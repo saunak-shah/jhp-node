@@ -107,6 +107,13 @@ module.exports = function () {
       // Extract necessary data from request body
       const { examId, user } = req.body;
 
+      if(!examId){
+        res.status(500).json({
+          message: `Exam Id not valid.`,
+        });
+        return
+      }
+
       // select the exam which you want to give
       // after select the exam need to show information about exam like
       // generate unique exam id
