@@ -203,7 +203,7 @@ module.exports = function () {
   // only Admin
   // Update Exam
   router.put("/exams/:id", userMiddleware, async (req, res) => {
-    const { admin } = req.body;
+    const { admin, user } = req.body;
     const examId = req.params.id;
     if (!admin) {
       res.status(403).json({
@@ -214,6 +214,12 @@ module.exports = function () {
     try {
       const { data } = req.body;
       const exam = await findExamByExamId(examId);
+      if(exam.createdBy != user.uniqueId){
+        res.status(403).json({
+          message: `Unable to update exam while creator and updator is not same`,
+        });
+        return;
+      }
       if (exam) {
         const updatedExam = await updateExam({ examId }, data);
         if (!updatedExam) {
@@ -240,7 +246,7 @@ module.exports = function () {
   // only Admin
   // Delete exam
   router.delete("/exams/:id", userMiddleware, async (req, res) => {
-    const { admin } = req.body;
+    const { admin, user } = req.body;
     const examId = req.params.id;
     if (!admin) {
       res.status(403).json({
@@ -249,6 +255,13 @@ module.exports = function () {
       return;
     }
     try {
+      const exam = await findExamByExamId(examId);
+      if(exam.createdBy != user.uniqueId){
+        res.status(403).json({
+          message: `Unable to update exam while creator and updator is not same`,
+        });
+        return;
+      }
       const deletedExam = await deleteExam({ examId });
       if (!deletedExam) {
         res.status(500).json({

@@ -139,6 +139,10 @@ module.exports = function () {
       const { data } = req.body;
       const result = await findResultByResultId(resultId);
       if (result) {
+        if(data.score){
+          const percentage = parseFloat(parseFloat((data.score * 100) / result.appliedExam.appliedExam.examScore).toFixed(2))
+          data.percentage = percentage
+        }
         const updatedResult = await updateResult({ resultId }, data);
         if (!updatedResult) {
           res.status(500).json({

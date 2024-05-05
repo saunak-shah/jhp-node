@@ -7,6 +7,10 @@ async function userMiddleware(req, res, next) {
     const tokenData = verifyJwt(jwtToken);
     if (tokenData) {
       const user = await findUserByUniqueId(tokenData.uniqueId);
+      if(!user){
+        res.status(500).json({ message: `Not admin` });
+        return;
+      }
       const admin = await isAdmin(user.userId);
       if (user) {
         req.body = {

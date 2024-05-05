@@ -57,6 +57,10 @@ model Users {
   @@index([firstName, middleName, lastName, phoneNumber])
   @@index([firstName, middleName, lastName, whatsappNumber])
   @@index([firstName, middleName, lastName, phoneNumber, whatsappNumber])
+  @@index([resetEmailToken])
+  @@index([resetEmailToken, resetPasswordTokenExpiration])
+  @@index([resetPasswordToken])
+  @@index([resetPasswordToken, resetPasswordTokenExpiration])
 }
 
 model Exams {

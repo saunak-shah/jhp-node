@@ -89,6 +89,14 @@ module.exports = function () {
         return;
       }
 
+      const isUniqueIdPresent = await findUserByUniqueId(uniqueId);
+      if (isUniqueIdPresent) {
+        res
+          .status(500)
+          .json({ message: "Unique Id already present.", value: false });
+          return
+      } 
+
       if (password.length <= 4 || password.length >= 12) {
         res.send("Password length should be between 4 to 12 characters.");
         return;
@@ -328,7 +336,7 @@ module.exports = function () {
   router.put("/users/reset/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const { password } = req.body;
+      const { password, uniqueId } = req.body;
       if (password.length <= 4 || password.length >= 12) {
         res.send("Password length should be between 4 to 12 characters.");
         return;
@@ -341,7 +349,10 @@ module.exports = function () {
       
       // Update user's password here
       const updatedUser = await updateUser(
-        { resetPasswordToken: token },
+        { 
+          resetPasswordToken: token,
+          uniqueId 
+        },
         {
           password: bcrypt.createHash(password),
           resetPasswordToken: "",
@@ -458,7 +469,10 @@ module.exports = function () {
 
       // Update user's Email here
       const updatedUser = await updateUser(
-        { uniqueId: user.uniqueId },
+        { 
+          uniqueId: user.uniqueId,
+          resetEmailToken: token
+        },
         {
           email,
           resetEmailToken: "",

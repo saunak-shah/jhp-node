@@ -17,6 +17,7 @@ const resultSelection = {
           examName: true,
           category: true,
           standard: true,
+          examScore: true
         },
       },
     },
