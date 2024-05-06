@@ -497,7 +497,7 @@ module.exports = function () {
     try {
       const { id } = req.params;
       const { user } = req.body;
-      if (user) {
+      if (user && user.uniqueId == id) {
         const deletedUser = await deleteUser({ uniqueId: id });
         if (deletedUser) {
           res.status(200).json({ message: "User deleted", user: deletedUser });
