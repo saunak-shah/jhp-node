@@ -13,135 +13,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Gender {
-  Male
-  Femlae
+enum gender {
+  Male   @map("M")
+  Femlae @map("F")
 }
 
-model Admin {
-  userId    String   @id @default(cuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @map("updated_at")
-  orgId     Int
-  email     String
-  password  String
+model master_role {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @default(now()) @map("updated_at")
+  org_id     Int
+  email      String
+  password   String
 }
 
-model Users {
-  userId                       String        @id @default(cuid())
-  createdAt                    DateTime      @default(now()) @map("created_at")
-  updatedAt                    DateTime      @default(now()) @map("updated_at")
-  orgId                        Int
-  firstName                    String
-  lastName                     String
-  middleName                   String
-  fatherName                   String
-  motherName                   String
-  phoneNumber                  String
-  whatsappNumber               String
-  email                        String
-  password                     String
-  birthDate                    DateTime
-  gender                       Gender
-  uniqueId                     String        @unique
-  resetPasswordToken           String        @default("")
-  resetPasswordTokenExpiration DateTime      @default(now())
-  resetEmailToken              String        @default("")
-  resetEmailTokenExpiration    DateTime      @default(now())
-  Exams                        Exams[]
-  AppliedExam                  AppliedExam[]
-  Result                       Result[]
+model users {
+  id                              String              @id @default(cuid())
+  created_at                      DateTime            @default(now()) @map("created_at")
+  updated_at                      DateTime            @default(now()) @map("updated_at")
+  org_id                          Int
+  first_name                      String
+  last_name                       String
+  middle_name                     String
+  father_name                     String
+  mother_name                     String
+  phone_number                    String
+  is_whatsapp_number              Boolean
+  whatsapp_number                 String
+  address                         String
+  email                           String
+  password                        String
+  birth_date                      DateTime
+  gender                          gender
+  unique_id                       String              @unique
+  reset_password_token            String              @default("")
+  reset_password_token_expiration DateTime            @default(now())
+  reset_email_token               String              @default("")
+  reset_email_token_expiration    DateTime            @default(now())
+  course                          course[]
+  user_apply_course               user_apply_course[]
+  result                          result[]
 
-  @@index([orgId])
-  @@index([firstName, middleName, lastName])
-  @@index([firstName, middleName, lastName, phoneNumber])
-  @@index([firstName, middleName, lastName, whatsappNumber])
-  @@index([firstName, middleName, lastName, phoneNumber, whatsappNumber])
-  @@index([resetEmailToken])
-  @@index([resetEmailToken, resetPasswordTokenExpiration])
-  @@index([resetPasswordToken])
-  @@index([resetPasswordToken, resetPasswordTokenExpiration])
+  @@index([org_id])
+  @@index([first_name, middle_name, last_name])
+  @@index([first_name, middle_name, last_name, phone_number])
+  @@index([first_name, middle_name, last_name, whatsapp_number])
+  @@index([first_name, middle_name, last_name, phone_number, whatsapp_number])
+  @@index([reset_email_token])
+  @@index([reset_email_token, reset_email_token_expiration])
+  @@index([reset_password_token])
+  @@index([reset_password_token, reset_password_token_expiration])
 }
 
-model Exams {
-  examId                   String        @id @default(cuid())
-  createdAt                DateTime      @default(now()) @map("created_at")
-  updatedAt                DateTime      @default(now()) @map("updated_at")
-  examName                 String
-  fileUrl                  String
-  examDate                 DateTime
-  examDurationInHours      Int
-  examDescription          String
-  examScore                Int
-  examLocation             String
-  examStatus               String
-  examPassingScore         String
-  examMaxAttemps           Int
-  isActive                 Boolean
-  registrationStartingDate DateTime
-  registrationClosingDate  DateTime
-  resultDate               DateTime?
-  recheckingStartingDate   DateTime?
-  recheckingClosingDate    DateTime?
-  users                    Users         @relation(fields: [createdBy], references: [uniqueId], onDelete: Cascade)
-  createdBy                String
-  category                 Category
-  standard                 Standard
-  AppliedExam              AppliedExam[]
+model course {
+  id                         String              @id @default(cuid())
+  created_at                 DateTime            @default(now()) @map("created_at")
+  updated_at                 DateTime            @default(now()) @map("updated_at")
+  course_name                String
+  file_url                   String
+  course_date                DateTime
+  course_duration_in_hours   Int
+  course_description         String
+  course_score               Int
+  course_location            String
+  course_passing_score       Int
+  course_max_attempts         Int
+  is_active                  Boolean
+  registration_starting_date DateTime
+  registration_closing_date  DateTime
+  result_date                DateTime?
+  users                      users               @relation(fields: [created_by], references: [unique_id], onDelete: Cascade)
+  created_by                 String
+  category                   category
+  user_apply_course          user_apply_course[]
 
   @@index([category])
-  @@index([standard])
-  @@index([examName, examDate])
-  @@index([examStatus])
-  @@index([examName, examDate, category, standard])
+  @@index([course_name, course_date])
+  @@index([course_name, course_date, category])
 }
 
-enum Category {
-  A
-  B
-  C
-  D
+enum category {
+  A @map("1")
+  B @map("2")
+  C @map("3")
+  D @map("4")
 }
 
-enum Standard {
-  One   @map("1")
-  Two   @map("2")
-  Three @map("3")
-  Four  @map("4")
-  Five  @map("5")
-  Six   @map("6")
-  Seven @map("7")
-  Eight @map("8")
-  Nine  @map("9")
-  Ten   @map("10")
+model user_apply_course {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @default(now()) @map("updated_at")
+  course_id    String
+  course     course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  result     result[]
+
+  @@index([user_id, course_id])
+  @@index([user_id])
+  @@index([course_id])
 }
 
-model AppliedExam {
-  registrationId String   @id @default(cuid())
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @default(now()) @map("updated_at")
-  examId         String
-  appliedExam    Exams    @relation(fields: [examId], references: [examId], onDelete: Cascade)
-  userId         String
-  user           Users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  Result         Result[]
+model result {
+  id                 String            @id @default(cuid())
+  created_at         DateTime          @default(now()) @map("created_at")
+  updated_at         DateTime          @default(now()) @map("updated_at")
+  registration_id    String            @unique
+  score              Int
+  course_passing_score String
+  course_score         Int
+  user_apply_course  user_apply_course @relation(fields: [registration_id], references: [id], onDelete: Cascade)
+  creator_id         String
+  users              users             @relation(fields: [creator_id], references: [id], onDelete: Cascade)
 
-  @@index([userId, examId])
-  @@index([userId])
-  @@index([examId])
-}
-
-model Result {
-  resultId       String      @id @default(cuid())
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @default(now()) @map("updated_at")
-  registrationId String      @unique
-  score          Int
-  percentage     Float
-  appliedExam    AppliedExam @relation(fields: [registrationId], references: [registrationId], onDelete: Cascade)
-  creatorId      String
-  createdBy      Users       @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
-
-  @@index([registrationId])
-  @@index([creatorId])
+  @@index([id])
+  @@index([creator_id])
 }

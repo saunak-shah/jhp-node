@@ -1,23 +1,22 @@
 const { prisma } = require("../prisma/client");
 
 const resultSelection = {
-  resultId: true,
-  createdAt: true,
-  updatedAt: true,
-  registrationId: true,
+  id: true,
+  created_at: true,
+  updated_at: true,
+  registration_id: true,
   score: true,
-  percentage: true,
-  creatorId: true,
-  appliedExam: {
+  creator_id: true,
+  user_apply_course: {
     select: {
-      userId: true,
-      examId: true,
-      appliedExam: {
+      user_id: true,
+      course_id: true,
+      course: {
         select: {
-          examName: true,
+          course_name: true,
           category: true,
-          standard: true,
-          examScore: true
+          course_score: true,
+          course_passing_score: true,
         },
       },
     },
@@ -27,6 +26,7 @@ const resultSelection = {
 async function createResult(data) {
   const result = await prisma.result.create({
     data,
+    select: resultSelection
   });
 
   if (result) {
@@ -35,30 +35,33 @@ async function createResult(data) {
   return;
 }
 
-async function getExamScore(registrationId) {
-  const result = await prisma.appliedExam.findUnique({
+async function getCourseScore(registration_id) {
+  const result = await prisma.user_apply_course.findUnique({
     where: {
-      registrationId,
+      id: registration_id,
     },
     select: {
-      appliedExam: {
+      course: {
         select: {
-          examScore: true,
+          course_score: true,
+          course_passing_score: true
         },
       },
     },
   });
 
   if (result) {
-    return result.appliedExam.examScore;
+    return {
+      course_score: result.course.course_score,
+      course_passing_score: result.course.course_passing_score
+    }
   }
-  return;
 }
 
 async function findResultByResultId(resultId) {
   const result = await prisma.result.findUnique({
     where: {
-      resultId,
+      id: resultId,
     },
     select: resultSelection,
   });
@@ -69,10 +72,10 @@ async function findResultByResultId(resultId) {
   return;
 }
 
-async function findResultByRegistrationId(registrationId) {
+async function findResultByRegistrationId(registration_id) {
   const result = await prisma.result.findUnique({
     where: {
-      registrationId,
+      registration_id,
     },
     select: resultSelection,
   });
@@ -84,10 +87,10 @@ async function findResultByRegistrationId(registrationId) {
 }
 
 async function getAllResults() {
-  const results = await prisma.appliedExam.findMany({
+  const results = await prisma.user_apply_course.findMany({
     select: resultSelection,
     orderBy: {
-      createdAt: "asc",
+      created_at: "asc",
     },
   });
 
@@ -100,13 +103,13 @@ async function getAllResults() {
 async function getAllResultsByUserId(userId) {
   const results = await prisma.result.findMany({
     where: {
-      appliedExam: {
-        userId,
+      user_apply_course: {
+        user_id: userId,
       },
     },
     select: resultSelection,
     orderBy: {
-      createdAt: "asc",
+      created_at: "asc",
     },
   });
 
@@ -116,16 +119,16 @@ async function getAllResultsByUserId(userId) {
   return;
 }
 
-async function getAllResultsByExamId(examId) {
+async function getAllResultsByCourseId(courseId) {
   const results = await prisma.result.findMany({
     where: {
-      appliedExam: {
-        examId
+      user_apply_course: {
+        course_id: courseId
       }
     },
     select: resultSelection,
     orderBy: {
-      createdAt: "asc",
+      created_at: "asc",
     },
   });
 
@@ -165,9 +168,9 @@ module.exports = {
   deleteResult,
   findResultByRegistrationId,
   getAllResults,
-  getAllResultsByExamId,
+  getAllResultsByCourseId,
   getAllResultsByUserId,
   updateResult,
   findResultByResultId,
-  getExamScore,
+  getCourseScore,
 };

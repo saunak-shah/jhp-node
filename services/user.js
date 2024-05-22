@@ -1,22 +1,24 @@
 const { prisma } = require("../prisma/client");
 
 const findUserSelection = {
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-  orgId: true,
-  firstName: true,
-  lastName: true,
-  middleName: true,
-  fatherName: true,
-  motherName: true,
-  phoneNumber: true,
-  whatsappNumber: true,
+  id: true,
+  created_at: true,
+  updated_at: true,
+  org_id: true,
+  first_name: true,
+  last_name: true,
+  middle_name: true,
+  father_name: true,
+  mother_name: true,
+  phone_number: true,
+  is_whatsapp_number: true,
+  whatsapp_number: true,
+  address: true,
   email: true,
   password: true,
-  birthDate: true,
+  birth_date: true,
   gender: true,
-  uniqueId: true
+  unique_id: true
 }
 
 async function createUser(data) {
@@ -30,10 +32,10 @@ async function createUser(data) {
   return;
 }
 
-async function findUserByUniqueId(uniqueId) {
+async function findUserByUniqueId(unique_id) {
   const user = await prisma.users.findUnique({
     where: {
-      uniqueId
+      unique_id
     },
     select: findUserSelection
   })
@@ -47,8 +49,8 @@ async function findUserByUniqueId(uniqueId) {
 async function findUserByResetPasswordToken(token) {
   const user = await prisma.users.findFirst({
     where: {
-      resetPasswordToken: token,
-      resetPasswordTokenExpiration: {
+      reset_password_token: token,
+      reset_password_token_expiration: {
         gte: new Date()
       }
     },
@@ -61,12 +63,12 @@ async function findUserByResetPasswordToken(token) {
   return;
 }
 
-async function findUserByResetEmailToken(uniqueId, token) {
+async function findUserByResetEmailToken(unique_id, token) {
   const user = await prisma.users.findFirst({
     where: {
-      uniqueId,
-      resetEmailToken: token,
-      resetEmailTokenExpiration: {
+      unique_id,
+      reset_email_token: token,
+      reset_email_token_expiration: {
         gte: new Date()
       }
     },
@@ -122,7 +124,7 @@ async function getAllUsers(){
   const users = await prisma.users.findMany({
     select: findUserSelection,
     orderBy: {
-      birthDate: "asc"
+      birth_date: "asc"
     }
   })
 
@@ -133,9 +135,9 @@ async function getAllUsers(){
 }
 
 async function isAdmin(userId){
-  const user = await prisma.admin.findUnique({
+  const user = await prisma.master_role.findUnique({
     where: {
-      userId,
+      id: userId,
     },
   })
 

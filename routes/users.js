@@ -15,18 +15,34 @@ const { signJwt } = require("../helpers/jwt");
 const { userMiddleware } = require("../middlewares/middleware");
 require("dotenv").config();
 
+// Email validation regex
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+// Phone number validation regex (simple international format)
+const phoneRegex = /^\d{10}$/;
+
+// Function to validate email
+function validateEmail(email) {
+  return emailRegex.test(email);
+}
+
+// Function to validate phone number, defaulting to +91 if no prefix is provided
+function validatePhoneNumber(phone_number) {
+  return phoneRegex.test(phone_number);
+}
+
 module.exports = function () {
   // Check unique Id if present in db or not.
   router.get("/users/check_unique_id/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const isUniqueIdPresent = await findUserByUniqueId(id);
-      if (isUniqueIdPresent) {
+      const isunique_idPresent = await findUserByUniqueId(id);
+      if (isunique_idPresent) {
         res
           .status(500)
-          .json({ message: "Unique Id already present.", value: false });
+          .json({ message: "Unique Id already present.", data: false });
       } else {
-        res.status(200).json({ message: "Id is unique", value: true });
+        res.status(200).json({ message: "Id is unique", data: true });
       }
     } catch (error) {
       console.error("Error while checking unique id:", error);
@@ -40,9 +56,9 @@ module.exports = function () {
       const { id } = req.params;
       const user = await findUserByUniqueId(id);
       if (user) {
-        res.status(200).json({ message: "User found", user });
+        res.status(200).json({ message: "User found", data: user });
       } else {
-        res.status(400).json({ message: "User not found", value: true });
+        res.status(400).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
@@ -55,50 +71,74 @@ module.exports = function () {
     try {
       // Extract necessary data from request body
       const {
-        firstName,
-        lastName,
-        middleName,
-        fatherName,
-        motherName,
-        phoneNumber,
-        whatsappNumber,
+        first_name,
+        last_name,
+        middle_name,
+        father_name,
+        mother_name,
+        phone_number,
+        whatsapp_number,
+        is_whatsapp_number,
+        address,
         email,
         password,
-        birthDate,
+        birth_date,
         gender,
-        uniqueId,
-        orgId,
+        unique_id,
+        org_id,
       } = req.body;
 
       if (
-        !firstName ||
-        !lastName ||
-        !middleName ||
-        !fatherName ||
-        !motherName ||
-        !phoneNumber ||
-        !whatsappNumber ||
+        !first_name ||
+        !last_name ||
+        !middle_name ||
+        !father_name ||
+        !mother_name ||
+        !phone_number ||
+        !(is_whatsapp_number != undefined) ||
+        (is_whatsapp_number == false && !whatsapp_number) ||
         !email ||
         !password ||
-        !birthDate ||
+        !birth_date ||
         !gender ||
-        !uniqueId ||
-        !orgId
+        !unique_id ||
+        !org_id ||
+        !address
       ) {
-        res.status(500).json({ message: "Fill all the fields properly" });
+        res
+          .status(500)
+          .json({ message: "Fill all the fields properly", data: null });
         return;
       }
 
-      const isUniqueIdPresent = await findUserByUniqueId(uniqueId);
+      const isUniqueIdPresent = await findUserByUniqueId(unique_id);
       if (isUniqueIdPresent) {
         res
           .status(500)
-          .json({ message: "Unique Id already present.", value: false });
-          return
-      } 
+          .json({ message: "Unique Id already present.", data: false });
+        return;
+      }
 
       if (password.length <= 4 || password.length >= 12) {
-        res.send("Password length should be between 4 to 12 characters.");
+        res
+          .status(500)
+          .send("Password length should be between 4 to 12 characters.");
+        return;
+      }
+
+      let new_whatsapp_number = whatsapp_number;
+      if (is_whatsapp_number == true) {
+        new_whatsapp_number = phone_number;
+      }
+
+      if (
+        !validateEmail(email) ||
+        !validatePhoneNumber(phone_number) ||
+        !validatePhoneNumber(new_whatsapp_number)
+      ) {
+        res
+          .status(500)
+          .send("Invalid data");
         return;
       }
 
@@ -106,29 +146,31 @@ module.exports = function () {
       let encPassword = bcrypt.createHash(password);
 
       const user = await createUser({
-        firstName,
-        lastName,
-        middleName,
-        fatherName,
-        motherName,
-        phoneNumber,
-        whatsappNumber,
+        first_name,
+        last_name,
+        middle_name,
+        father_name,
+        mother_name,
+        phone_number,
+        is_whatsapp_number,
+        whatsapp_number: new_whatsapp_number,
         email,
+        address,
         password: encPassword,
-        birthDate,
+        birth_date,
         gender,
-        uniqueId,
-        orgId,
+        unique_id,
+        org_id,
       });
       if (user) {
         // Sending mail
         const subject = `Welcome to JHP Family`;
-        const text = `Your registration is successful\n Your Unique Id : ${uniqueId}.\n Your password is : ${password} \n Use this unique id to login `;
+        const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
         const isMailSent = await sendEmail(email, subject, text);
         if (!isMailSent) {
           console.error(`Unable to send mail`);
         } else {
-          res.status(200).json({ message: "Signup successful", user });
+          res.status(200).json({ message: "Signup successful", data: user });
         }
       } else {
         res.status(500).send("Internal Server Error");
@@ -141,23 +183,23 @@ module.exports = function () {
 
   // Login route
   router.post("/users/login", async (req, res) => {
-    const { uniqueId, password } = req.body;
-    if (!uniqueId || !password) {
-      res.status(400).json({
+    const { unique_id, password } = req.body;
+    if (!unique_id || !password) {
+      res.status(500).json({
         message: `Fill all the fields properly`,
       });
       return;
     }
     try {
-      const user = await findUserByUniqueId(uniqueId);
+      const user = await findUserByUniqueId(unique_id);
       if (user) {
         const isValidPassword = bcrypt.isValidPassword(user.password, password);
         if (isValidPassword) {
           const token = signJwt(user);
           if (token) {
             res.status(200).json({
-              message: `Login successful for user with unique Id - ${uniqueId}`,
-              token,
+              message: `Login successful for user`,
+              data: token,
             });
           } else {
             res.status(500).json({
@@ -166,15 +208,11 @@ module.exports = function () {
             return;
           }
         } else {
-          res
-            .status(403)
-            .json({ message: `Invalid password for uniqueId - ${uniqueId}` });
+          res.status(403).json({ message: `Invalid username or password` });
           return;
         }
       } else {
-        res
-          .status(403)
-          .json({ message: `User does not exist with uniqueId - ${uniqueId}` });
+        res.status(403).json({ message: `User does not exist` });
         return;
       }
     } catch (error) {
@@ -188,12 +226,14 @@ module.exports = function () {
   router.put("/users/update_profile", userMiddleware, async (req, res) => {
     const { user, data } = req.body;
     try {
-      const updatedUser = await updateUser({ uniqueId: user.uniqueId }, data);
+      const updatedUser = await updateUser({ unique_id: user.unique_id }, data);
       if (updatedUser) {
         const data = (({ password, ...o }) => o)(updatedUser);
         res.status(200).json({
           message: `User profile updated successfully.`,
-          user: data,
+          data: {
+            user: data,
+          },
         });
       } else {
         res.status(500).json({
@@ -219,12 +259,14 @@ module.exports = function () {
     try {
       if (bcrypt.isValidPassword(user.password, oldPassword)) {
         if (newPassword.length <= 4 || newPassword.length >= 12) {
-          res.send("New Password length should be between 4 to 12 characters.");
+          res
+            .status(500)
+            .send("New Password length should be between 4 to 12 characters.");
           return;
         }
         const newEncPassword = bcrypt.createHash(newPassword);
         const updatedUser = await updateUser(
-          { uniqueId: user.uniqueId },
+          { unique_id: user.unique_id },
           {
             password: newEncPassword,
           }
@@ -233,7 +275,9 @@ module.exports = function () {
           const data = (({ password, ...o }) => o)(updatedUser);
           res.status(200).json({
             message: `User's password changed successfully.`,
-            user: data,
+            data: {
+              user: data,
+            },
           });
         } else {
           res.status(500).json({
@@ -254,19 +298,19 @@ module.exports = function () {
 
   // Forgot password
   router.post("/users/forgot_password", async (req, res) => {
-    const { uniqueId, email } = req.body;
+    const { unique_id, email } = req.body;
     try {
-      const userByUniqueId = await findUserByUniqueId(uniqueId);
+      const userByUniqueId = await findUserByUniqueId(unique_id);
       if (
         userByUniqueId &&
         userByUniqueId.email.toLowerCase() == email.toLowerCase()
       ) {
         const token = crypto.randomBytes(20).toString("hex");
         const updatedUser = await updateUser(
-          { uniqueId },
+          { unique_id },
           {
-            resetPasswordToken: token,
-            resetPasswordTokenExpiration: new Date(
+            reset_password_token: token,
+            reset_password_token_expiration: new Date(
               Date.now() + 3600000
             ).toISOString(), // 10 minutes
           }
@@ -336,7 +380,7 @@ module.exports = function () {
   router.put("/users/reset/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const { password, uniqueId } = req.body;
+      const { password, unique_id } = req.body;
       if (password.length <= 4 || password.length >= 12) {
         res.send("Password length should be between 4 to 12 characters.");
         return;
@@ -346,17 +390,17 @@ module.exports = function () {
         res.status(400).send("Password reset token is invalid or has expired");
         return;
       }
-      
+
       // Update user's password here
       const updatedUser = await updateUser(
-        { 
-          resetPasswordToken: token,
-          uniqueId 
+        {
+          reset_password_token: token,
+          unique_id,
         },
         {
           password: bcrypt.createHash(password),
-          resetPasswordToken: "",
-          resetPasswordTokenExpiration: new Date(Date.now()).toISOString(),
+          reset_password_token: "",
+          reset_password_token_expiration: new Date(Date.now()).toISOString(),
         }
       );
 
@@ -376,14 +420,14 @@ module.exports = function () {
   router.post("/users/reset/email", userMiddleware, async (req, res) => {
     const { user } = req.body;
     try {
-      const userByUniqueId = await findUserByUniqueId(user.uniqueId);
+      const userByUniqueId = await findUserByUniqueId(user.unique_id);
       if (userByUniqueId) {
         const token = crypto.randomBytes(20).toString("hex");
         const updatedUser = await updateUser(
-          { uniqueId: user.uniqueId },
+          { unique_id: user.unique_id },
           {
-            resetEmailToken: token,
-            resetEmailTokenExpiration: new Date(
+            reset_email_token: token,
+            reset_email_token_expiration: new Date(
               Date.now() + 300000
             ).toISOString(), // 5 minutes
           }
@@ -433,7 +477,7 @@ module.exports = function () {
     try {
       const { user } = req.body;
       const token = req.params.token;
-      const userData = await findUserByResetEmailToken(user.uniqueId, token);
+      const userData = await findUserByResetEmailToken(user.unique_id, token);
       if (!userData) {
         return res
           .status(400)
@@ -461,7 +505,7 @@ module.exports = function () {
         });
         return;
       }
-      const userData = await findUserByResetEmailToken(user.uniqueId, token);
+      const userData = await findUserByResetEmailToken(user.unique_id, token);
       if (!userData) {
         res.status(400).send("Email reset token is invalid or has expired");
         return;
@@ -469,14 +513,14 @@ module.exports = function () {
 
       // Update user's Email here
       const updatedUser = await updateUser(
-        { 
-          uniqueId: user.uniqueId,
-          resetEmailToken: token
+        {
+          unique_id: user.unique_id,
+          reset_email_token: token,
         },
         {
           email,
-          resetEmailToken: "",
-          resetEmailTokenExpiration: new Date(Date.now()).toISOString(),
+          reset_email_token: "",
+          reset_email_token_expiration: new Date(Date.now()).toISOString(),
         }
       );
 
@@ -497,10 +541,12 @@ module.exports = function () {
     try {
       const { id } = req.params;
       const { user } = req.body;
-      if (user && user.uniqueId == id) {
-        const deletedUser = await deleteUser({ uniqueId: id });
+      if (user && user.unique_id == id) {
+        const deletedUser = await deleteUser({ unique_id: id });
         if (deletedUser) {
-          res.status(200).json({ message: "User deleted", user: deletedUser });
+          res
+            .status(200)
+            .json({ message: "User deleted", data: { user: deletedUser } });
         } else {
           res.status(500).json({ message: "Unable to delete user" });
         }
