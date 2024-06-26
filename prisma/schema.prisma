@@ -1,0 +1,131 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum gender {
+  Male   @map("M")
+  Femlae @map("F")
+}
+
+model master_role {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @default(now()) @map("updated_at")
+  org_id     Int
+  email      String
+  password   String
+}
+
+model users {
+  id                              String              @id @default(cuid())
+  created_at                      DateTime            @default(now()) @map("created_at")
+  updated_at                      DateTime            @default(now()) @map("updated_at")
+  org_id                          Int
+  first_name                      String
+  last_name                       String
+  middle_name                     String
+  father_name                     String
+  mother_name                     String
+  phone_number                    String
+  is_whatsapp_number              Boolean
+  whatsapp_number                 String
+  address                         String
+  email                           String
+  password                        String
+  birth_date                      DateTime
+  gender                          gender
+  unique_id                       String              @unique
+  reset_password_token            String              @default("")
+  reset_password_token_expiration DateTime            @default(now())
+  reset_email_token               String              @default("")
+  reset_email_token_expiration    DateTime            @default(now())
+  course                          course[]
+  user_apply_course               user_apply_course[]
+  result                          result[]
+
+  @@index([org_id])
+  @@index([first_name, middle_name, last_name])
+  @@index([first_name, middle_name, last_name, phone_number])
+  @@index([first_name, middle_name, last_name, whatsapp_number])
+  @@index([first_name, middle_name, last_name, phone_number, whatsapp_number])
+  @@index([reset_email_token])
+  @@index([reset_email_token, reset_email_token_expiration])
+  @@index([reset_password_token])
+  @@index([reset_password_token, reset_password_token_expiration])
+}
+
+model course {
+  id                         String              @id @default(cuid())
+  created_at                 DateTime            @default(now()) @map("created_at")
+  updated_at                 DateTime            @default(now()) @map("updated_at")
+  course_name                String
+  file_url                   String
+  course_date                DateTime
+  course_duration_in_hours   Int
+  course_description         String
+  course_score               Int
+  course_location            String
+  course_passing_score       Int
+  course_max_attempts         Int
+  is_active                  Boolean
+  registration_starting_date DateTime
+  registration_closing_date  DateTime
+  result_date                DateTime?
+  users                      users               @relation(fields: [created_by], references: [unique_id], onDelete: Cascade)
+  created_by                 String
+  category                   category
+  user_apply_course          user_apply_course[]
+
+  @@index([category])
+  @@index([course_name, course_date])
+  @@index([course_name, course_date, category])
+}
+
+enum category {
+  A @map("1")
+  B @map("2")
+  C @map("3")
+  D @map("4")
+}
+
+model user_apply_course {
+  id         String   @id @default(cuid())
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @default(now()) @map("updated_at")
+  course_id    String
+  course     course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  result     result[]
+
+  @@index([user_id, course_id])
+  @@index([user_id])
+  @@index([course_id])
+}
+
+model result {
+  id                 String            @id @default(cuid())
+  created_at         DateTime          @default(now()) @map("created_at")
+  updated_at         DateTime          @default(now()) @map("updated_at")
+  registration_id    String            @unique
+  score              Int
+  course_passing_score String
+  course_score         Int
+  user_apply_course  user_apply_course @relation(fields: [registration_id], references: [id], onDelete: Cascade)
+  creator_id         String
+  users              users             @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+
+  @@index([id])
+  @@index([creator_id])
+}
