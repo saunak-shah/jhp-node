@@ -28,18 +28,14 @@ model master_role {
 }
 
 model users {
-  id                              String              @id @default(cuid())
+  id                              Int                 @id @default(autoincrement())
   created_at                      DateTime            @default(now()) @map("created_at")
   updated_at                      DateTime            @default(now()) @map("updated_at")
   org_id                          Int
   first_name                      String
   last_name                       String
-  middle_name                     String
   father_name                     String
-  mother_name                     String
   phone_number                    String
-  is_whatsapp_number              Boolean
-  whatsapp_number                 String
   address                         String
   email                           String
   password                        String
@@ -55,10 +51,8 @@ model users {
   result                          result[]
 
   @@index([org_id])
-  @@index([first_name, middle_name, last_name])
-  @@index([first_name, middle_name, last_name, phone_number])
-  @@index([first_name, middle_name, last_name, whatsapp_number])
-  @@index([first_name, middle_name, last_name, phone_number, whatsapp_number])
+  @@index([first_name, last_name])
+  @@index([first_name, last_name, phone_number])
   @@index([reset_email_token])
   @@index([reset_email_token, reset_email_token_expiration])
   @@index([reset_password_token])
@@ -77,7 +71,7 @@ model course {
   course_score               Int
   course_location            String
   course_passing_score       Int
-  course_max_attempts         Int
+  course_max_attempts        Int
   is_active                  Boolean
   registration_starting_date DateTime
   registration_closing_date  DateTime
@@ -103,9 +97,9 @@ model user_apply_course {
   id         String   @id @default(cuid())
   created_at DateTime @default(now()) @map("created_at")
   updated_at DateTime @default(now()) @map("updated_at")
-  course_id    String
+  course_id  String
   course     course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
-  user_id    String
+  user_id    Int
   user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   result     result[]
 
@@ -115,16 +109,16 @@ model user_apply_course {
 }
 
 model result {
-  id                 String            @id @default(cuid())
-  created_at         DateTime          @default(now()) @map("created_at")
-  updated_at         DateTime          @default(now()) @map("updated_at")
-  registration_id    String            @unique
-  score              Int
+  id                   String            @id @default(cuid())
+  created_at           DateTime          @default(now()) @map("created_at")
+  updated_at           DateTime          @default(now()) @map("updated_at")
+  registration_id      String            @unique
+  score                Int
   course_passing_score String
   course_score         Int
-  user_apply_course  user_apply_course @relation(fields: [registration_id], references: [id], onDelete: Cascade)
-  creator_id         String
-  users              users             @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  user_apply_course    user_apply_course @relation(fields: [registration_id], references: [id], onDelete: Cascade)
+  creator_id           Int
+  users                users             @relation(fields: [creator_id], references: [id], onDelete: Cascade)
 
   @@index([id])
   @@index([creator_id])

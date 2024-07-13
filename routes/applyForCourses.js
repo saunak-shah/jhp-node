@@ -24,7 +24,7 @@ module.exports = function () {
           data: registrations,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch registrations`,
         });
       }
@@ -46,7 +46,7 @@ module.exports = function () {
           data: registration,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch registration`,
         });
       }
@@ -68,7 +68,7 @@ module.exports = function () {
           data: registrations,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch applications`,
         });
       }
@@ -90,7 +90,7 @@ module.exports = function () {
           registrations,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch registrations`,
         });
       }
@@ -108,7 +108,7 @@ module.exports = function () {
       const { course_id, user } = req.body;
 
       if(!course_id){
-        res.status(500).json({
+        res.status(422).json({
           message: `Course Id not valid.`,
         });
         return
@@ -125,7 +125,7 @@ module.exports = function () {
         course.registration_starting_date > new Date(Date.now()).toISOString() ||
         course.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
-        res.status(400).json({
+        res.status(422).json({
           message: `Course registration cannot be done`,
         });
       }
@@ -219,7 +219,7 @@ module.exports = function () {
           data: deletedApplication
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Application not found`,
         });
       }
