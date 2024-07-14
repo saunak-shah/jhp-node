@@ -19,7 +19,7 @@ module.exports = function () {
     try {
       const result = await findResultByResultId(id);
       if (!result) {
-        res.status(400).json({
+        res.status(422).json({
           message: `No Result found`,
         });
         return;
@@ -41,7 +41,7 @@ module.exports = function () {
     try {
       const result = await getAllResultsByCourseId(id);
       if (!result) {
-        res.status(400).json({
+        res.status(422).json({
           message: `No Result found`,
         });
         return;
@@ -64,7 +64,7 @@ module.exports = function () {
     try {
       const result = await getAllResultsByUserId(id);
       if (!result) {
-        res.status(400).json({
+        res.status(422).json({
           message: `No Result found`,
         });
         return;
@@ -154,7 +154,7 @@ module.exports = function () {
           data: updatedResult
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to find result`,
         });
       }

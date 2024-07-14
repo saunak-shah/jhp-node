@@ -23,7 +23,7 @@ module.exports = function () {
           data: course,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch courses`,
         });
       }
@@ -45,7 +45,7 @@ module.exports = function () {
           data: course,
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to fetch course`,
         });
       }
@@ -75,7 +75,7 @@ module.exports = function () {
           new Date(Date.now()).toISOString() ||
         course.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
-        res.status(400).json({
+        res.status(422).json({
           message: `Course registration cannot be done`,
         });
       }
@@ -147,14 +147,14 @@ module.exports = function () {
         !registration_starting_date ||
         !registration_closing_date
       ) {
-        res.status(400).json({
+        res.status(422).json({
           message: `Fill all the fields`,
         });
         return;
       }
 
       if (course_date < new Date(Date.now()).toISOString()) {
-        res.status(400).json({
+        res.status(422).json({
           message: `Course Date should be greater than today's date.`,
         });
         return;
@@ -228,7 +228,7 @@ module.exports = function () {
           data: updatedCourse
         });
       } else {
-        res.status(500).json({
+        res.status(422).json({
           message: `Unable to find course`,
         });
       }

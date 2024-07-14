@@ -7,12 +7,8 @@ const findUserSelection = {
   org_id: true,
   first_name: true,
   last_name: true,
-  middle_name: true,
   father_name: true,
-  mother_name: true,
   phone_number: true,
-  is_whatsapp_number: true,
-  whatsapp_number: true,
   address: true,
   email: true,
   password: true,
@@ -36,6 +32,20 @@ async function findUserByUniqueId(unique_id) {
   const user = await prisma.users.findUnique({
     where: {
       unique_id
+    },
+    select: findUserSelection
+  })
+
+  if(user){
+    return user;
+  }
+  return;
+}
+
+async function findUserById(id) {
+  const user = await prisma.users.findUnique({
+    where: {
+      id
     },
     select: findUserSelection
   })
@@ -120,12 +130,19 @@ async function deleteUser(filter){
   return;
 }
 
-async function getAllUsers(){
+async function getAllUsers(limit, offset, nameFilter){
   const users = await prisma.users.findMany({
+    where: {
+      unique_id: {
+        contains: nameFilter
+      }
+    },
     select: findUserSelection,
     orderBy: {
       birth_date: "asc"
-    }
+    },
+    take: limit,
+    skip: offset
   })
 
   if(users){
@@ -151,6 +168,7 @@ module.exports = {
   createUser,
   findUserByUniqueId,
   findUserByEmail,
+  findUserById,
   updateUser,
   deleteUser,
   findUserByResetPasswordToken,

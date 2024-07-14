@@ -9,6 +9,8 @@ const {
   findUserByResetPasswordToken,
   findUserByResetEmailToken,
   deleteUser,
+  getAllUsers,
+  findUserById,
 } = require("../services/user");
 const { sendEmail } = require("../helpers/sendEmail");
 const { signJwt } = require("../helpers/jwt");
@@ -39,7 +41,7 @@ module.exports = function () {
       const isunique_idPresent = await findUserByUniqueId(id);
       if (isunique_idPresent) {
         res
-          .status(500)
+          .status(422)
           .json({ message: "Unique Id already present.", data: false });
       } else {
         res.status(200).json({ message: "Id is unique", data: true });
@@ -50,15 +52,31 @@ module.exports = function () {
     }
   });
 
+  // Get users.
+  router.get("/users", userMiddleware, async (req, res) => {
+    try {
+      const { limit, offset, nameFilter } = req.body;
+      const users = await getAllUsers(limit, offset, nameFilter);
+      if (users && users.length > 0) {
+        res.status(200).json({ message: "Users found", data: users });
+      } else {
+        res.status(422).json({ message: "User not found", data: null });
+      }
+    } catch (error) {
+      console.error("Error while getting users:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
   // Get user by unique Id.
-  router.get("/users/:id", async (req, res) => {
+  router.get("/users/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const user = await findUserByUniqueId(id);
+      const user = await findUserById(id);
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {
-        res.status(400).json({ message: "User not found", data: null });
+        res.status(422).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
@@ -73,12 +91,8 @@ module.exports = function () {
       const {
         first_name,
         last_name,
-        middle_name,
         father_name,
-        mother_name,
         phone_number,
-        whatsapp_number,
-        is_whatsapp_number,
         address,
         email,
         password,
@@ -91,12 +105,8 @@ module.exports = function () {
       if (
         !first_name ||
         !last_name ||
-        !middle_name ||
         !father_name ||
-        !mother_name ||
         !phone_number ||
-        !(is_whatsapp_number != undefined) ||
-        (is_whatsapp_number == false && !whatsapp_number) ||
         !email ||
         !password ||
         !birth_date ||
@@ -106,7 +116,7 @@ module.exports = function () {
         !address
       ) {
         res
-          .status(500)
+          .status(422)
           .json({ message: "Fill all the fields properly", data: null });
         return;
       }
@@ -114,31 +124,20 @@ module.exports = function () {
       const isUniqueIdPresent = await findUserByUniqueId(unique_id);
       if (isUniqueIdPresent) {
         res
-          .status(500)
+          .status(422)
           .json({ message: "Unique Id already present.", data: false });
         return;
       }
 
       if (password.length <= 4 || password.length >= 12) {
         res
-          .status(500)
+          .status(422)
           .send("Password length should be between 4 to 12 characters.");
         return;
       }
 
-      let new_whatsapp_number = whatsapp_number;
-      if (is_whatsapp_number == true) {
-        new_whatsapp_number = phone_number;
-      }
-
-      if (
-        !validateEmail(email) ||
-        !validatePhoneNumber(phone_number) ||
-        !validatePhoneNumber(new_whatsapp_number)
-      ) {
-        res
-          .status(500)
-          .send("Invalid data");
+      if (!validateEmail(email) || !validatePhoneNumber(phone_number)) {
+        res.status(422).send("Invalid data");
         return;
       }
 
@@ -148,12 +147,8 @@ module.exports = function () {
       const user = await createUser({
         first_name,
         last_name,
-        middle_name,
         father_name,
-        mother_name,
         phone_number,
-        is_whatsapp_number,
-        whatsapp_number: new_whatsapp_number,
         email,
         address,
         password: encPassword,
@@ -163,15 +158,15 @@ module.exports = function () {
         org_id,
       });
       if (user) {
-        // Sending mail
-        const subject = `Welcome to JHP Family`;
-        const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
-        const isMailSent = await sendEmail(email, subject, text);
-        if (!isMailSent) {
-          console.error(`Unable to send mail`);
-        } else {
-          res.status(200).json({ message: "Signup successful", data: user });
-        }
+        //   // Sending mail
+        // const subject = `Welcome to JHP Family`;
+        // const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
+        // const isMailSent = await sendEmail(email, subject, text);
+        // if (!isMailSent) {
+        //   console.error(`Unable to send mail`);
+        // } else {
+        res.status(200).json({ message: "Signup successful", data: user });
+        // }
       } else {
         res.status(500).send("Internal Server Error");
       }
@@ -185,7 +180,7 @@ module.exports = function () {
   router.post("/users/login", async (req, res) => {
     const { unique_id, password } = req.body;
     if (!unique_id || !password) {
-      res.status(500).json({
+      res.status(422).json({
         message: `Fill all the fields properly`,
       });
       return;
@@ -208,11 +203,11 @@ module.exports = function () {
             return;
           }
         } else {
-          res.status(403).json({ message: `Invalid username or password` });
+          res.status(422).json({ message: `Invalid username or password` });
           return;
         }
       } else {
-        res.status(403).json({ message: `User does not exist` });
+        res.status(422).json({ message: `User does not exist` });
         return;
       }
     } catch (error) {
@@ -236,8 +231,8 @@ module.exports = function () {
           },
         });
       } else {
-        res.status(500).json({
-          message: `Failed to update profile.`,
+        res.status(422).json({
+          message: `Invalid data`,
         });
       }
     } catch (error) {
@@ -251,7 +246,7 @@ module.exports = function () {
   router.put("/users/change_password", userMiddleware, async (req, res) => {
     const { user, oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {
-      res.status(400).json({
+      res.status(422).json({
         message: `Fill all the fields properly`,
       });
       return;
@@ -260,7 +255,7 @@ module.exports = function () {
       if (bcrypt.isValidPassword(user.password, oldPassword)) {
         if (newPassword.length <= 4 || newPassword.length >= 12) {
           res
-            .status(500)
+            .status(422)
             .send("New Password length should be between 4 to 12 characters.");
           return;
         }
@@ -272,12 +267,12 @@ module.exports = function () {
           }
         );
         if (updatedUser) {
-          const data = (({ password, ...o }) => o)(updatedUser);
+          // const data = (({ password, ...o }) => o)(updatedUser);
           res.status(200).json({
             message: `User's password changed successfully.`,
-            data: {
-              user: data,
-            },
+            // data: {
+            //   user: data,
+            // },
           });
         } else {
           res.status(500).json({
@@ -285,7 +280,7 @@ module.exports = function () {
           });
         }
       } else {
-        res.status(403).json({
+        res.status(422).json({
           message: `Invalid Password provided.`,
         });
       }
@@ -342,7 +337,7 @@ module.exports = function () {
           });
         }
       } else {
-        res.status(403).json({
+        res.status(422).json({
           message: `Invalid unique Id`,
         });
         return;
@@ -362,7 +357,7 @@ module.exports = function () {
       const userData = await findUserByResetPasswordToken(token);
       if (!userData) {
         return res
-          .status(400)
+          .status(422)
           .send("Password reset token is invalid or has expired");
       } else {
         res.status(200).json({
@@ -382,12 +377,14 @@ module.exports = function () {
       const token = req.params.token;
       const { password, unique_id } = req.body;
       if (password.length <= 4 || password.length >= 12) {
-        res.send("Password length should be between 4 to 12 characters.");
+        res
+          .status(422)
+          .send("Password length should be between 4 to 12 characters.");
         return;
       }
       const userData = await findUserByResetPasswordToken(token);
       if (!userData) {
-        res.status(400).send("Password reset token is invalid or has expired");
+        res.status(422).send("Password reset token is invalid or has expired");
         return;
       }
 
@@ -416,125 +413,125 @@ module.exports = function () {
     }
   });
 
-  // Email reset
-  router.post("/users/reset/email", userMiddleware, async (req, res) => {
-    const { user } = req.body;
-    try {
-      const userByUniqueId = await findUserByUniqueId(user.unique_id);
-      if (userByUniqueId) {
-        const token = crypto.randomBytes(20).toString("hex");
-        const updatedUser = await updateUser(
-          { unique_id: user.unique_id },
-          {
-            reset_email_token: token,
-            reset_email_token_expiration: new Date(
-              Date.now() + 300000
-            ).toISOString(), // 5 minutes
-          }
-        );
+  // // Email reset
+  // router.post("/users/reset/email", userMiddleware, async (req, res) => {
+  //   const { user } = req.body;
+  //   try {
+  //     const userByUniqueId = await findUserByUniqueId(user.unique_id);
+  //     if (userByUniqueId) {
+  //       const token = crypto.randomBytes(20).toString("hex");
+  //       const updatedUser = await updateUser(
+  //         { unique_id: user.unique_id },
+  //         {
+  //           reset_email_token: token,
+  //           reset_email_token_expiration: new Date(
+  //             Date.now() + 300000
+  //           ).toISOString(), // 5 minutes
+  //         }
+  //       );
 
-        if (!updatedUser) {
-          res.status(500).json({
-            message: `User not updated for reset token.`,
-          });
-          return;
-        }
+  //       if (!updatedUser) {
+  //         res.status(500).json({
+  //           message: `User not updated for reset token.`,
+  //         });
+  //         return;
+  //       }
 
-        const to = user.email.toLowerCase();
-        const subject = "Email Reset";
-        const text =
-          `You are receiving this because you (or someone else) have requested the reset of the email for your account.\n\n` +
-          `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
-          `${process.env.BASE_URL}/users/reset/email/${token}\n\n` +
-          `If you did not request this, please ignore this email and your password will remain unchanged.\n`;
-        const isMailSent = await sendEmail(to, subject, text);
-        if (isMailSent) {
-          res.status(200).json({
-            message: `Email reset link sent on old email.`,
-          });
-          return;
-        } else {
-          res.status(500).json({
-            message: `Password reset link sending failed.`,
-          });
-        }
-      } else {
-        res.status(403).json({
-          message: `Invalid unique Id`,
-        });
-        return;
-      }
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: `Error while forgot password: ${error}` });
-      return;
-    }
-  });
+  //       const to = user.email.toLowerCase();
+  //       const subject = "Email Reset";
+  //       const text =
+  //         `You are receiving this because you (or someone else) have requested the reset of the email for your account.\n\n` +
+  //         `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
+  //         `${process.env.BASE_URL}/users/reset/email/${token}\n\n` +
+  //         `If you did not request this, please ignore this email and your password will remain unchanged.\n`;
+  //       const isMailSent = await sendEmail(to, subject, text);
+  //       if (isMailSent) {
+  //         res.status(200).json({
+  //           message: `Email reset link sent on old email.`,
+  //         });
+  //         return;
+  //       } else {
+  //         res.status(500).json({
+  //           message: `Password reset link sending failed.`,
+  //         });
+  //       }
+  //     } else {
+  //       res.status(422).json({
+  //         message: `Invalid unique Id`,
+  //       });
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     res
+  //       .status(500)
+  //       .json({ message: `Error while forgot password: ${error}` });
+  //     return;
+  //   }
+  // });
 
-  // Email reset form
-  router.get("/users/reset/email/:token", userMiddleware, async (req, res) => {
-    try {
-      const { user } = req.body;
-      const token = req.params.token;
-      const userData = await findUserByResetEmailToken(user.unique_id, token);
-      if (!userData) {
-        return res
-          .status(400)
-          .send("Email reset token is invalid or has expired");
-      } else {
-        res.status(200).json({
-          message: `Correct User.`,
-        });
-      }
-      return;
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Internal Server Error");
-    }
-  });
+  // // Email reset form
+  // router.get("/users/reset/email/:token", userMiddleware, async (req, res) => {
+  //   try {
+  //     const { user } = req.body;
+  //     const token = req.params.token;
+  //     const userData = await findUserByResetEmailToken(user.unique_id, token);
+  //     if (!userData) {
+  //       return res
+  //         .status(422)
+  //         .send("Email reset token is invalid or has expired");
+  //     } else {
+  //       res.status(200).json({
+  //         message: `Correct User.`,
+  //       });
+  //     }
+  //     return;
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).send("Internal Server Error");
+  //   }
+  // });
 
-  // Email reset
-  router.put("/users/reset/email/:token", userMiddleware, async (req, res) => {
-    try {
-      const token = req.params.token;
-      const { email, user } = req.body;
-      if (!email) {
-        res.status(400).json({
-          message: `Fill all the fields properly`,
-        });
-        return;
-      }
-      const userData = await findUserByResetEmailToken(user.unique_id, token);
-      if (!userData) {
-        res.status(400).send("Email reset token is invalid or has expired");
-        return;
-      }
+  // // Email reset
+  // router.put("/users/reset/email/:token", userMiddleware, async (req, res) => {
+  //   try {
+  //     const token = req.params.token;
+  //     const { email, user } = req.body;
+  //     if (!email) {
+  //       res.status(422).json({
+  //         message: `Fill all the fields properly`,
+  //       });
+  //       return;
+  //     }
+  //     const userData = await findUserByResetEmailToken(user.unique_id, token);
+  //     if (!userData) {
+  //       res.status(422).send("Email reset token is invalid or has expired");
+  //       return;
+  //     }
 
-      // Update user's Email here
-      const updatedUser = await updateUser(
-        {
-          unique_id: user.unique_id,
-          reset_email_token: token,
-        },
-        {
-          email,
-          reset_email_token: "",
-          reset_email_token_expiration: new Date(Date.now()).toISOString(),
-        }
-      );
+  //     // Update user's Email here
+  //     const updatedUser = await updateUser(
+  //       {
+  //         unique_id: user.unique_id,
+  //         reset_email_token: token,
+  //       },
+  //       {
+  //         email,
+  //         reset_email_token: "",
+  //         reset_email_token_expiration: new Date(Date.now()).toISOString(),
+  //       }
+  //     );
 
-      if (!updatedUser) {
-        res.status(500).json({ message: `User not updated.` });
-        return;
-      }
+  //     if (!updatedUser) {
+  //       res.status(500).json({ message: `User not updated.` });
+  //       return;
+  //     }
 
-      res.status(200).json({ message: "Email has been reset successfully" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Internal Server Error");
-    }
-  });
+  //     res.status(200).json({ message: "Email has been reset successfully" });
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).send("Internal Server Error");
+  //   }
+  // });
 
   // Delete user by unique Id.
   router.delete("/users/:id", userMiddleware, async (req, res) => {
@@ -551,7 +548,7 @@ module.exports = function () {
           res.status(500).json({ message: "Unable to delete user" });
         }
       } else {
-        res.status(400).json({ message: "User not found" });
+        res.status(422).json({ message: "User not found" });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
