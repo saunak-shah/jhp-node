@@ -19,6 +19,7 @@ const courseOutputData = {
   result_date: true,
   created_by: true,
   category: true,
+  organization_id: true
 };
 
 async function createCourse(data) {

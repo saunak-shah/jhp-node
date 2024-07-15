@@ -28,6 +28,7 @@ model organization {
   master_role master_role[]
   student     student[]
   teacher     teacher[]
+  course      course[]
 
   @@index([name])
 }
@@ -118,9 +119,9 @@ model teacher_student_assignes {
 }
 
 model course {
-  course_id                  Int       @id @default(autoincrement())
-  created_at                 DateTime  @default(now()) @map("created_at")
-  updated_at                 DateTime  @default(now()) @map("updated_at")
+  course_id                  Int          @id @default(autoincrement())
+  created_at                 DateTime     @default(now()) @map("created_at")
+  updated_at                 DateTime     @default(now()) @map("updated_at")
   course_name                String
   file_url                   String
   course_date                DateTime
@@ -135,7 +136,9 @@ model course {
   registration_closing_date  DateTime
   result_date                DateTime?
   created_by                 Int
-  student                    student   @relation(fields: [created_by], references: [student_id], onDelete: Cascade)
+  student                    student      @relation(fields: [created_by], references: [student_id], onDelete: Cascade)
+  organization_id            Int
+  organization               organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
   category                   category
 
   student_apply_course student_apply_course[]

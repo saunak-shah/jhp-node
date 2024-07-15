@@ -5,7 +5,6 @@ const {
   findCourseByCourseId,
   updateCourse,
   deleteCourse,
-  getAllPendingCourses,
 } = require("../services/course");
 const { userMiddleware } = require("../middlewares/middleware");
 const { createApplication } = require("../services/applyForCourse");
@@ -145,7 +144,7 @@ module.exports = function () {
         !is_active ||
         !category ||
         !registration_starting_date ||
-        !registration_closing_date
+        !registration_closing_date        
       ) {
         res.status(422).json({
           message: `Fill all the fields`,
@@ -174,6 +173,7 @@ module.exports = function () {
         registration_closing_date,
         category,
         created_by: student.student_id,
+        organization_id: student.organization_id
       });
 
       if (courseData) {
