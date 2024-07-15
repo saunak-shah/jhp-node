@@ -3,8 +3,8 @@ const { userMiddleware } = require("../middlewares/middleware");
 const {
   getAllApplications,
   findApplicationByRegistrationId,
-  createApplication,
-  updateApplication,
+  applyForCourse,
+  getAllApplicationsByUserIdAndCourseId,
   deleteApplication,
   getAllApplicationsByUserId,
   getAllApplicationsByCourseId,
@@ -15,7 +15,7 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all applications
-  router.get("/registrations/", async (req, res) => {
+  router.get("/registrations/", userMiddleware, async (req, res) => {
     try {
       const registrations = await getAllApplications();
       if (registrations) {
@@ -36,9 +36,9 @@ module.exports = function () {
   });
 
   // Get application by applicationId
-  router.get("/registrations/:id", async (req, res) => {
+  router.get("/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(parseInt(req.params.id));
       const registration = await findApplicationByRegistrationId(id);
       if (registration) {
         res.status(200).json({
@@ -58,9 +58,9 @@ module.exports = function () {
   });
 
   // Get application by userId
-  router.get("/users/registrations/:id", async (req, res) => {
+  router.get("/students/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       const registrations = await getAllApplicationsByUserId(id);
       if (registrations) {
         res.status(200).json({
@@ -80,9 +80,9 @@ module.exports = function () {
   });
 
   // Get application by examId
-  router.get("/courses/registrations/:id", async (req, res) => {
+  router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       const registrations = await getAllApplicationsByCourseId(id);
       if (registrations) {
         res.status(200).json({
@@ -105,7 +105,7 @@ module.exports = function () {
   router.post("/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { course_id, user } = req.body;
+      const { course_id, student } = req.body;
 
       if(!course_id){
         res.status(422).json({
@@ -118,7 +118,7 @@ module.exports = function () {
       // after select the exam need to show information about exam like
       // generate unique exam id
       // check if already apply or not for requested exam
-
+      
       const course = await findCourseByCourseId(course_id);
       if (
         !course ||
@@ -130,8 +130,16 @@ module.exports = function () {
         });
       }
 
-      const registration = await createApplication({
-        user_id: user.id,
+      const isRegistered = await getAllApplicationsByUserIdAndCourseId(student.student_id, course_id)
+      if(isRegistered && isRegistered.length > 0){
+        res.status(500).json({
+          message: `Already registered`,
+        });
+        return
+      }
+
+      const registration = await applyForCourse({
+        student_id: student.student_id,
         course_id,
       });
 
@@ -154,15 +162,15 @@ module.exports = function () {
 
   // Update Application
   // router.put("/registration/:id", userMiddleware, async (req, res) => {
-  //   const { user } = req.body;
-  //   const id = req.params.id;
+  //   const { student } = req.body;
+  //   const id = parseInt(req.params.id);
   //   try {
   //     const { data } = req.body;
   //     const registration = await findApplicationByRegistrationId(
   //       id
   //     );
   //     if (registration) {
-  //       if (registration?.user_id != user?.id) {
+  //       if (registration?.user_id != student?.id) {
   //         res.status(403).json({
   //           message: `Unauthorized to update application.`,
   //         });
@@ -196,18 +204,18 @@ module.exports = function () {
 
   // Delete exam
   router.delete("/registration/:id", userMiddleware, async (req, res) => {
-    const { user } = req.body;
-    const id = req.params.id;
+    const { student } = req.body;
+    const id = parseInt(req.params.id);
     try {
       const registration = await findApplicationByRegistrationId(id);
       if (registration) {
-        if (registration.userId != user.userId) {
+        if (registration.student_id != student.student_id) {
           res.status(403).json({
             message: `Unauthorized to update registration.`,
           });
           return;
         }
-        const deletedApplication = await deleteApplication({ id });
+        const deletedApplication = await deleteApplication({ student_apply_course_id: id });
         if (!deletedApplication) {
           res.status(500).json({
             message: `Unable to delete application.`,

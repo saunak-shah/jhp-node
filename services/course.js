@@ -1,7 +1,7 @@
 const { prisma } = require("../prisma/client");
 
-const findCourseSelection = {
-  id: true,
+const courseOutputData = {
+  course_id: true,
   created_at: true,
   updated_at: true,
   course_name: true,
@@ -24,6 +24,7 @@ const findCourseSelection = {
 async function createCourse(data) {
   const course = await prisma.course.create({
     data,
+    select: courseOutputData
   });
 
   if (course) {
@@ -35,9 +36,9 @@ async function createCourse(data) {
 async function findCourseByCourseId(courseId) {
   const course = await prisma.course.findUnique({
     where: {
-      id: courseId,
+      course_id: courseId,
     },
-    select: findCourseSelection,
+    select: courseOutputData,
   });
 
   if (course) {
@@ -48,7 +49,7 @@ async function findCourseByCourseId(courseId) {
 
 async function getAllCourses() {
   const courses = await prisma.course.findMany({
-    select: findCourseSelection,
+    select: courseOutputData,
     orderBy: {
       course_date: "asc",
     },
@@ -67,7 +68,7 @@ async function getAllPendingCourses() {
         gt: Date.now(),
       },
     },
-    select: findCourseSelection,
+    select: courseOutputData,
     orderBy: {
       course_date: "asc",
     },
@@ -83,7 +84,7 @@ async function updateCourse(filter, data) {
   const course = await prisma.course.update({
     where: filter,
     data,
-    select: findCourseSelection,
+    select: courseOutputData,
   });
 
   if (course) {
@@ -95,7 +96,7 @@ async function updateCourse(filter, data) {
 async function deleteCourse(filter) {
   const course = await prisma.course.delete({
     where: filter,
-    select: findCourseSelection,
+    select: courseOutputData,
   });
 
   if (course) {

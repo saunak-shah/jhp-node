@@ -1,30 +1,31 @@
 const { prisma } = require("../prisma/client");
 
-const examApplySelection = {
-  id: true,
+const appliedExamOutputData = {
+  student_apply_course_id: true,
   created_at: true,
   updated_at: true,
   course_id: true,
-  user_id: true,
+  student_id: true,
 };
 
-async function createApplication(data) {
-  const exam = await prisma.user_apply_course.create({
+async function applyForCourse(data) {
+  const application = await prisma.student_apply_course.create({
     data,
+    select: appliedExamOutputData,
   });
 
-  if (exam) {
-    return exam;
+  if (application) {
+    return application;
   }
   return;
 }
 
 async function findApplicationByRegistrationId(registrationId) {
-  const application = await prisma.user_apply_course.findUnique({
+  const application = await prisma.student_apply_course.findUnique({
     where: {
-      id: registrationId,
+      student_apply_course_id: registrationId,
     },
-    select: examApplySelection,
+    select: appliedExamOutputData,
   });
 
   if (application) {
@@ -34,8 +35,8 @@ async function findApplicationByRegistrationId(registrationId) {
 }
 
 async function getAllApplications() {
-  const courses = await prisma.user_apply_course.findMany({
-    select: examApplySelection,
+  const courses = await prisma.student_apply_course.findMany({
+    select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
@@ -48,11 +49,11 @@ async function getAllApplications() {
 }
 
 async function getAllApplicationsByUserId(userId) {
-  const courses = await prisma.user_apply_course.findMany({
+  const courses = await prisma.student_apply_course.findMany({
     where: {
-      user_id: userId,
+      student_id: userId,
     },
-    select: examApplySelection,
+    select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
@@ -65,11 +66,11 @@ async function getAllApplicationsByUserId(userId) {
 }
 
 async function getAllApplicationsByCourseId(examId) {
-  const courses = await prisma.user_apply_course.findMany({
+  const courses = await prisma.student_apply_course.findMany({
     where: {
       course_id: examId,
     },
-    select: examApplySelection,
+    select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
@@ -82,12 +83,12 @@ async function getAllApplicationsByCourseId(examId) {
 }
 
 async function getAllApplicationsByUserIdAndCourseId(userId, courseId) {
-  const courses = await prisma.user_apply_course.findMany({
+  const courses = await prisma.student_apply_course.findMany({
     where: {
-      user_id: userId,
-      course_id: courseId
+      student_id: userId,
+      course_id: courseId,
     },
-    select: examApplySelection,
+    select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
@@ -100,37 +101,37 @@ async function getAllApplicationsByUserIdAndCourseId(userId, courseId) {
 }
 
 async function updateApplication(filter, data) {
-  const exam = await prisma.user_apply_course.update({
+  const application = await prisma.student_apply_course.update({
     where: filter,
     data,
-    select: examApplySelection,
+    select: appliedExamOutputData,
   });
 
-  if (exam) {
-    return exam;
+  if (application) {
+    return application;
   }
   return;
 }
 
 async function deleteApplication(filter) {
-  const exam = await prisma.user_apply_course.delete({
+  const application = await prisma.student_apply_course.delete({
     where: filter,
-    select: examApplySelection,
+    select: appliedExamOutputData,
   });
 
-  if (exam) {
-    return exam;
+  if (application) {
+    return application;
   }
   return;
 }
 
 module.exports = {
-  createApplication,
+  applyForCourse,
   findApplicationByRegistrationId,
   getAllApplications,
   getAllApplicationsByCourseId,
   getAllApplicationsByUserId,
   updateApplication,
   deleteApplication,
-  getAllApplicationsByUserIdAndCourseId
+  getAllApplicationsByUserIdAndCourseId,
 };
