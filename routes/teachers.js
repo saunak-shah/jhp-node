@@ -251,14 +251,11 @@ module.exports = function () {
   // Update profile route
   router.post("/teachers/update_profile", userMiddleware, async (req, res) => {
     const { teacher, data } = req.body;
-    console.log("🚀 ~ file: teachers.js:254 ~ router.post ~ data:", data)
-    console.log("🚀 ~ file: teachers.js:254 ~ router.post ~ teacher:", teacher)
     try {
       const updatedTeacher = await updateTeacherData(
         { teacher_username: teacher.teacher_username },
         data
       );
-      console.log("🚀 ~ file: teachers.js:288 ~ router.post ~ updatedTeacher:", updatedTeacher)
 
       if (updatedTeacher) {
         const data = (({
@@ -306,7 +303,7 @@ module.exports = function () {
         const updatedTeacher = await updateTeacherData(
           { teacher_id: teacher.teacher_id },
           {
-            password: newEncPassword,
+            teacher_password: newEncPassword,
           }
         );
         if (updatedTeacher) {
@@ -477,6 +474,8 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
+
+
 
   return router;
 };

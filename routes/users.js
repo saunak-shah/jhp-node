@@ -126,17 +126,6 @@ module.exports = function () {
         username,
         organization_id,
       } = req.body;
-        console.log(first_name,
-        last_name,
-        father_name,
-        phone_number,
-        address,
-        email,
-        password,
-        birth_date,
-        gender,
-        username,
-        organization_id,)
 
       if (
         !first_name ||

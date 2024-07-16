@@ -106,8 +106,6 @@ async function findTeacherByEmail(email) {
 }
 
 async function updateTeacherData(filter, data) {
-  console.log("🚀 ~ file: teacher.js:109 ~ updateTeacherData ~ data:", data)
-  console.log("🚀 ~ file: teacher.js:109 ~ updateTeacherData ~ filter:", filter)
   const teacher = await prisma.teacher.update({
     where: filter,
     data,
