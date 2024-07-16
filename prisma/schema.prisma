@@ -15,7 +15,7 @@ datasource db {
 
 enum gender {
   Male   @map("M")
-  Femlae @map("F")
+  Female @map("F")
 }
 
 model organization {
