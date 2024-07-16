@@ -12,11 +12,14 @@ const {
   deleteStudentData,
   getAllStudents,
   findStudentById,
+  findStudentByRegisterNumber,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
 const { signJwt } = require("../helpers/jwt");
 const { userMiddleware } = require("../middlewares/middleware");
+const { generateFourDigitRandomNumber } = require("../helpers/randomNumber");
+const { getOrganization } = require("../services/organization");
 require("dotenv").config();
 
 // Email validation regex
@@ -55,10 +58,14 @@ module.exports = function () {
   });
 
   // Get users.
-  router.get("/students", async (req, res) => {
+  router.get("/students", userMiddleware, async (req, res) => {
     try {
-      const { limit, offset } = req.body;
-      const users = await getAllStudents(limit, offset);
+      const { limit, offset, student } = req.body;
+      const users = await getAllStudents(
+        limit,
+        offset,
+        student.organization_id
+      );
       if (users && users.length > 0) {
         res.status(200).json({ message: "Users found", data: users });
       } else {
@@ -119,6 +126,17 @@ module.exports = function () {
         username,
         organization_id,
       } = req.body;
+        console.log(first_name,
+        last_name,
+        father_name,
+        phone_number,
+        address,
+        email,
+        password,
+        birth_date,
+        gender,
+        username,
+        organization_id,)
 
       if (
         !first_name ||
@@ -162,6 +180,27 @@ module.exports = function () {
       // hash password
       let encPassword = bcrypt.createHash(password);
 
+      const organization = await getOrganization(organization_id);
+
+      let register_no =
+      organization.name.slice(0, 3) +
+      first_name[0] +
+      last_name[0] +
+      generateFourDigitRandomNumber().toString();
+      
+      while (true) {
+        const isStudentExists = await findStudentByRegisterNumber(register_no);
+        if (isStudentExists) {
+          register_no =
+          organization.name.slice(0, 3) +
+          first_name[0] +
+          last_name[0] +
+          generateFourDigitRandomNumber().toString();
+        } else {
+          break;
+        }
+      }
+
       const student = await createStudentData({
         first_name,
         last_name,
@@ -174,6 +213,7 @@ module.exports = function () {
         gender,
         username,
         organization_id,
+        register_no,
       });
       if (student) {
         //   // Sending mail
@@ -563,12 +603,10 @@ module.exports = function () {
       if (student && student.student_id == id) {
         const deletedStudent = await deleteStudentData({ student_id: id });
         if (deletedStudent) {
-          res
-            .status(200)
-            .json({
-              message: "Student deleted",
-              data: { student: deletedStudent },
-            });
+          res.status(200).json({
+            message: "Student deleted",
+            data: { student: deletedStudent },
+          });
         } else {
           res.status(500).json({ message: "Unable to delete student" });
         }

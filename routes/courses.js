@@ -15,7 +15,8 @@ module.exports = function () {
   // Get all courses
   router.get("/courses/", userMiddleware, async (req, res) => {
     try {
-      const course = await getAllCourses();
+      const { student } = req.body;
+      const course = await getAllCourses(student.organization_id);
       if (course) {
         res.status(200).json({
           message: `Fetched all courses`,
@@ -104,12 +105,12 @@ module.exports = function () {
   // onlyAdmin
   // Create Course
   router.post("/courses/", userMiddleware, async (req, res) => {
-    const {admin} = req.body;
-    if(!admin){
+    const { admin } = req.body;
+    if (!admin) {
       res.status(403).json({
-        message: `Only admin`
-      })
-      return
+        message: `Only admin`,
+      });
+      return;
     }
     try {
       // Extract necessary data from request body
@@ -144,7 +145,7 @@ module.exports = function () {
         !is_active ||
         !category ||
         !registration_starting_date ||
-        !registration_closing_date        
+        !registration_closing_date
       ) {
         res.status(422).json({
           message: `Fill all the fields`,
@@ -173,7 +174,7 @@ module.exports = function () {
         registration_closing_date,
         category,
         created_by: student.student_id,
-        organization_id: student.organization_id
+        organization_id: student.organization_id,
       });
 
       if (courseData) {
@@ -209,7 +210,7 @@ module.exports = function () {
     try {
       const { data } = req.body;
       const course = await findCourseByCourseId(id);
-      if(course.created_by != student.student_id){
+      if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
@@ -252,7 +253,7 @@ module.exports = function () {
     }
     try {
       const course = await findCourseByCourseId(id);
-      if(course.created_by != student.student_id){
+      if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });

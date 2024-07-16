@@ -48,8 +48,11 @@ async function findCourseByCourseId(courseId) {
   return;
 }
 
-async function getAllCourses() {
+async function getAllCourses(organization_id) {
   const courses = await prisma.course.findMany({
+    where: {
+      organization_id
+    },
     select: courseOutputData,
     orderBy: {
       course_date: "asc",
