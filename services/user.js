@@ -57,6 +57,20 @@ async function findStudentById(id) {
   return;
 }
 
+async function findStudentByRegisterNumber(register_no) {
+  const student = await prisma.student.findUnique({
+    where: {
+      register_no
+    },
+    select: studentOutputData,
+  });
+
+  if (student) {
+    return student;
+  }
+  return;
+}
+
 async function findStudentByResetPasswordToken(token) {
   const student = await prisma.student.findFirst({
     where: {
@@ -131,8 +145,11 @@ async function deleteStudentData(filter) {
   return;
 }
 
-async function getAllStudents(limit, offset) {
+async function getAllStudents(limit, offset, organization_id) {
   const student = await prisma.student.findMany({
+    where: {
+      organization_id,
+    },
     select: studentOutputData,
     orderBy: {
       birth_date: "asc",
@@ -147,10 +164,11 @@ async function getAllStudents(limit, offset) {
   return;
 }
 
-async function isAdmin(student_id) {
+async function isAdmin(student_id, organization_id) {
   const student = await prisma.master_role.findUnique({
     where: {
       master_role_id: student_id,
+      organization_id
     },
   });
 
@@ -166,6 +184,7 @@ module.exports = {
   findStudentById,
   findStudentByResetPasswordToken,
   findStudentByResetEmailToken,
+  findStudentByRegisterNumber,
   getAllStudents,
   createStudentData,
   updateStudentData,
