@@ -1,4 +1,5 @@
 const { verifyJwt } = require("../helpers/jwt");
+const { findTeacherByUsername } = require("../services/teacher");
 const { isAdmin, findStudentByUsername } = require("../services/user");
 
 async function userMiddleware(req, res, next) {
@@ -6,20 +7,26 @@ async function userMiddleware(req, res, next) {
   if (jwtToken) {
     const tokenData = verifyJwt(jwtToken);
     if (tokenData) {
-      const student = await findStudentByUsername(tokenData.username);
-      let teacher = null;
-      if (!student) {
-        teacher = await findTeacherByUsername(tokenData.username);
+      let student, teacher;
+      try {
+        student = await findStudentByUsername(tokenData.username);
+
+        if (!student) {
+          res.status(500).json({ message: `Not admin` });
+          return;
+        }
+      } catch (e) {
+        teacher = await findTeacherByUsername(tokenData.teacher_username);
         if (!teacher) {
-          res.status(500).json({ message: `Not valid user` });
+          res.status(500).json({ message: `Not admin` });
           return;
         }
       }
-      const isUserAdmin = await isAdmin(
-        student.student_id || teacher.teacher_id,
-        student.organization_id || teacher.organization_id
-      );
 
+      const isUserAdmin = await isAdmin(
+        student?.student_id || teacher?.teacher_id
+      );
+      
       if (student || teacher) {
         req.body = {
           token: "",
