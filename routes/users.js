@@ -2,19 +2,24 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("../helpers/bcrypt");
 const crypto = require("crypto");
+
 const {
-  findUserByUniqueId,
-  createUser,
-  updateUser,
-  findUserByResetPasswordToken,
-  findUserByResetEmailToken,
-  deleteUser,
-  getAllUsers,
-  findUserById,
+  findStudentByUsername,
+  createStudentData,
+  updateStudentData,
+  findStudentByResetPasswordToken,
+  findStudentByResetEmailToken,
+  deleteStudentData,
+  getAllStudents,
+  findStudentById,
+  findStudentByRegisterNumber,
 } = require("../services/user");
+
 const { sendEmail } = require("../helpers/sendEmail");
 const { signJwt } = require("../helpers/jwt");
 const { userMiddleware } = require("../middlewares/middleware");
+const { generateFourDigitRandomNumber } = require("../helpers/randomNumber");
+const { getOrganization } = require("../services/organization");
 require("dotenv").config();
 
 // Email validation regex
@@ -35,28 +40,32 @@ function validatePhoneNumber(phone_number) {
 
 module.exports = function () {
   // Check unique Id if present in db or not.
-  router.get("/users/check_unique_id/:id", async (req, res) => {
+  router.get("/students/check_username/:username", async (req, res) => {
     try {
-      const { id } = req.params;
-      const isunique_idPresent = await findUserByUniqueId(id);
-      if (isunique_idPresent) {
+      const { username } = req.params;
+      const isUsernamePresent = await findStudentByUsername(username);
+      if (isUsernamePresent) {
         res
           .status(422)
-          .json({ message: "Unique Id already present.", data: false });
+          .json({ message: "Username already present.", data: false });
       } else {
-        res.status(200).json({ message: "Id is unique", data: true });
+        res.status(200).json({ message: "Username not present", data: true });
       }
     } catch (error) {
       console.error("Error while checking unique id:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
 
   // Get users.
-  router.get("/users", userMiddleware, async (req, res) => {
+  router.get("/students", userMiddleware, async (req, res) => {
     try {
-      const { limit, offset, nameFilter } = req.body;
-      const users = await getAllUsers(limit, offset, nameFilter);
+      const { limit, offset, student } = req.body;
+      const users = await getAllStudents(
+        limit,
+        offset,
+        student.organization_id
+      );
       if (users && users.length > 0) {
         res.status(200).json({ message: "Users found", data: users });
       } else {
@@ -64,15 +73,15 @@ module.exports = function () {
       }
     } catch (error) {
       console.error("Error while getting users:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
 
-  // Get user by unique Id.
-  router.get("/users/:id", userMiddleware, async (req, res) => {
+  // Get student by username.
+  router.get("/students/:username", userMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
-      const user = await findUserById(id);
+      const { username } = req.params;
+      const user = await findStudentByUsername(username);
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {
@@ -80,12 +89,28 @@ module.exports = function () {
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).send(`Internal Server Error: ${error}`);
+    }
+  });
+
+  // Get student by id.
+  router.get("/students/:id", userMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await findStudentById(id);
+      if (user) {
+        res.status(200).json({ message: "User found", data: user });
+      } else {
+        res.status(422).json({ message: "User not found", data: null });
+      }
+    } catch (error) {
+      console.error("Error while getting user with unique id:", error);
+      res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
 
   // Signup route
-  router.post("/users/signup", async (req, res) => {
+  router.post("/students/signup", async (req, res) => {
     try {
       // Extract necessary data from request body
       const {
@@ -98,9 +123,20 @@ module.exports = function () {
         password,
         birth_date,
         gender,
-        unique_id,
-        org_id,
+        username,
+        organization_id,
       } = req.body;
+        console.log(first_name,
+        last_name,
+        father_name,
+        phone_number,
+        address,
+        email,
+        password,
+        birth_date,
+        gender,
+        username,
+        organization_id,)
 
       if (
         !first_name ||
@@ -111,8 +147,8 @@ module.exports = function () {
         !password ||
         !birth_date ||
         !gender ||
-        !unique_id ||
-        !org_id ||
+        !username ||
+        !organization_id ||
         !address
       ) {
         res
@@ -121,11 +157,11 @@ module.exports = function () {
         return;
       }
 
-      const isUniqueIdPresent = await findUserByUniqueId(unique_id);
-      if (isUniqueIdPresent) {
+      const isUsernamePresent = await findStudentByUsername(username);
+      if (isUsernamePresent) {
         res
           .status(422)
-          .json({ message: "Unique Id already present.", data: false });
+          .json({ message: "Username already present.", data: false });
         return;
       }
 
@@ -144,7 +180,28 @@ module.exports = function () {
       // hash password
       let encPassword = bcrypt.createHash(password);
 
-      const user = await createUser({
+      const organization = await getOrganization(organization_id);
+
+      let register_no =
+      organization.name.slice(0, 3) +
+      first_name[0] +
+      last_name[0] +
+      generateFourDigitRandomNumber().toString();
+      
+      while (true) {
+        const isStudentExists = await findStudentByRegisterNumber(register_no);
+        if (isStudentExists) {
+          register_no =
+          organization.name.slice(0, 3) +
+          first_name[0] +
+          last_name[0] +
+          generateFourDigitRandomNumber().toString();
+        } else {
+          break;
+        }
+      }
+
+      const student = await createStudentData({
         first_name,
         last_name,
         father_name,
@@ -154,10 +211,11 @@ module.exports = function () {
         password: encPassword,
         birth_date,
         gender,
-        unique_id,
-        org_id,
+        username,
+        organization_id,
+        register_no,
       });
-      if (user) {
+      if (student) {
         //   // Sending mail
         // const subject = `Welcome to JHP Family`;
         // const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
@@ -165,7 +223,7 @@ module.exports = function () {
         // if (!isMailSent) {
         //   console.error(`Unable to send mail`);
         // } else {
-        res.status(200).json({ message: "Signup successful", data: user });
+        res.status(200).json({ message: "Signup successful", data: student });
         // }
       } else {
         res.status(500).send("Internal Server Error");
@@ -177,23 +235,26 @@ module.exports = function () {
   });
 
   // Login route
-  router.post("/users/login", async (req, res) => {
-    const { unique_id, password } = req.body;
-    if (!unique_id || !password) {
+  router.post("/students/login", async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
       res.status(422).json({
         message: `Fill all the fields properly`,
       });
       return;
     }
     try {
-      const user = await findUserByUniqueId(unique_id);
-      if (user) {
-        const isValidPassword = bcrypt.isValidPassword(user.password, password);
+      const student = await findStudentByUsername(username);
+      if (student) {
+        const isValidPassword = bcrypt.isValidPassword(
+          student.password,
+          password
+        );
         if (isValidPassword) {
-          const token = signJwt(user);
+          const token = signJwt(student);
           if (token) {
             res.status(200).json({
-              message: `Login successful for user`,
+              message: `Login successful for student`,
               data: token,
             });
           } else {
@@ -218,12 +279,17 @@ module.exports = function () {
   });
 
   // Update profile route
-  router.put("/users/update_profile", userMiddleware, async (req, res) => {
-    const { user, data } = req.body;
+  router.post("/students/update_profile", userMiddleware, async (req, res) => {
+    const { student, data } = req.body;
     try {
-      const updatedUser = await updateUser({ unique_id: user.unique_id }, data);
-      if (updatedUser) {
-        const data = (({ password, ...o }) => o)(updatedUser);
+      const updatedStudent = await updateStudentData(
+        { username: student.username },
+        data
+      );
+      if (updatedStudent) {
+        const data = (({ password, student_id, username, ...o }) => o)(
+          updatedStudent
+        );
         res.status(200).json({
           message: `User profile updated successfully.`,
           data: {
@@ -243,8 +309,8 @@ module.exports = function () {
   });
 
   // Change password
-  router.put("/users/change_password", userMiddleware, async (req, res) => {
-    const { user, oldPassword, newPassword } = req.body;
+  router.post("/students/change_password", userMiddleware, async (req, res) => {
+    const { student, oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) {
       res.status(422).json({
         message: `Fill all the fields properly`,
@@ -252,7 +318,7 @@ module.exports = function () {
       return;
     }
     try {
-      if (bcrypt.isValidPassword(user.password, oldPassword)) {
+      if (bcrypt.isValidPassword(student.password, oldPassword)) {
         if (newPassword.length <= 4 || newPassword.length >= 12) {
           res
             .status(422)
@@ -260,19 +326,15 @@ module.exports = function () {
           return;
         }
         const newEncPassword = bcrypt.createHash(newPassword);
-        const updatedUser = await updateUser(
-          { unique_id: user.unique_id },
+        const updatedUser = await updateStudentData(
+          { student_id: student.student_id },
           {
             password: newEncPassword,
           }
         );
         if (updatedUser) {
-          // const data = (({ password, ...o }) => o)(updatedUser);
           res.status(200).json({
             message: `User's password changed successfully.`,
-            // data: {
-            //   user: data,
-            // },
           });
         } else {
           res.status(500).json({
@@ -292,17 +354,17 @@ module.exports = function () {
   });
 
   // Forgot password
-  router.post("/users/forgot_password", async (req, res) => {
-    const { unique_id, email } = req.body;
+  router.post("/students/forgot_password", async (req, res) => {
+    const { username, email } = req.body;
     try {
-      const userByUniqueId = await findUserByUniqueId(unique_id);
+      const studentByUsername = await findStudentByUsername(username);
       if (
-        userByUniqueId &&
-        userByUniqueId.email.toLowerCase() == email.toLowerCase()
+        studentByUsername &&
+        studentByUsername.email.toLowerCase() == email.toLowerCase()
       ) {
         const token = crypto.randomBytes(20).toString("hex");
-        const updatedUser = await updateUser(
-          { unique_id },
+        const updatedStudent = await updateStudentData(
+          { username },
           {
             reset_password_token: token,
             reset_password_token_expiration: new Date(
@@ -311,7 +373,7 @@ module.exports = function () {
           }
         );
 
-        if (!updatedUser) {
+        if (!updatedStudent) {
           res.status(500).json({
             message: `User not updated for reset token.`,
           });
@@ -351,17 +413,17 @@ module.exports = function () {
   });
 
   // Password reset form
-  router.get("/users/reset/:token", async (req, res) => {
+  router.get("/students/reset/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const userData = await findUserByResetPasswordToken(token);
-      if (!userData) {
+      const studentData = await findStudentByResetPasswordToken(token);
+      if (!studentData) {
         return res
           .status(422)
           .send("Password reset token is invalid or has expired");
       } else {
         res.status(200).json({
-          message: `Correct User.`,
+          message: `Correct Student.`,
         });
       }
       return;
@@ -372,27 +434,27 @@ module.exports = function () {
   });
 
   // Password reset
-  router.put("/users/reset/:token", async (req, res) => {
+  router.post("/students/reset/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const { password, unique_id } = req.body;
+      const { password, username } = req.body;
       if (password.length <= 4 || password.length >= 12) {
         res
           .status(422)
           .send("Password length should be between 4 to 12 characters.");
         return;
       }
-      const userData = await findUserByResetPasswordToken(token);
-      if (!userData) {
+      const studentData = await findStudentByResetPasswordToken(token);
+      if (!studentData) {
         res.status(422).send("Password reset token is invalid or has expired");
         return;
       }
 
       // Update user's password here
-      const updatedUser = await updateUser(
+      const updatedStudent = await updateStudentData(
         {
           reset_password_token: token,
-          unique_id,
+          username,
         },
         {
           password: bcrypt.createHash(password),
@@ -401,15 +463,15 @@ module.exports = function () {
         }
       );
 
-      if (!updatedUser) {
-        res.status(500).json({ message: `User not updated` });
+      if (!updatedStudent) {
+        res.status(500).json({ message: `Student not updated` });
         return;
       }
 
       res.status(200).json({ message: "Password has been reset successfully" });
     } catch (error) {
       console.error(error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
 
@@ -534,25 +596,26 @@ module.exports = function () {
   // });
 
   // Delete user by unique Id.
-  router.delete("/users/:id", userMiddleware, async (req, res) => {
+  router.delete("/students/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const { user } = req.body;
-      if (user && user.unique_id == id) {
-        const deletedUser = await deleteUser({ unique_id: id });
-        if (deletedUser) {
-          res
-            .status(200)
-            .json({ message: "User deleted", data: { user: deletedUser } });
+      const { student } = req.body;
+      if (student && student.student_id == id) {
+        const deletedStudent = await deleteStudentData({ student_id: id });
+        if (deletedStudent) {
+          res.status(200).json({
+            message: "Student deleted",
+            data: { student: deletedStudent },
+          });
         } else {
-          res.status(500).json({ message: "Unable to delete user" });
+          res.status(500).json({ message: "Unable to delete student" });
         }
       } else {
-        res.status(422).json({ message: "User not found" });
+        res.status(422).json({ message: "Student not found" });
       }
     } catch (error) {
-      console.error("Error while getting user with unique id:", error);
-      res.status(500).send("Internal Server Error");
+      console.error("Error while getting student with unique id:", error);
+      res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
 

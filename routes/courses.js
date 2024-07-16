@@ -5,7 +5,6 @@ const {
   findCourseByCourseId,
   updateCourse,
   deleteCourse,
-  getAllPendingCourses,
 } = require("../services/course");
 const { userMiddleware } = require("../middlewares/middleware");
 const { createApplication } = require("../services/applyForCourse");
@@ -14,9 +13,10 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all courses
-  router.get("/courses/", async (req, res) => {
+  router.get("/courses/", userMiddleware, async (req, res) => {
     try {
-      const course = await getAllCourses();
+      const { student } = req.body;
+      const course = await getAllCourses(student.organization_id);
       if (course) {
         res.status(200).json({
           message: `Fetched all courses`,
@@ -35,9 +35,9 @@ module.exports = function () {
   });
 
   // Get course by courseId
-  router.get("/courses/:id", async (req, res) => {
+  router.get("/courses/:id", userMiddleware, async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       const course = await findCourseByCourseId(id);
       if (course) {
         res.status(200).json({
@@ -60,7 +60,7 @@ module.exports = function () {
   router.post("/courses/apply/:id", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       const { user } = req.body;
 
       // select the course which you want to give
@@ -105,17 +105,17 @@ module.exports = function () {
   // onlyAdmin
   // Create Course
   router.post("/courses/", userMiddleware, async (req, res) => {
-    const {admin} = req.body;
-    if(!admin){
+    const { admin } = req.body;
+    if (!admin) {
       res.status(403).json({
-        message: `Only admin`
-      })
-      return
+        message: `Only admin`,
+      });
+      return;
     }
     try {
       // Extract necessary data from request body
       const {
-        user,
+        student,
         course_name,
         file_url,
         course_date,
@@ -132,7 +132,7 @@ module.exports = function () {
       } = req.body;
 
       if (
-        !user ||
+        !student ||
         !course_name ||
         !file_url ||
         !course_date ||
@@ -173,7 +173,8 @@ module.exports = function () {
         registration_starting_date,
         registration_closing_date,
         category,
-        created_by: user.unique_id,
+        created_by: student.student_id,
+        organization_id: student.organization_id,
       });
 
       if (courseData) {
@@ -197,9 +198,9 @@ module.exports = function () {
 
   // only Admin
   // Update Course
-  router.put("/courses/:id", userMiddleware, async (req, res) => {
-    const { admin, user } = req.body;
-    const id = req.params.id;
+  router.post("/courses/:id", userMiddleware, async (req, res) => {
+    const { admin, student } = req.body;
+    const id = parseInt(req.params.id);
     if (!admin) {
       res.status(403).json({
         message: `Only admin`,
@@ -209,14 +210,14 @@ module.exports = function () {
     try {
       const { data } = req.body;
       const course = await findCourseByCourseId(id);
-      if(course.created_by != user.unique_id){
+      if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
       }
       if (course) {
-        const updatedCourse = await updateCourse({ id }, data);
+        const updatedCourse = await updateCourse({ course_id: id }, data);
         if (!updatedCourse) {
           res.status(500).json({
             message: `Unable to update course.`,
@@ -242,8 +243,8 @@ module.exports = function () {
   // only Admin
   // Delete course
   router.delete("/courses/:id", userMiddleware, async (req, res) => {
-    const { admin, user } = req.body;
-    const id = req.params.id;
+    const { admin, student } = req.body;
+    const id = parseInt(req.params.id);
     if (!admin) {
       res.status(403).json({
         message: `Only admin`,
@@ -252,13 +253,13 @@ module.exports = function () {
     }
     try {
       const course = await findCourseByCourseId(id);
-      if(course.created_by != user.unique_id){
+      if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
       }
-      const deletedCourse = await deleteCourse({ id });
+      const deletedCourse = await deleteCourse({ course_id: id });
       if (!deletedCourse) {
         res.status(500).json({
           message: `Unable to delete course.`,

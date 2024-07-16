@@ -1,31 +1,40 @@
 const { verifyJwt } = require("../helpers/jwt");
-const { findUserByUniqueId, isAdmin } = require("../services/user");
+const { isAdmin, findStudentByUsername } = require("../services/user");
 
 async function userMiddleware(req, res, next) {
   const jwtToken = req.get("Authorization");
   if (jwtToken) {
     const tokenData = verifyJwt(jwtToken);
     if (tokenData) {
-      const user = await findUserByUniqueId(tokenData.unique_id);
-      if(!user){
-        res.status(500).json({ message: `Not admin` });
-        return;
+      const student = await findStudentByUsername(tokenData.username);
+      let teacher = null;
+      if (!student) {
+        teacher = await findTeacherByUsername(tokenData.username);
+        if (!teacher) {
+          res.status(500).json({ message: `Not valid user` });
+          return;
+        }
       }
-      const admin = await isAdmin(user.id);
-      if (user) {
+      const isUserAdmin = await isAdmin(
+        student.student_id || teacher.teacher_id,
+        student.organization_id || teacher.organization_id
+      );
+
+      if (student || teacher) {
         req.body = {
           token: "",
-          user,
+          student,
+          teacher,
           ...req.body,
-          admin: Boolean(admin),
+          admin: Boolean(isUserAdmin),
         };
         next();
       } else {
-        res.status(500).json({ message: `Invalid user` });
+        res.status(403).json({ message: `Invalid user` });
         return;
       }
     } else {
-      res.status(500).json({ message: `Invalid token` });
+      res.status(403).json({ message: `Invalid token` });
       return;
     }
   }
