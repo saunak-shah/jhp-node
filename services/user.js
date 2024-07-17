@@ -15,6 +15,8 @@ const studentOutputData = {
   created_at: true,
   updated_at: true,
   organization_id: true,
+  assignedTo: true,
+  teacher: true
 };
 
 async function createStudentData(data) {
@@ -178,6 +180,59 @@ async function isAdmin(student_id, organization_id) {
   return;
 }
 
+
+async function findStudentsAssignedToTeacherId(teacher_id) {
+  const students = await prisma.student.findMany({
+    where: {
+        assignedTo: teacher_id
+    },
+    select: studentOutputData
+  });
+
+  if (students) {
+    return students;
+  }
+  return;
+}
+
+async function findStudentAssignedTeacher(student_id) {
+  const teacher = await prisma.student.findUnique({
+    where: {
+      student_id,
+    },
+    select: {
+        teacher: true
+    },
+  });
+
+  if (teacher) {
+    return teacher.teacher;
+  }
+  return;
+}
+
+async function getAllAssignees() {
+  const students = await prisma.student.findMany({
+    where: {
+      assignedTo: {
+        not: null
+      }
+    },
+    select: {
+      student_id: true,
+      assignedTo: true
+    },
+    orderBy: {
+      birth_date: "asc",
+    },
+  });
+
+  if (students) {
+    return students;
+  }
+  return;
+}
+
 module.exports = {
   findStudentByUsername,
   findStudentByEmail,
@@ -190,4 +245,7 @@ module.exports = {
   updateStudentData,
   deleteStudentData,
   isAdmin,
+  findStudentsAssignedToTeacherId,
+  findStudentAssignedTeacher,
+  getAllAssignees
 };

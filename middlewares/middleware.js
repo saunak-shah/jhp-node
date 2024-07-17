@@ -12,13 +12,13 @@ async function userMiddleware(req, res, next) {
         student = await findStudentByUsername(tokenData.username);
 
         if (!student) {
-          res.status(500).json({ message: `Not admin` });
+          res.status(500).json({ message: `Not student` });
           return;
         }
       } catch (e) {
         teacher = await findTeacherByUsername(tokenData.teacher_username);
         if (!teacher) {
-          res.status(500).json({ message: `Not admin` });
+          res.status(500).json({ message: `Not teacher` });
           return;
         }
       }
