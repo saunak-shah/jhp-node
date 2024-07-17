@@ -216,6 +216,24 @@ module.exports = function () {
         register_no,
       });
       if (student) {
+        const token = signJwt(student);
+          if (token) {
+            res.status(200).json({
+              message: `Signup successful for student`,
+              data: {
+                student_id: student.student_id,
+                username: student.username,
+                first_name: student.first_name,
+                last_name: student.last_name,
+                token: token,
+              },
+            });
+          } else {
+            res.status(500).json({
+              message: `Internal Server Error while creating jwt token`,
+            });
+            return;
+          }
         //   // Sending mail
         // const subject = `Welcome to JHP Family`;
         // const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
@@ -255,7 +273,13 @@ module.exports = function () {
           if (token) {
             res.status(200).json({
               message: `Login successful for student`,
-              data: token,
+              data: {
+                student_id: student.student_id,
+                username: student.username,
+                first_name: student.first_name,
+                last_name: student.last_name,
+                token: token,
+              },
             });
           } else {
             res.status(500).json({
@@ -281,19 +305,28 @@ module.exports = function () {
   // Update profile route
   router.post("/students/update_profile", userMiddleware, async (req, res) => {
     const { student, data } = req.body;
+    const updateData = (({ password, student_id, username, ...o }) => o)(
+      data
+    );
     try {
       const updatedStudent = await updateStudentData(
         { username: student.username },
-        data
+        updateData
       );
       if (updatedStudent) {
-        const data = (({ password, student_id, username, ...o }) => o)(
-          updatedStudent
-        );
         res.status(200).json({
           message: `User profile updated successfully.`,
           data: {
-            user: data,
+            user: {
+              student_id: updatedStudent.student_id,
+              first_name: updatedStudent.first_name,
+              last_name: updatedStudent.last_name,
+              father_name: updatedStudent.father_name,
+              email: updatedStudent.email,
+              phone_number: updatedStudent.phone_number,
+              address: updatedStudent.address,
+              birth_date: updatedStudent.birth_date,
+            },
           },
         });
       } else {
