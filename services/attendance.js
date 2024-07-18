@@ -10,22 +10,20 @@ const attendanceOutputData = {
   updated_at: true,
 };
 
-async function createAttendance(data) {
+async function createAttendance(teacher_id, attendance) {
   const attendances = [];
-  const teacher_id = data.teacher_id;
-  for (let i = 0; i < data.attendance.length; i++) {
-    const student_id = data.attendance[i].student_id;
-    const attendanceDates = data.attendance[i].checked_dates;
+  for (let i = 0; i < attendance.length; i++) {
+    const student_id = attendance[i].student_id;
+    const attendanceDates = attendance[i].checked_dates;
 
     const student = await findStudentById(student_id);
 
     if (student.assignedTo != teacher_id) {
-      throw new error("Only assigned teacher can fill the attendance");
+      throw new Error("Only assigned teacher can fill the attendance");
     }
 
     for (let j = 0; j < attendanceDates.length; j++) {
-      const attendanceDate = attendanceDates[i];
-
+      const attendanceDate = attendanceDates[j];
       const attendance = await prisma.attendance.create({
         data: {
           student_id,
@@ -45,12 +43,11 @@ async function createAttendance(data) {
   return;
 }
 
-async function deleteAttendance(data) {
-  const attendances = [];
-  const teacher_id = data.teacher_id;
-  for (let i = 0; i < data.attendance.length; i++) {
-    const student_id = data.attendance[i].student_id;
-    const attendanceDates = data.attendance[i].checked_dates;
+async function deleteAttendance(teacher_id, attendance) {
+  let attendances = [];
+  for (let i = 0; i < attendance.length; i++) {
+    const student_id = attendance[i].student_id;
+    const attendanceDates = attendance[i].checked_dates;
 
     const student = await findStudentById(student_id);
 
@@ -59,34 +56,36 @@ async function deleteAttendance(data) {
     }
 
     for (let j = 0; j < attendanceDates.length; j++) {
-      const attendanceDate = attendanceDates[i];
+      const attendanceDate = attendanceDates[j];
 
-      const attendance = await prisma.attendance.delete({
+      const attendanceData = await prisma.attendance.deleteMany({
         where: {
           student_id,
           teacher_id,
-          date: attendanceDate,
+          date: attendanceDate.toString(),
         },
-        select: attendanceOutputData,
       });
 
-      attendances.push(attendance);
+      if(attendanceData.count > 0){
+        attendances.push(attendance[i])
+      }
     }
   }
 
-  if (attendances && attendances.length > 0) {
-    return attendances;
-  }
-  return;
+  return attendances;
 }
 
-async function getStudentAttendance(student_id, days = 7) {
-  const day = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+async function getStudentAttendance(
+  student_id,
+  lowerDateLimit = new Date(Date.now - 7 * 24 * 60 * 60 * 1000),
+  upperDateLimit = new Date(Date.now)
+) {
   const attendance = await prisma.attendance.findMany({
     where: {
       student_id,
       date: {
-        gte: day,
+        gte: lowerDateLimit,
+        lte: upperDateLimit,
       },
     },
     select: attendanceOutputData,
@@ -105,14 +104,17 @@ async function getStudentAttendance(student_id, days = 7) {
   return;
 }
 
-async function getAllStudentsAttendance(teacher_id, days = 7) {
-  const day = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
+async function getAllStudentsAttendance(
+  teacher_id,
+  lowerDateLimit = new Date(Date.now - 7 * 24 * 60 * 60 * 1000),
+  upperDateLimit = new Date(Date.now)
+) {
   const attendance = await prisma.attendance.findMany({
     where: {
       teacher_id,
       date: {
-        gte: day,
+        gte: lowerDateLimit,
+        lte: upperDateLimit,
       },
     },
     select: attendanceOutputData,
@@ -120,13 +122,13 @@ async function getAllStudentsAttendance(teacher_id, days = 7) {
 
   if (attendance) {
     const attendances = {};
-    attendance.map((attendanceData) => {
-      const attendanceDataOfStudent =
-        attendances[attendanceData.student_id] || [];
-      attendances[attendanceData.student_id] = attendanceDataOfStudent.push(
-        attendanceData.date
-      );
-    });
+
+    for(let i = 0; i < attendance.length; i++) {
+      const attendanceData = attendance[i];
+      attendances[attendanceData.student_id] = attendances[attendanceData.student_id] ? attendances[attendanceData.student_id] + "," + new Date(attendanceData.date).toISOString() : new Date(attendanceData.date).toISOString()
+    }
+
+    Object.keys(attendances).map((key) => attendances[key] = attendances[key].split(','))
     return attendances;
   }
   return;

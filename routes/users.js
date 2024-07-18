@@ -78,7 +78,7 @@ module.exports = function () {
   });
 
   // Get student by username.
-  router.get("/students/:username", userMiddleware, async (req, res) => {
+  router.get("/students/username/:username", userMiddleware, async (req, res) => {
     try {
       const { username } = req.params;
       const user = await findStudentByUsername(username);
