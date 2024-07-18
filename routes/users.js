@@ -202,7 +202,7 @@ module.exports = function () {
         gender,
         username,
         organization_id,
-        register_no,
+        register_no: register_no.toLocaleUpperCase(),
       });
       if (student) {
         const token = signJwt(student);
