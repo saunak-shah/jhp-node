@@ -16,7 +16,8 @@ const studentOutputData = {
   updated_at: true,
   organization_id: true,
   assignedTo: true,
-  teacher: true
+  teacher: true,
+  register_no: true
 };
 
 async function createStudentData(data) {
