@@ -78,7 +78,7 @@ module.exports = function () {
   });
 
   // Get student by username.
-  router.get("/students/:username", userMiddleware, async (req, res) => {
+  router.get("/students/username/:username", userMiddleware, async (req, res) => {
     try {
       const { username } = req.params;
       const user = await findStudentByUsername(username);
@@ -126,17 +126,6 @@ module.exports = function () {
         username,
         organization_id,
       } = req.body;
-        console.log(first_name,
-        last_name,
-        father_name,
-        phone_number,
-        address,
-        email,
-        password,
-        birth_date,
-        gender,
-        username,
-        organization_id,)
 
       if (
         !first_name ||
@@ -213,36 +202,53 @@ module.exports = function () {
         gender,
         username,
         organization_id,
-        register_no,
+        register_no: register_no.toLocaleUpperCase(),
       });
       if (student) {
         const token = signJwt(student);
-          if (token) {
-            res.status(200).json({
-              message: `Signup successful for student`,
-              data: {
-                student_id: student.student_id,
-                username: student.username,
-                first_name: student.first_name,
-                last_name: student.last_name,
-                token: token,
-              },
-            });
-          } else {
-            res.status(500).json({
-              message: `Internal Server Error while creating jwt token`,
-            });
-            return;
-          }
-        //   // Sending mail
-        // const subject = `Welcome to JHP Family`;
-        // const text = `Your registration is successful\n Your Unique Id : ${unique_id}.\n Your password is : ${password} \n Use this unique id to login `;
-        // const isMailSent = await sendEmail(email, subject, text);
-        // if (!isMailSent) {
-        //   console.error(`Unable to send mail`);
-        // } else {
-        res.status(200).json({ message: "Signup successful", data: student });
-        // }
+        if (token) {
+          res.status(200).json({
+            message: `Signup successful for student`,
+            data: {
+              student_id: student.student_id,
+              username: student.username,
+              first_name: student.first_name,
+              last_name: student.last_name,
+              register_no: student.register_no,
+              token: token,
+            },
+          });
+        } else {
+          res.status(500).json({
+            message: `Internal Server Error while creating jwt token`,
+          });
+          return;
+        }
+        // Sending mail
+        const subject = `Welcome to JHP Family`;
+        const text = `
+          <html>
+            <body>
+              <pre>
+Hello ${student.first_name}
+                
+Thank you for registering with us. Below are your login details. Please keep them secure and do not share them with anyone.
+
+<b>Username:</b> ${student.username} 
+<b>Password:</b> ${password} 
+                
+You can log in using the below link: 
+                
+<a href="https://software.jhpparivar.in">https://software.jhpparivar.in</a>
+                </pre>
+            </body>
+          </html>`;
+        const isMailSent = await sendEmail(email, subject, text);
+        if (!isMailSent) {
+          console.error(`Unable to send mail`);
+        } else {
+          res.status(200).json({ message: "Signup successful", data: student });
+        }
       } else {
         res.status(500).send("Internal Server Error");
       }
@@ -278,6 +284,7 @@ module.exports = function () {
                 username: student.username,
                 first_name: student.first_name,
                 last_name: student.last_name,
+                register_no: student.register_no,
                 token: token,
               },
             });
@@ -326,6 +333,7 @@ module.exports = function () {
               phone_number: updatedStudent.phone_number,
               address: updatedStudent.address,
               birth_date: updatedStudent.birth_date,
+              register_no: updatedStudent.register_no,
             },
           },
         });

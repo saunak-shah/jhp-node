@@ -195,5 +195,6 @@ model attendance {
 
   @@index([date])
   @@index([date, student_id])
+  @@unique([date, student_id])
   @@index([date, teacher_id, student_id])
 }
