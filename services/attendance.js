@@ -152,10 +152,35 @@ async function isStudentPresentOnDate(student_id, date) {
   return false;
 }
 
+async function getAttendanceCountByMonth(studentId){
+  // Count data grouped by month
+  const dataByMonth = await prisma.$queryRaw`
+    SELECT
+      DATE_TRUNC('month', "date") AS month,
+      COUNT(*) AS count
+    FROM
+      "attendance"
+    WHERE
+      "student_id" = ${studentId}
+    GROUP BY
+      month
+    ORDER BY
+      month ASC;
+  `;
+
+  for(let i = 0; i < dataByMonth.length; i++){
+    dataByMonth[i].monthNumber = new Date(dataByMonth[i].month).getMonth() + 1
+    dataByMonth[i].count = Number(dataByMonth[i].count)
+  }
+
+  return dataByMonth
+}
+
 module.exports = {
   createAttendance,
   deleteAttendance,
   isStudentPresentOnDate,
   getStudentAttendance,
   getAllStudentsAttendance,
+  getAttendanceCountByMonth
 };
