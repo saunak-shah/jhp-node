@@ -96,9 +96,8 @@ module.exports = function () {
   // Get student by id.
   router.get("/students/:id", userMiddleware, async (req, res) => {
     try {
-      let { id } = req.params;
-      id = parseInt(id)
-      const user = await findStudentById(id);
+      const { id } = req.params;
+      const user = await findStudentById(parseInt(id));
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {

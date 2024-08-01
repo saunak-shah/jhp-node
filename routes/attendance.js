@@ -6,6 +6,7 @@ const {
   getAllStudentsAttendance,
   createAttendance,
   deleteAttendance,
+  getAttendanceCountByMonth,
 } = require("../services/attendance");
 
 const { findStudentById } = require("../services/user");
@@ -55,6 +56,28 @@ module.exports = function () {
         lowerDateLimit,
         upperDateLimit
       );
+      if (!attendance) {
+        res.status(422).json({
+          message: `No attendance found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `attendance found`,
+        data: attendance,
+      });
+    } catch (error) {
+      console.error("Error getting attendance:", error);
+      res.status(500).json({
+        message: `Error while fetching attendance - ${error}`,
+      });
+    }
+  });
+
+  router.get("/attendance-summary", userMiddleware, async (req, res) => {
+    const {student} = req.body;
+    try {
+      const attendance = await getAttendanceCountByMonth(student.student_id);
       if (!attendance) {
         res.status(422).json({
           message: `No attendance found`,
