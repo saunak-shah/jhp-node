@@ -96,7 +96,8 @@ module.exports = function () {
   // Get student by id.
   router.get("/students/:id", userMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
+      let { id } = req.params;
+      id = parseInt(id)
       const user = await findStudentById(id);
       if (user) {
         res.status(200).json({ message: "User found", data: user });
@@ -285,6 +286,7 @@ You can log in using the below link:
                 first_name: student.first_name,
                 last_name: student.last_name,
                 register_no: student.register_no,
+                assignedTo: student.assignedTo,
                 token: token,
               },
             });
