@@ -1,0 +1,1 @@
+INSERT INTO "master_role"("created_at","updated_at","email","password","organization_id") VALUES('2024-08-05 17:05:59.56','2024-08-05 17:05:59.56','manavj4254@gmail.com','$2b$10$1NtvD4UinQ7hwcONds.LkOLiaqA3Lf93SxHuw7MiVWhNq2sBpgFFe',1);
