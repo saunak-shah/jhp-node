@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("../helpers/bcrypt");
 const crypto = require("crypto");
+const moment = require("moment");
 
 const {
   findStudentByUsername,
@@ -170,12 +171,15 @@ module.exports = function () {
       let encPassword = bcrypt.createHash(password);
 
       const organization = await getOrganization(organization_id);
+      const date = moment(birth_date).format("DD");
+      const month = moment(birth_date).format("MM");
 
       let register_no =
       organization.name.slice(0, 3) +
       first_name[0] +
+      father_name[0] +
       last_name[0] +
-      generateFourDigitRandomNumber().toString();
+      date + month;
       
       while (true) {
         const isStudentExists = await findStudentByRegisterNumber(register_no);
@@ -183,8 +187,9 @@ module.exports = function () {
           register_no =
           organization.name.slice(0, 3) +
           first_name[0] +
+          father_name[0] +
           last_name[0] +
-          generateFourDigitRandomNumber().toString();
+          date + month;
         } else {
           break;
         }
@@ -215,6 +220,7 @@ module.exports = function () {
               first_name: student.first_name,
               last_name: student.last_name,
               register_no: student.register_no,
+              assignedTo: student.assignedTo,
               token: token,
             },
           });

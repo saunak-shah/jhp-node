@@ -90,12 +90,12 @@ module.exports = function () {
   // Create and Update Assignee
   router.post("/assign", userMiddleware, async (req, res) => {
     const { teacher } = req.body;
-    if (!teacher) {
+    /* if (!teacher) {
       res.status(403).json({
         message: `Only teacher or support user`,
       });
       return;
-    }
+    } */
     try {
       const { student_id, teacher_id } = req.body;
       if (!student_id || !teacher_id) {
