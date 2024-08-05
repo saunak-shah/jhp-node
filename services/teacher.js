@@ -139,8 +139,8 @@ async function getAllTeachers(limit, offset, organization_id) {
     orderBy: {
       teacher_birth_date: "asc",
     },
-    take: limit,
-    skip: offset,
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (teacher) {

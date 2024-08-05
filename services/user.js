@@ -157,8 +157,8 @@ async function getAllStudents(limit, offset, organization_id) {
     orderBy: {
       birth_date: "asc",
     },
-    take: limit,
-    skip: offset,
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (student) {
