@@ -16,20 +16,20 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get a student attendance data
-  router.get("/attendance/student/:student_id", userMiddleware, async (req, res) => {
-    const { teacher, lowerDateLimit, upperDateLimit  } = req.body;
-    const student_id = parseInt(req.params.student_id)
+  router.get("/attendance/student/:student_id/:lowerDateLimit/:upperDateLimit", userMiddleware, async (req, res) => {
+    const { teacher } = req.body;
+    const {student_id, lowerDateLimit, upperDateLimit} = req.params
     try {
-      const studentData = await findStudentById(student_id);
+      const studentData = await findStudentById(parseInt(student_id));
       if (
-        studentData.assignedTo &&
-        studentData.assignedTo != teacher.teacher_id
+        studentData.assigned_to &&
+        studentData.assigned_to != teacher.teacher_id
       ) {
         res.status(403).json({
           message: `Only assigned teacher can fetch the attendance`,
         });
       }
-      const attendance = await getStudentAttendance(student_id, lowerDateLimit, upperDateLimit);
+      const attendance = await getStudentAttendance(parseInt(student_id), lowerDateLimit, upperDateLimit);
       if (!attendance) {
         res.status(422).json({
           message: `No attendance found`,
@@ -48,8 +48,10 @@ module.exports = function () {
   });
 
   // Get the attendance of all students assigned to some teacher_id
-  router.get("/attendance", userMiddleware, async (req, res) => {
-    const { teacher, lowerDateLimit, upperDateLimit } = req.body;
+  router.get("/attendance/:lowerDateLimit/:upperDateLimit", userMiddleware, async (req, res) => {
+    const { teacher } = req.body;
+    const {lowerDateLimit, upperDateLimit} = req.params
+
     try {
       const attendance = await getAllStudentsAttendance(
         teacher.teacher_id,

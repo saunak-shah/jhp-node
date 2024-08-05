@@ -59,9 +59,11 @@ module.exports = function () {
   });
 
   // Get users.
-  router.get("/students", userMiddleware, async (req, res) => {
+  router.get("/students/:limit/:offset", userMiddleware, async (req, res) => {
     try {
-      const { limit, offset, student } = req.body;
+      const { student } = req.body;
+      const {limit, offset} = req.params;
+      
       const users = await getAllStudents(
         limit,
         offset,
@@ -220,7 +222,7 @@ module.exports = function () {
               first_name: student.first_name,
               last_name: student.last_name,
               register_no: student.register_no,
-              assignedTo: student.assignedTo,
+              assigned_to: student.assigned_to,
               token: token,
             },
           });
@@ -291,7 +293,7 @@ You can log in using the below link:
                 first_name: student.first_name,
                 last_name: student.last_name,
                 register_no: student.register_no,
-                assignedTo: student.assignedTo,
+                assigned_to: student.assigned_to,
                 token: token,
               },
             });

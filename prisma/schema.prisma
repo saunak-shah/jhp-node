@@ -67,8 +67,8 @@ model student {
   created_at                      DateTime @default(now()) @map("created_at")
   updated_at                      DateTime @default(now()) @map("updated_at")
   organization_id                 Int
-  assignedTo                      Int?
-  teacher                         teacher? @relation(fields: [assignedTo], references: [teacher_id], onDelete: SetNull)
+  assigned_to                      Int?
+  teacher                         teacher? @relation(fields: [assigned_to], references: [teacher_id], onDelete: SetNull)
 
   organization         organization           @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
   course               course[]
