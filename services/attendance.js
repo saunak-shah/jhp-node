@@ -18,7 +18,7 @@ async function createAttendance(teacher_id, attendance) {
 
     const student = await findStudentById(student_id);
 
-    if (student.assignedTo != teacher_id) {
+    if (student.assigned_to != teacher_id) {
       throw new Error("Only assigned teacher can fill the attendance");
     }
 
@@ -51,7 +51,7 @@ async function deleteAttendance(teacher_id, attendance) {
 
     const student = await findStudentById(student_id);
 
-    if (student.assignedTo != teacher_id) {
+    if (student.assigned_to != teacher_id) {
       throw new error("Only assigned teacher can delete the attendance");
     }
 

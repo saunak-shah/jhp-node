@@ -121,8 +121,8 @@ module.exports = function () {
         return;
       }
 
-      if (student.assignedTo) {
-        const teacherById = await findTeacherById(student.assignedTo);
+      if (student.assigned_to) {
+        const teacherById = await findTeacherById(student.assigned_to);
         if (!teacherById) {
           res.status(422).json({
             message: `Invalid teacher`,
@@ -139,7 +139,7 @@ module.exports = function () {
       }
       const isAssigned = await updateStudentData(
         { student_id },
-        { assignedTo: teacher_id }
+        { assigned_to: teacher_id }
       );
 
       if (isAssigned) {
@@ -187,7 +187,7 @@ module.exports = function () {
 
       const deletedAssignee = await updateStudentData(
         { student_id },
-        { assignedTo: null }
+        { assigned_to: null }
       );
       if (!deletedAssignee) {
         res.status(500).json({

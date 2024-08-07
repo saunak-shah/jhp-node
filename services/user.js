@@ -15,7 +15,7 @@ const studentOutputData = {
   created_at: true,
   updated_at: true,
   organization_id: true,
-  assignedTo: true,
+  assigned_to: true,
   teacher: true,
   register_no: true
 };
@@ -157,8 +157,8 @@ async function getAllStudents(limit, offset, organization_id) {
     orderBy: {
       birth_date: "asc",
     },
-    take: limit,
-    skip: offset,
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (student) {
@@ -185,7 +185,7 @@ async function isAdmin(student_id, organization_id) {
 async function findStudentsAssignedToTeacherId(teacher_id) {
   const students = await prisma.student.findMany({
     where: {
-        assignedTo: teacher_id
+        assigned_to: teacher_id
     },
     select: studentOutputData
   });
@@ -215,13 +215,13 @@ async function findStudentAssignedTeacher(student_id) {
 async function getAllAssignees() {
   const students = await prisma.student.findMany({
     where: {
-      assignedTo: {
+      assigned_to: {
         not: null
       }
     },
     select: {
       student_id: true,
-      assignedTo: true
+      assigned_to: true
     },
     orderBy: {
       birth_date: "asc",

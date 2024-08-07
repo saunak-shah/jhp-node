@@ -55,9 +55,12 @@ module.exports = function () {
   });
 
   // Get teachers.
-  router.get("/teachers", userMiddleware, async (req, res) => {
+  router.get("/teachers/:limit/:offset", userMiddleware, async (req, res) => {
     try {
-      const { limit, offset, student, teacher } = req.body;
+      const { student, teacher } = req.body;
+
+      const {limit, offset} = req.params;
+
       const users = await getAllTeachers(
         limit,
         offset,
@@ -225,7 +228,13 @@ module.exports = function () {
           if (token) {
             res.status(200).json({
               message: `Login successful for teacher`,
-              data: token,
+              data: {
+                teacher_id: teacher.teacher_id,
+                teacher_username: teacher.teacher_username,
+                teacher_first_name: teacher.teacher_first_name,
+                teacher_last_name: teacher.teacher_last_name,
+                token: token,
+              },
             });
           } else {
             res.status(500).json({
