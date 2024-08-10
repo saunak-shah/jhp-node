@@ -18,6 +18,12 @@ enum gender {
   Female @map("F")
 }
 
+enum Role {
+  Admin @map("1")
+  Teacher @map("2")
+  Support @map("3")
+}
+
 model organization {
   organization_id Int      @id @default(autoincrement())
   name            String
@@ -36,12 +42,12 @@ model organization {
 }
 
 model master_role {
-  master_role_id  Int      @id @default(autoincrement())
-  created_at      DateTime @default(now()) @map("created_at")
-  updated_at      DateTime @default(now()) @map("updated_at")
-  email           String
-  password        String
+  master_role_id  Int           @id @default(autoincrement())
+  created_at      DateTime      @default(now()) @map("created_at")
+  updated_at      DateTime      @default(now()) @map("updated_at")
   organization_id Int
+  role_name       Role
+  role_access     String
 
   organization organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
 }
