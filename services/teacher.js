@@ -149,6 +149,16 @@ async function getAllTeachers(limit, offset, organization_id) {
   return;
 }
 
+async function getTeachersCount(organization_id) {
+  const teacherCount = await prisma.teacher.count({
+    where: {
+      organization_id,
+    },
+  });
+
+  return teacherCount;
+}
+
 module.exports = {
   findTeacherByUsername,
   findTeacherByEmail,
@@ -159,4 +169,5 @@ module.exports = {
   createTeacherData,
   updateTeacherData,
   deleteTeacherData,
+  getTeachersCount
 };

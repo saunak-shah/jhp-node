@@ -19,14 +19,13 @@ enum gender {
 }
 
 model organization {
-  organization_id Int    @id @default(autoincrement())
+  organization_id Int      @id @default(autoincrement())
   name            String
   location        String
-  phone_number    String @unique
-  email           String @unique
+  phone_number    String   @unique
+  email           String   @unique
   created_at      DateTime @default(now()) @map("created_at")
   updated_at      DateTime @default(now()) @map("updated_at")
-  
 
   master_role master_role[]
   student     student[]
@@ -67,7 +66,7 @@ model student {
   created_at                      DateTime @default(now()) @map("created_at")
   updated_at                      DateTime @default(now()) @map("updated_at")
   organization_id                 Int
-  assigned_to                      Int?
+  assigned_to                     Int?
   teacher                         teacher? @relation(fields: [assigned_to], references: [teacher_id], onDelete: SetNull)
 
   organization         organization           @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
@@ -193,8 +192,8 @@ model attendance {
   teacher_id    Int
   teacher       teacher  @relation(fields: [teacher_id], references: [teacher_id], onDelete: Cascade)
 
+  @@unique([date, student_id])
   @@index([date])
   @@index([date, student_id])
-  @@unique([date, student_id])
   @@index([date, teacher_id, student_id])
 }

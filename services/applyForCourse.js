@@ -34,12 +34,14 @@ async function findApplicationByRegistrationId(registrationId) {
   return;
 }
 
-async function getAllApplications() {
+async function getAllApplications(limit, offset) {
   const courses = await prisma.student_apply_course.findMany({
     select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (courses) {
@@ -48,15 +50,22 @@ async function getAllApplications() {
   return;
 }
 
-async function getAllApplicationsByUserId(userId) {
+async function getAllApplicationsCount() {
+  const coursesCount = await prisma.student_apply_course.count();
+  return coursesCount;
+}
+
+async function getAllApplicationsByUserId(userId, limit, offset) {
   const courses = await prisma.student_apply_course.findMany({
     where: {
-      student_id: userId,
+      student_id: parseInt(userId),
     },
     select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (courses) {
@@ -65,21 +74,43 @@ async function getAllApplicationsByUserId(userId) {
   return;
 }
 
-async function getAllApplicationsByCourseId(examId) {
+async function getAllApplicationsByUserIdCount(userId) {
+  const coursesCount = await prisma.student_apply_course.count({
+    where: {
+      student_id: parseInt(userId),
+    },
+  });
+
+  return coursesCount;
+}
+
+async function getAllApplicationsByCourseId(examId, limit, offset) {
   const courses = await prisma.student_apply_course.findMany({
     where: {
-      course_id: examId,
+      course_id: parseInt(examId),
     },
     select: appliedExamOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (courses) {
     return courses;
   }
   return;
+}
+
+async function getAllApplicationsByCourseIdCount(examId) {
+  const coursesCount = await prisma.student_apply_course.count({
+    where: {
+      course_id: parseInt(examId),
+    },
+  });
+
+  return coursesCount;
 }
 
 async function getAllApplicationsByUserIdAndCourseId(userId, courseId) {
@@ -129,8 +160,11 @@ module.exports = {
   applyForCourse,
   findApplicationByRegistrationId,
   getAllApplications,
+  getAllApplicationsCount,
   getAllApplicationsByCourseId,
+  getAllApplicationsByCourseIdCount,
   getAllApplicationsByUserId,
+  getAllApplicationsByUserIdCount,
   updateApplication,
   deleteApplication,
   getAllApplicationsByUserIdAndCourseId,

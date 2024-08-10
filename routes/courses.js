@@ -5,6 +5,7 @@ const {
   findCourseByCourseId,
   updateCourse,
   deleteCourse,
+  getAllCoursesCount,
 } = require("../services/course");
 const { userMiddleware } = require("../middlewares/middleware");
 const { createApplication } = require("../services/applyForCourse");
@@ -13,14 +14,20 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all courses
-  router.get("/courses/", userMiddleware, async (req, res) => {
+  router.get("/courses/:limit/:offset", userMiddleware, async (req, res) => {
     try {
       const { student } = req.body;
-      const course = await getAllCourses(student.organization_id);
+      const { limit, offset } = req.params;
+      const courseCount = await getAllCoursesCount();
+      const course = await getAllCourses(
+        student.organization_id,
+        limit,
+        offset
+      );
       if (course) {
         res.status(200).json({
           message: `Fetched all courses`,
-          data: course,
+          data: { course, offset, totalCount: courseCount },
         });
       } else {
         res.status(422).json({
@@ -55,7 +62,7 @@ module.exports = function () {
       });
     }
   });
-  
+
   // Apply for course
   router.post("/courses/apply/:id", userMiddleware, async (req, res) => {
     try {
@@ -226,7 +233,7 @@ module.exports = function () {
         }
         res.status(200).json({
           message: `Course updated successfully`,
-          data: updatedCourse
+          data: updatedCourse,
         });
       } else {
         res.status(422).json({
@@ -268,7 +275,7 @@ module.exports = function () {
       }
       res.status(200).json({
         message: `Course deleted successfully`,
-        data: deletedCourse
+        data: deletedCourse,
       });
     } catch (error) {
       res.status(500).json({

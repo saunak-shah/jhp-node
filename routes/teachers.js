@@ -12,6 +12,7 @@ const {
   deleteTeacherData,
   getAllTeachers,
   findTeacherById,
+  getTeachersCount,
 } = require("../services/teacher");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -59,15 +60,24 @@ module.exports = function () {
     try {
       const { student, teacher } = req.body;
 
-      const {limit, offset} = req.params;
+      const { limit, offset } = req.params;
 
-      const users = await getAllTeachers(
+      const totalTeacherCount = await getTeachersCount();
+
+      const teachers = await getAllTeachers(
         limit,
         offset,
         student?.organization_id || teacher?.organization_id
       );
       if (users && users.length > 0) {
-        res.status(200).json({ message: "Teachers found", data: users });
+        res.status(200).json({
+          message: "Teachers found",
+          data: {
+            teachers,
+            offset,
+            totalCount: totalTeacherCount,
+          },
+        });
       } else {
         res.status(422).json({ message: "Teachers not found", data: null });
       }
@@ -85,6 +95,7 @@ module.exports = function () {
       try {
         const { username } = req.params;
         const user = await findTeacherByUsername(username);
+        console.log("🚀 ~ file: teachers.js:88 ~ user:", user);
         if (user) {
           res.status(200).json({ message: "Teacher found", data: user });
         } else {
@@ -483,8 +494,6 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
-
-
 
   return router;
 };
