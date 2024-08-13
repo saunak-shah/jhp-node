@@ -19,7 +19,7 @@ enum gender {
 }
 
 enum Role {
-  Admin @map("1")
+  Admin   @map("1")
   Teacher @map("2")
   Support @map("3")
 }
@@ -42,14 +42,15 @@ model organization {
 }
 
 model master_role {
-  master_role_id  Int           @id @default(autoincrement())
-  created_at      DateTime      @default(now()) @map("created_at")
-  updated_at      DateTime      @default(now()) @map("updated_at")
+  master_role_id  Int      @id @default(autoincrement())
+  created_at      DateTime @default(now()) @map("created_at")
+  updated_at      DateTime @default(now()) @map("updated_at")
   organization_id Int
   role_name       Role
   role_access     String
 
   organization organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
+  teacher      teacher[]
 }
 
 model student {
@@ -91,21 +92,23 @@ model student {
 }
 
 model teacher {
-  teacher_id                              Int      @id @default(autoincrement())
+  teacher_id                              Int         @id @default(autoincrement())
   teacher_first_name                      String
   teacher_last_name                       String
-  teacher_phone_number                    String   @unique
-  teacher_email                           String   @unique
+  teacher_phone_number                    String      @unique
+  teacher_email                           String      @unique
   teacher_address                         String
-  teacher_password                        String   @unique
+  teacher_password                        String      @unique
   teacher_birth_date                      DateTime
   teacher_gender                          gender
-  teacher_username                        String   @unique
-  teacher_reset_password_token            String   @default("")
-  teacher_reset_password_token_expiration DateTime @default(now())
-  is_support_user                         Boolean  @default(false)
-  created_at                              DateTime @default(now()) @map("created_at")
-  updated_at                              DateTime @default(now()) @map("updated_at")
+  teacher_username                        String      @unique
+  teacher_reset_password_token            String      @default("")
+  teacher_reset_password_token_expiration DateTime    @default(now())
+  is_support_user                         Boolean     @default(false)
+  created_at                              DateTime    @default(now()) @map("created_at")
+  updated_at                              DateTime    @default(now()) @map("updated_at")
+  master_role_id                          Int
+  master_role                             master_role @relation(fields: [master_role_id], references: [master_role_id], onDelete: Cascade)
 
   organization_id Int
   organization    organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)

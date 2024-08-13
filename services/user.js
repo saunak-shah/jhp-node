@@ -177,20 +177,6 @@ async function getAllStudents(limit, offset, organization_id) {
   return;
 }
 
-async function isAdmin(student_id, organization_id) {
-  const student = await prisma.master_role.findUnique({
-    where: {
-      master_role_id: student_id,
-      organization_id,
-    },
-  });
-
-  if (student) {
-    return true;
-  }
-  return;
-}
-
 async function findStudentsAssignedToTeacherId(teacher_id) {
   const students = await prisma.student.findMany({
     where: {
@@ -268,7 +254,6 @@ module.exports = {
   createStudentData,
   updateStudentData,
   deleteStudentData,
-  isAdmin,
   findStudentsAssignedToTeacherId,
   findStudentAssignedTeacher,
   getAllAssignees,

@@ -7,13 +7,9 @@
   - Added the required column `role_name` to the `master_role` table without a default value. This is not possible if the table is not empty.
 
 */
--- CreateEnum
-CREATE TYPE "Role" AS ENUM ('1', '2', '3');
 
--- AlterTable
-ALTER TABLE "master_role" DROP COLUMN "email",
-DROP COLUMN "password",
-ADD COLUMN     "role_access" TEXT NOT NULL,
-ADD COLUMN     "role_name" "Role" NOT NULL;
+INSERT INTO "master_role"("created_at","updated_at","organization_id","role_access","role_name") VALUES('2024-08-10 00:00:00','2024-08-10 00:00:00',1,'[1,2]','2');
 
-INSERT INTO "master_role"("created_at","updated_at","master_role_id","organization_id","role_access","role_name") VALUES('2024-08-10 00:00:00','2024-08-10 00:00:00',1,1,'[1]','1');
+INSERT INTO "master_role"("created_at","updated_at","organization_id","role_access","role_name") VALUES('2024-08-10 00:00:00','2024-08-10 00:00:00',1,'[1]','3');
+
+INSERT INTO "master_role"("created_at","updated_at","organization_id","role_access","role_name") VALUES('2024-08-10 00:00:00','2024-08-10 00:00:00',1,'[1,2,3]','1');

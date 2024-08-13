@@ -54,6 +54,29 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
+  // Get teacher by username.
+  router.get(
+    "/teachers/username/:username",
+    userMiddleware,
+    async (req, res) => {
+      console.log("🚀 ~ file: teachers.js:95 ~ res:", res);
+      console.log("🚀 ~ file: teachers.js:95 ~ req:", req);
+      try {
+        const { username } = req.params;
+        console.log("🚀 ~ file: teachers.js:97 ~ username:", username);
+        const user = await findTeacherByUsername(username);
+        console.log("🚀 ~ file: teachers.js:88 ~ user:", user);
+        if (user) {
+          res.status(200).json({ message: "Teacher found", data: user });
+        } else {
+          res.status(422).json({ message: "Teacher not found", data: null });
+        }
+      } catch (error) {
+        console.error("Error while getting teacher with unique id:", error);
+        res.status(500).send(`Internal Server Error: ${error}`);
+      }
+    }
+  );
 
   // Get teachers.
   router.get("/teachers/:limit/:offset", userMiddleware, async (req, res) => {
@@ -69,7 +92,7 @@ module.exports = function () {
         offset,
         student?.organization_id || teacher?.organization_id
       );
-      if (users && users.length > 0) {
+      if (teachers && teachers.length > 0) {
         res.status(200).json({
           message: "Teachers found",
           data: {
@@ -86,27 +109,6 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
-
-  // Get teacher by username.
-  router.get(
-    "/teachers/username/:username",
-    userMiddleware,
-    async (req, res) => {
-      try {
-        const { username } = req.params;
-        const user = await findTeacherByUsername(username);
-        console.log("🚀 ~ file: teachers.js:88 ~ user:", user);
-        if (user) {
-          res.status(200).json({ message: "Teacher found", data: user });
-        } else {
-          res.status(422).json({ message: "Teacher not found", data: null });
-        }
-      } catch (error) {
-        console.error("Error while getting teacher with unique id:", error);
-        res.status(500).send(`Internal Server Error: ${error}`);
-      }
-    }
-  );
 
   // Get teacher by id.
   router.get("/teachers/:id", userMiddleware, async (req, res) => {
@@ -140,7 +142,20 @@ module.exports = function () {
         teacher_username,
         is_support_user,
         organization_id,
+        master_role_id
       } = req.body;
+        console.log("🚀 ~ file: teachers.js:147 ~ router.post ~ teacher_first_name", teacher_first_name,
+        teacher_last_name,
+        teacher_phone_number,
+        teacher_address,
+        teacher_email,
+        teacher_password,
+        teacher_birth_date,
+        teacher_gender,
+        teacher_username,
+        is_support_user,
+        organization_id,
+        master_role_id)
 
       if (
         !teacher_first_name ||
@@ -152,7 +167,8 @@ module.exports = function () {
         !teacher_gender ||
         !teacher_username ||
         !organization_id ||
-        !teacher_address
+        !teacher_address || 
+        !master_role_id
       ) {
         res
           .status(422)
@@ -197,6 +213,7 @@ module.exports = function () {
         teacher_gender,
         teacher_username,
         organization_id,
+        master_role_id,
         is_support_user: is_support_user || false,
       });
       if (teacher) {
@@ -270,10 +287,10 @@ module.exports = function () {
 
   // Update profile route
   router.post("/teachers/update_profile", userMiddleware, async (req, res) => {
-    const { teacher, data } = req.body;
+    const { teacher, data, admin } = req.body;
     try {
       const updatedTeacher = await updateTeacherData(
-        { teacher_username: teacher.teacher_username },
+        { teacher_username: data.teacher_username },
         data
       );
 
@@ -475,8 +492,10 @@ module.exports = function () {
   router.delete("/teachers/:id", userMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { teacher } = req.body;
-      if (teacher && teacher.teacher_id == id) {
+      console.log("🚀 ~ file: teachers.js:480 ~ router.delete ~ id:", id)
+      const { teacher, admin } = req.body;
+      console.log("🚀 ~ file: teachers.js:482 ~ router.delete ~ teacher:", teacher)
+      if (teacher && (teacher.teacher_id == id || admin) ) {
         const deletedTeacher = await deleteTeacherData({ teacher_id: id });
         if (deletedTeacher) {
           res.status(200).json({

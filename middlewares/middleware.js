@@ -1,9 +1,10 @@
 const { verifyJwt } = require("../helpers/jwt");
-const { findTeacherByUsername } = require("../services/teacher");
-const { isAdmin, findStudentByUsername } = require("../services/user");
+const { findTeacherByUsername, isAdmin } = require("../services/teacher");
+const { findStudentByUsername } = require("../services/user");
 
 async function userMiddleware(req, res, next) {
   const jwtToken = req.get("Authorization");
+  console.log("🚀 ~ file: middleware.js:7 ~ userMiddleware ~ jwtToken:", jwtToken)
   if (jwtToken) {
     const tokenData = verifyJwt(jwtToken);
     if (tokenData) {

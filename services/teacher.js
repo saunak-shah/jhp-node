@@ -14,6 +14,8 @@ const teacherOutputData = {
   created_at: true,
   updated_at: true,
   organization_id: true,
+  is_support_user: true,
+  master_role_id: true,
 };
 
 async function createTeacherData(data) {
@@ -159,6 +161,20 @@ async function getTeachersCount(organization_id) {
   return teacherCount;
 }
 
+async function isAdmin(id, organization_id) {
+  const student = await prisma.teacher.findUnique({
+    where: {
+      teacher_id: id,
+      organization_id,
+    },
+  });
+
+  if (student.master_role_id == 1) {
+    return true;
+  }
+  return;
+}
+
 module.exports = {
   findTeacherByUsername,
   findTeacherByEmail,
@@ -169,5 +185,6 @@ module.exports = {
   createTeacherData,
   updateTeacherData,
   deleteTeacherData,
-  getTeachersCount
+  getTeachersCount,
+  isAdmin
 };
