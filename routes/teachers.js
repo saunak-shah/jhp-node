@@ -59,13 +59,9 @@ module.exports = function () {
     "/teachers/username/:username",
     userMiddleware,
     async (req, res) => {
-      console.log("🚀 ~ file: teachers.js:95 ~ res:", res);
-      console.log("🚀 ~ file: teachers.js:95 ~ req:", req);
       try {
         const { username } = req.params;
-        console.log("🚀 ~ file: teachers.js:97 ~ username:", username);
         const user = await findTeacherByUsername(username);
-        console.log("🚀 ~ file: teachers.js:88 ~ user:", user);
         if (user) {
           res.status(200).json({ message: "Teacher found", data: user });
         } else {
@@ -144,18 +140,6 @@ module.exports = function () {
         organization_id,
         master_role_id
       } = req.body;
-        console.log("🚀 ~ file: teachers.js:147 ~ router.post ~ teacher_first_name", teacher_first_name,
-        teacher_last_name,
-        teacher_phone_number,
-        teacher_address,
-        teacher_email,
-        teacher_password,
-        teacher_birth_date,
-        teacher_gender,
-        teacher_username,
-        is_support_user,
-        organization_id,
-        master_role_id)
 
       if (
         !teacher_first_name ||
@@ -492,9 +476,7 @@ module.exports = function () {
   router.delete("/teachers/:id", userMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      console.log("🚀 ~ file: teachers.js:480 ~ router.delete ~ id:", id)
       const { teacher, admin } = req.body;
-      console.log("🚀 ~ file: teachers.js:482 ~ router.delete ~ teacher:", teacher)
       if (teacher && (teacher.teacher_id == id || admin) ) {
         const deletedTeacher = await deleteTeacherData({ teacher_id: id });
         if (deletedTeacher) {
