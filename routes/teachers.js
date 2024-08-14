@@ -69,7 +69,7 @@ module.exports = function () {
       if (users && users.length > 0) {
         res.status(200).json({ message: "Teachers found", data: users });
       } else {
-        res.status(422).json({ message: "Teachers not found", data: null });
+        res.status(204).json({ message: "Teachers not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting teachers data:", error);
@@ -88,7 +88,7 @@ module.exports = function () {
         if (user) {
           res.status(200).json({ message: "Teacher found", data: user });
         } else {
-          res.status(422).json({ message: "Teacher not found", data: null });
+          res.status(204).json({ message: "Teacher not found", data: null });
         }
       } catch (error) {
         console.error("Error while getting teacher with unique id:", error);
@@ -105,7 +105,7 @@ module.exports = function () {
       if (teacher) {
         res.status(200).json({ message: "Teacher found", data: teacher });
       } else {
-        res.status(422).json({ message: "Teacher not found", data: null });
+        res.status(204).json({ message: "Teacher not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting teacher with id:", error);
@@ -476,7 +476,7 @@ module.exports = function () {
           res.status(500).json({ message: "Unable to delete teacher" });
         }
       } else {
-        res.status(422).json({ message: "Teacher not found" });
+        res.status(204).json({ message: "Teacher not found" });
       }
     } catch (error) {
       console.error("Error while getting teacher with unique id:", error);

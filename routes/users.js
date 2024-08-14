@@ -72,7 +72,7 @@ module.exports = function () {
       if (users && users.length > 0) {
         res.status(200).json({ message: "Users found", data: users });
       } else {
-        res.status(422).json({ message: "User not found", data: null });
+        res.status(204).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting users:", error);
@@ -88,7 +88,7 @@ module.exports = function () {
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {
-        res.status(422).json({ message: "User not found", data: null });
+        res.status(204).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
@@ -104,7 +104,7 @@ module.exports = function () {
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {
-        res.status(422).json({ message: "User not found", data: null });
+        res.status(204).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
@@ -661,7 +661,7 @@ You can log in using the below link:
           res.status(500).json({ message: "Unable to delete student" });
         }
       } else {
-        res.status(422).json({ message: "Student not found" });
+        res.status(204).json({ message: "Student not found" });
       }
     } catch (error) {
       console.error("Error while getting student with unique id:", error);

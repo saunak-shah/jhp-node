@@ -15,8 +15,10 @@ module.exports = function () {
   // Get all courses
   router.get("/courses/", userMiddleware, async (req, res) => {
     try {
-      const { student } = req.body;
-      const course = await getAllCourses(student.organization_id);
+      const { student, teacher } = req.body;
+
+      let organizationId = (student) ? student.organization_id : teacher.organization_id;
+      const course = await getAllCourses(organizationId);
       if (course) {
         res.status(200).json({
           message: `Fetched all courses`,
@@ -115,7 +117,7 @@ module.exports = function () {
     try {
       // Extract necessary data from request body
       const {
-        student,
+        teacher,
         course_name,
         file_url,
         course_date,
@@ -132,7 +134,7 @@ module.exports = function () {
       } = req.body;
 
       if (
-        !student ||
+        !teacher ||
         !course_name ||
         !file_url ||
         !course_date ||
@@ -173,8 +175,8 @@ module.exports = function () {
         registration_starting_date,
         registration_closing_date,
         category,
-        created_by: student.student_id,
-        organization_id: student.organization_id,
+        created_by: teacher.teacher_id,
+        organization_id: teacher.organization_id,
       });
 
       if (courseData) {
