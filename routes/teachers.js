@@ -136,7 +136,6 @@ module.exports = function () {
         teacher_birth_date,
         teacher_gender,
         teacher_username,
-        is_support_user,
         organization_id,
         master_role_id
       } = req.body;
@@ -198,7 +197,6 @@ module.exports = function () {
         teacher_username,
         organization_id,
         master_role_id,
-        is_support_user: is_support_user || false,
       });
       if (teacher) {
         //   // Sending mail

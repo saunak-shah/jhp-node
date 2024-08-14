@@ -14,7 +14,6 @@ const teacherOutputData = {
   created_at: true,
   updated_at: true,
   organization_id: true,
-  is_support_user: true,
   master_role_id: true,
 };
 
@@ -175,6 +174,34 @@ async function isAdmin(id, organization_id) {
   return;
 }
 
+async function isOnlyTeacher(id, organization_id) {
+  const student = await prisma.teacher.findUnique({
+    where: {
+      teacher_id: id,
+      organization_id,
+    },
+  });
+
+  if (student.master_role_id == 2) {
+    return true;
+  }
+  return;
+}
+
+async function isOnlySupportUser(id, organization_id) {
+  const student = await prisma.teacher.findUnique({
+    where: {
+      teacher_id: id,
+      organization_id,
+    },
+  });
+
+  if (student.master_role_id == 3) {
+    return true;
+  }
+  return;
+}
+
 module.exports = {
   findTeacherByUsername,
   findTeacherByEmail,
@@ -186,5 +213,7 @@ module.exports = {
   updateTeacherData,
   deleteTeacherData,
   getTeachersCount,
-  isAdmin
+  isAdmin,
+  isOnlySupportUser,
+  isOnlyTeacher
 };

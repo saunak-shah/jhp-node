@@ -104,7 +104,6 @@ model teacher {
   teacher_username                        String      @unique
   teacher_reset_password_token            String      @default("")
   teacher_reset_password_token_expiration DateTime    @default(now())
-  is_support_user                         Boolean     @default(false)
   created_at                              DateTime    @default(now()) @map("created_at")
   updated_at                              DateTime    @default(now()) @map("updated_at")
   master_role_id                          Int
