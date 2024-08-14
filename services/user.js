@@ -17,7 +17,7 @@ const studentOutputData = {
   organization_id: true,
   assigned_to: true,
   teacher: true,
-  register_no: true
+  register_no: true,
 };
 
 async function createStudentData(data) {
@@ -63,7 +63,7 @@ async function findStudentById(id) {
 async function findStudentByRegisterNumber(register_no) {
   const student = await prisma.student.findUnique({
     where: {
-      register_no
+      register_no,
     },
     select: studentOutputData,
   });
@@ -148,6 +148,16 @@ async function deleteStudentData(filter) {
   return;
 }
 
+async function getTotalStudentsCount() {
+  const studentCount = await prisma.student.count({
+    where: {
+      organization_id,
+    },
+  });
+
+  return studentCount;
+}
+
 async function getAllStudents(limit, offset, organization_id) {
   const student = await prisma.student.findMany({
     where: {
@@ -167,27 +177,12 @@ async function getAllStudents(limit, offset, organization_id) {
   return;
 }
 
-async function isAdmin(student_id, organization_id) {
-  const student = await prisma.master_role.findUnique({
-    where: {
-      master_role_id: student_id,
-      organization_id
-    },
-  });
-
-  if (student) {
-    return true;
-  }
-  return;
-}
-
-
 async function findStudentsAssignedToTeacherId(teacher_id) {
   const students = await prisma.student.findMany({
     where: {
-        assigned_to: teacher_id
+      assigned_to: teacher_id,
     },
-    select: studentOutputData
+    select: studentOutputData,
   });
 
   if (students) {
@@ -202,7 +197,7 @@ async function findStudentAssignedTeacher(student_id) {
       student_id,
     },
     select: {
-        teacher: true
+      teacher: true,
     },
   });
 
@@ -212,26 +207,40 @@ async function findStudentAssignedTeacher(student_id) {
   return;
 }
 
-async function getAllAssignees() {
+async function getAllAssignees(limit, offset) {
   const students = await prisma.student.findMany({
     where: {
       assigned_to: {
-        not: null
-      }
+        not: null,
+      },
     },
     select: {
       student_id: true,
-      assigned_to: true
+      assigned_to: true,
     },
     orderBy: {
       birth_date: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (students) {
     return students;
   }
   return;
+}
+
+async function getAllAssigneesCount() {
+  const studentsCount = await prisma.student.count({
+    where: {
+      assigned_to: {
+        not: null,
+      },
+    },
+  });
+
+  return studentsCount;
 }
 
 module.exports = {
@@ -245,8 +254,9 @@ module.exports = {
   createStudentData,
   updateStudentData,
   deleteStudentData,
-  isAdmin,
   findStudentsAssignedToTeacherId,
   findStudentAssignedTeacher,
-  getAllAssignees
+  getAllAssignees,
+  getTotalStudentsCount,
+  getAllAssigneesCount
 };

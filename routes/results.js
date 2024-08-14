@@ -8,6 +8,8 @@ const {
   getCourseScore,
   updateResult,
   deleteResult,
+  getAllResultsByCourseIdCount,
+  getAllResultsByUserIdCount,
 } = require("../services/result");
 const router = express.Router();
 
@@ -36,49 +38,68 @@ module.exports = function () {
   });
 
   // Get Result By Courses
-  router.get("/courses/result/:id", userMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
-    try {
-      const result = await getAllResultsByCourseId(id);
-      if (!result) {
-        res.status(422).json({
-          message: `No Result found`,
+  router.get(
+    "/courses/result/:id/:limit/:offset",
+    userMiddleware,
+    async (req, res) => {
+      const { id, limit, offset } = req.params;
+
+      try {
+        const resultCount = await getAllResultsByCourseIdCount();
+        const result = await getAllResultsByCourseId(id, limit, offset);
+        if (!result) {
+          res.status(422).json({
+            message: `No Result found`,
+          });
+          return;
+        }
+        res.status(200).json({
+          message: `Result found`,
+          data: {
+            result,
+            offset,
+            totalCount: resultCount,
+          },
         });
-        return;
+      } catch (error) {
+        console.error("Error getting results:", error);
+        res.status(500).json({
+          message: `Error while listing result - ${id}`,
+        });
       }
-      res.status(200).json({
-        message: `Result found`,
-        data: result,
-      });
-    } catch (error) {
-      console.error("Error getting results:", error);
-      res.status(500).json({
-        message: `Error while listing result - ${id}`,
-      });
     }
-  });
+  );
 
   // Get Result By Users
-  router.get("/students/result/:id", userMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
-    try {
-      const result = await getAllResultsByUserId(id);
-      if (!result) {
-        res.status(422).json({
-          message: `No Result found`,
+  router.get(
+    "/students/result/:limit/:offset",
+    userMiddleware,
+    async (req, res) => {
+      const { id, limit, offset } = req.params;
+      try {
+        const resultCount = await getAllResultsByUserIdCount();
+        const result = await getAllResultsByUserId(id, limit, offset);
+        if (!result) {
+          res.status(422).json({
+            message: `No Result found`,
+          });
+          return;
+        }
+        res.status(200).json({
+          message: `Result found`,
+          data: {
+            result,
+            offset,
+            totalCount: resultCount,
+          },
         });
-        return;
+      } catch (error) {
+        res.status(500).json({
+          message: `Error while listing result - ${id}: ${error}`,
+        });
       }
-      res.status(200).json({
-        message: `Result found`,
-        data: result,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: `Error while listing result - ${id}: ${error}`,
-      });
     }
-  });
+  );
 
   // only Admin
   // Create Result

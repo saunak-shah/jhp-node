@@ -1,3 +1,4 @@
+const { parse } = require("dotenv");
 const { prisma } = require("../prisma/client");
 
 const resultOutputData = {
@@ -38,7 +39,7 @@ async function createResult(data) {
 async function getCourseScore(registration_id) {
   const result = await prisma.student_apply_course.findUnique({
     where: {
-      student_apply_course_id: registration_id,
+      student_apply_course_id: parseInt(registration_id),
     },
     select: {
       course: {
@@ -61,7 +62,7 @@ async function getCourseScore(registration_id) {
 async function findResultByResultId(resultId) {
   const result = await prisma.result.findUnique({
     where: {
-      result_id: resultId,
+      result_id: parseInt(resultId),
     },
     select: resultOutputData,
   });
@@ -75,7 +76,7 @@ async function findResultByResultId(resultId) {
 async function findResultByRegistrationId(registration_id) {
   const result = await prisma.result.findUnique({
     where: {
-      student_apply_course_id: registration_id,
+      student_apply_course_id: parseInt(registration_id),
     },
     select: resultOutputData,
   });
@@ -86,12 +87,14 @@ async function findResultByRegistrationId(registration_id) {
   return;
 }
 
-async function getAllResults() {
+async function getAllResults(limit, offset) {
   const results = await prisma.user_apply_course.findMany({
     select: resultOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (results) {
@@ -100,17 +103,24 @@ async function getAllResults() {
   return;
 }
 
-async function getAllResultsByUserId(userId) {
+async function getAllResultsCount() {
+  const resultsCount = await prisma.user_apply_course.count();
+  return resultsCount;
+}
+
+async function getAllResultsByUserId(userId, limit, offset) {
   const results = await prisma.result.findMany({
     where: {
       student_apply_course: {
-        student_id: userId,
+        student_id: parseInt(userId),
       },
     },
     select: resultOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (results) {
@@ -119,23 +129,49 @@ async function getAllResultsByUserId(userId) {
   return;
 }
 
-async function getAllResultsByCourseId(courseId) {
+async function getAllResultsByUserIdCount(userId) {
+  const resultsCount = await prisma.result.count({
+    where: {
+      student_apply_course: {
+        student_id: parseInt(userId),
+      },
+    },
+  });
+
+  return resultsCount;
+}
+
+async function getAllResultsByCourseId(courseId, limit, offset) {
   const results = await prisma.result.findMany({
     where: {
       student_apply_course: {
-        course_id: courseId,
+        course_id: parseInt(courseId),
       },
     },
     select: resultOutputData,
     orderBy: {
       created_at: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset),
   });
 
   if (results) {
     return results;
   }
   return;
+}
+
+async function getAllResultsByCourseIdCount(courseId) {
+  const resultsCount = await prisma.result.count({
+    where: {
+      student_apply_course: {
+        course_id: parseInt(courseId),
+      },
+    },
+  });
+
+  return resultsCount;
 }
 
 async function updateResult(filter, data) {
@@ -168,8 +204,11 @@ module.exports = {
   deleteResult,
   findResultByRegistrationId,
   getAllResults,
+  getAllResultsCount,
   getAllResultsByCourseId,
+  getAllResultsByCourseIdCount,
   getAllResultsByUserId,
+  getAllResultsByUserIdCount,
   updateResult,
   findResultByResultId,
   getCourseScore,
