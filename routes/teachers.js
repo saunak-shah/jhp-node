@@ -137,7 +137,7 @@ module.exports = function () {
         teacher_gender,
         teacher_username,
         organization_id,
-        master_role_id
+        master_role_id,
       } = req.body;
 
       if (
@@ -150,7 +150,7 @@ module.exports = function () {
         !teacher_gender ||
         !teacher_username ||
         !organization_id ||
-        !teacher_address || 
+        !teacher_address ||
         !master_role_id
       ) {
         res
@@ -184,7 +184,6 @@ module.exports = function () {
 
       // hash password
       let encPassword = bcrypt.createHash(teacher_password);
-
       const teacher = await createTeacherData({
         teacher_first_name,
         teacher_last_name,
@@ -198,6 +197,7 @@ module.exports = function () {
         organization_id,
         master_role_id,
       });
+
       if (teacher) {
         //   // Sending mail
         // const subject = `Welcome to JHP Family`;
@@ -475,7 +475,7 @@ module.exports = function () {
     try {
       const id = parseInt(req.params.id);
       const { teacher, admin } = req.body;
-      if (teacher && (teacher.teacher_id == id || admin) ) {
+      if (teacher && (teacher.teacher_id == id || admin)) {
         const deletedTeacher = await deleteTeacherData({ teacher_id: id });
         if (deletedTeacher) {
           res.status(200).json({
