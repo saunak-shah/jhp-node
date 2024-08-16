@@ -8,6 +8,9 @@ const {
   deleteApplication,
   getAllApplicationsByUserId,
   getAllApplicationsByCourseId,
+  getAllApplicationsCount,
+  getAllApplicationsByUserIdCount,
+  getAllApplicationsByCourseIdCount,
 } = require("../services/applyForCourse");
 const { findCourseByCourseId } = require("../services/course");
 const router = express.Router();
@@ -15,25 +18,31 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all applications
-  router.get("/registrations/", userMiddleware, async (req, res) => {
-    try {
-      const registrations = await getAllApplications();
-      if (registrations) {
-        res.status(200).json({
-          message: `Fetched all registrations`,
-          data: registrations,
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch registrations`,
+  router.get(
+    "/registrations/:limit/:offset",
+    userMiddleware,
+    async (req, res) => {
+      try {
+        const { limit, offset } = req.params;
+        const totalRegistrationCount = await getAllApplicationsCount();
+        const registrations = await getAllApplications(limit, offset);
+        if (registrations) {
+          res.status(200).json({
+            message: `Fetched all registrations`,
+            data: { registrations, offset, totalCount: totalRegistrationCount },
+          });
+        } else {
+          res.status(422).json({
+            message: `Unable to fetch registrations`,
+          });
+        }
+      } catch (error) {
+        res.status(500).json({
+          message: `Internal Server Error while getting registrations: ${error}`,
         });
       }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting registrations: ${error}`,
-      });
     }
-  });
+  );
 
   // Get application by applicationId
   router.get("/registrations/:id", userMiddleware, async (req, res) => {
@@ -58,36 +67,46 @@ module.exports = function () {
   });
 
   // Get application by userId
-  router.get("/students/registrations/:id", userMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const registrations = await getAllApplicationsByUserId(id);
-      if (registrations) {
-        res.status(200).json({
-          message: `Fetched registrations`,
-          data: registrations,
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch applications`,
+  router.get(
+    "/students/registrations/:id/:limit/:offset",
+    userMiddleware,
+    async (req, res) => {
+      try {
+        const { id, limit, offset } = req.params;
+        const registrationCount = await getAllApplicationsByUserIdCount(id);
+        const registrations = await getAllApplicationsByUserId(
+          id,
+          limit,
+          offset
+        );
+        if (registrations) {
+          res.status(200).json({
+            message: `Fetched registrations`,
+            data: { registrations, totalCount: registrationCount, offset },
+          });
+        } else {
+          res.status(422).json({
+            message: `Unable to fetch applications`,
+          });
+        }
+      } catch (error) {
+        res.status(500).json({
+          message: `Internal Server Error while getting applications: ${error}`,
         });
       }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting applications: ${error}`,
-      });
     }
-  });
+  );
 
   // Get application by examId
-  router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
+  router.get("/courses/registrations/:id/:limit/:offset", userMiddleware, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const registrations = await getAllApplicationsByCourseId(id);
+      const {id, limit, offset} = req.params;
+      const totalUserCount = await getAllApplicationsByCourseIdCount(id);
+      const registrations = await getAllApplicationsByCourseId(id, limit, offset);
       if (registrations) {
         res.status(200).json({
           message: `Fetched registrations`,
-          registrations,
+          data: {registrations, offset, totalCount: totalUserCount},
         });
       } else {
         res.status(422).json({
@@ -107,22 +126,23 @@ module.exports = function () {
       // Extract necessary data from request body
       const { course_id, student } = req.body;
 
-      if(!course_id){
+      if (!course_id) {
         res.status(422).json({
           message: `Course Id not valid.`,
         });
-        return
+        return;
       }
 
       // select the exam which you want to give
       // after select the exam need to show information about exam like
       // generate unique exam id
       // check if already apply or not for requested exam
-      
+
       const course = await findCourseByCourseId(course_id);
       if (
         !course ||
-        course.registration_starting_date > new Date(Date.now()).toISOString() ||
+        course.registration_starting_date >
+          new Date(Date.now()).toISOString() ||
         course.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
         res.status(422).json({
@@ -130,12 +150,15 @@ module.exports = function () {
         });
       }
 
-      const isRegistered = await getAllApplicationsByUserIdAndCourseId(student.student_id, course_id)
-      if(isRegistered && isRegistered.length > 0){
+      const isRegistered = await getAllApplicationsByUserIdAndCourseId(
+        student.student_id,
+        course_id
+      );
+      if (isRegistered && isRegistered.length > 0) {
         res.status(500).json({
           message: `Already registered`,
         });
-        return
+        return;
       }
 
       const registration = await applyForCourse({
@@ -215,7 +238,9 @@ module.exports = function () {
           });
           return;
         }
-        const deletedApplication = await deleteApplication({ student_apply_course_id: id });
+        const deletedApplication = await deleteApplication({
+          student_apply_course_id: id,
+        });
         if (!deletedApplication) {
           res.status(500).json({
             message: `Unable to delete application.`,
@@ -224,7 +249,7 @@ module.exports = function () {
         }
         res.status(200).json({
           message: `Application deleted successfully`,
-          data: deletedApplication
+          data: deletedApplication,
         });
       } else {
         res.status(204).json({

@@ -48,7 +48,7 @@ async function findCourseByCourseId(courseId) {
   return;
 }
 
-async function getAllCourses(organization_id) {
+async function getAllCourses(organization_id, limit, offset) {
   const courses = await prisma.course.findMany({
     where: {
       organization_id
@@ -57,6 +57,8 @@ async function getAllCourses(organization_id) {
     orderBy: {
       course_date: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (courses) {
@@ -65,7 +67,17 @@ async function getAllCourses(organization_id) {
   return;
 }
 
-async function getAllPendingCourses() {
+async function getAllCoursesCount(organization_id) {
+  const coursesCount = await prisma.course.count({
+    where: {
+      organization_id
+    },
+  });
+
+  return coursesCount;
+}
+
+async function getAllPendingCourses(limit, offset) {
   const courses = await prisma.course.findMany({
     where: {
       course_date: {
@@ -76,12 +88,26 @@ async function getAllPendingCourses() {
     orderBy: {
       course_date: "asc",
     },
+    take: parseInt(limit),
+    skip: parseInt(offset)
   });
 
   if (courses) {
     return courses;
   }
   return;
+}
+
+async function getAllPendingCoursesCount() {
+  const coursesCount = await prisma.course.count({
+    where: {
+      course_date: {
+        gt: Date.now(),
+      },
+    },
+  });
+
+  return coursesCount;
 }
 
 async function updateCourse(filter, data) {
@@ -113,7 +139,9 @@ module.exports = {
   createCourse,
   findCourseByCourseId,
   getAllCourses,
+  getAllCoursesCount,
   updateCourse,
   deleteCourse,
   getAllPendingCourses,
+  getAllPendingCoursesCount
 };

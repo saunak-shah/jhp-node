@@ -12,6 +12,7 @@ const {
   deleteTeacherData,
   getAllTeachers,
   findTeacherById,
+  getTeachersCount,
 } = require("../services/teacher");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -53,30 +54,6 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
-
-  // Get teachers.
-  router.get("/teachers/:limit/:offset", userMiddleware, async (req, res) => {
-    try {
-      const { student, teacher } = req.body;
-
-      const {limit, offset} = req.params;
-
-      const users = await getAllTeachers(
-        limit,
-        offset,
-        student?.organization_id || teacher?.organization_id
-      );
-      if (users && users.length > 0) {
-        res.status(200).json({ message: "Teachers found", data: users });
-      } else {
-        res.status(204).json({ message: "Teachers not found", data: null });
-      }
-    } catch (error) {
-      console.error("Error while getting teachers data:", error);
-      res.status(500).send(`Internal Server Error: ${error}`);
-    }
-  });
-
   // Get teacher by username.
   router.get(
     "/teachers/username/:username",
@@ -96,6 +73,38 @@ module.exports = function () {
       }
     }
   );
+
+  // Get teachers.
+  router.get("/teachers/:limit/:offset", userMiddleware, async (req, res) => {
+    try {
+      const { student, teacher } = req.body;
+
+      const { limit, offset } = req.params;
+
+      const totalTeacherCount = await getTeachersCount();
+
+      const teachers = await getAllTeachers(
+        limit,
+        offset,
+        student?.organization_id || teacher?.organization_id
+      );
+      if (teachers && teachers.length > 0) {
+        res.status(200).json({
+          message: "Teachers found",
+          data: {
+            teachers,
+            offset,
+            totalCount: totalTeacherCount,
+          },
+        });
+      } else {
+        res.status(422).json({ message: "Teachers not found", data: null });
+      }
+    } catch (error) {
+      console.error("Error while getting teachers data:", error);
+      res.status(500).send(`Internal Server Error: ${error}`);
+    }
+  });
 
   // Get teacher by id.
   router.get("/teachers/:id", userMiddleware, async (req, res) => {
@@ -127,8 +136,8 @@ module.exports = function () {
         teacher_birth_date,
         teacher_gender,
         teacher_username,
-        is_support_user,
         organization_id,
+        master_role_id,
       } = req.body;
 
       if (
@@ -141,7 +150,8 @@ module.exports = function () {
         !teacher_gender ||
         !teacher_username ||
         !organization_id ||
-        !teacher_address
+        !teacher_address ||
+        !master_role_id
       ) {
         res
           .status(422)
@@ -174,7 +184,6 @@ module.exports = function () {
 
       // hash password
       let encPassword = bcrypt.createHash(teacher_password);
-
       const teacher = await createTeacherData({
         teacher_first_name,
         teacher_last_name,
@@ -186,8 +195,9 @@ module.exports = function () {
         teacher_gender,
         teacher_username,
         organization_id,
-        is_support_user: is_support_user || false,
+        master_role_id,
       });
+
       if (teacher) {
         //   // Sending mail
         // const subject = `Welcome to JHP Family`;
@@ -259,10 +269,10 @@ module.exports = function () {
 
   // Update profile route
   router.post("/teachers/update_profile", userMiddleware, async (req, res) => {
-    const { teacher, data } = req.body;
+    const { teacher, data, admin } = req.body;
     try {
       const updatedTeacher = await updateTeacherData(
-        { teacher_username: teacher.teacher_username },
+        { teacher_username: data.teacher_username },
         data
       );
 
@@ -464,8 +474,8 @@ module.exports = function () {
   router.delete("/teachers/:id", userMiddleware, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { teacher } = req.body;
-      if (teacher && teacher.teacher_id == id) {
+      const { teacher, admin } = req.body;
+      if (teacher && (teacher.teacher_id == id || admin)) {
         const deletedTeacher = await deleteTeacherData({ teacher_id: id });
         if (deletedTeacher) {
           res.status(200).json({
@@ -483,8 +493,6 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
-
-
 
   return router;
 };

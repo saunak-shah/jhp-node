@@ -7,6 +7,7 @@ const {
   findStudentsAssignedToTeacherId,
   findStudentAssignedTeacher,
   getAllAssignees,
+  getAllAssigneesCount,
 } = require("../services/user");
 const { findTeacherById } = require("../services/teacher");
 const router = express.Router();
@@ -67,9 +68,11 @@ module.exports = function () {
   );
 
   // Get Result By Users
-  router.get("/assignees/", userMiddleware, async (req, res) => {
+  router.get("/assignees/:limit/:offset", userMiddleware, async (req, res) => {
     try {
-      const assignees = await getAllAssignees();
+      const {limit, offset} = req.params
+      const totalAssigneeCount = await getAllAssigneesCount();
+      const assignees = await getAllAssignees(limit, offset);
       if (!assignees) {
         res.status(422).json({
           message: `Invalid data`,
@@ -78,7 +81,7 @@ module.exports = function () {
       }
       res.status(200).json({
         message: `Result found`,
-        data: assignees,
+        data: {assignees, offset, totalCount: totalAssigneeCount},
       });
     } catch (error) {
       res.status(500).json({

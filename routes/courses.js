@@ -5,6 +5,7 @@ const {
   findCourseByCourseId,
   updateCourse,
   deleteCourse,
+  getAllCoursesCount,
 } = require("../services/course");
 const { userMiddleware } = require("../middlewares/middleware");
 const { createApplication } = require("../services/applyForCourse");
@@ -13,16 +14,22 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all courses
-  router.get("/courses/", userMiddleware, async (req, res) => {
+  router.get("/courses/:limit/:offset", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
 
       let organizationId = (student) ? student.organization_id : teacher.organization_id;
-      const course = await getAllCourses(organizationId);
+      const { limit, offset } = req.params;
+      const courseCount = await getAllCoursesCount();
+      const course = await getAllCourses(
+        organizationId,
+        limit,
+        offset
+      );
       if (course) {
         res.status(200).json({
           message: `Fetched all courses`,
-          data: course,
+          data: { course, offset, totalCount: courseCount },
         });
       } else {
         res.status(422).json({
@@ -57,7 +64,7 @@ module.exports = function () {
       });
     }
   });
-  
+
   // Apply for course
   router.post("/courses/apply/:id", userMiddleware, async (req, res) => {
     try {
@@ -110,7 +117,7 @@ module.exports = function () {
     const { admin } = req.body;
     if (!admin) {
       res.status(403).json({
-        message: `Only admin`,
+        message: `You dont have access to add Exam. Please contact to admin.`,
       });
       return;
     }
@@ -155,12 +162,15 @@ module.exports = function () {
         return;
       }
 
+      console.log("777777777777", teacher)
       if (course_date < new Date(Date.now()).toISOString()) {
         res.status(422).json({
           message: `Course Date should be greater than today's date.`,
         });
         return;
       }
+      console.log("3333333333333333333", teacher)
+
       const courseData = await createCourse({
         course_name,
         file_url,
@@ -178,6 +188,7 @@ module.exports = function () {
         created_by: teacher.teacher_id,
         organization_id: teacher.organization_id,
       });
+      console.log("vvvvvvvvvvv")
 
       if (courseData) {
         res.status(200).json({
@@ -228,7 +239,7 @@ module.exports = function () {
         }
         res.status(200).json({
           message: `Course updated successfully`,
-          data: updatedCourse
+          data: updatedCourse,
         });
       } else {
         res.status(422).json({
@@ -270,7 +281,7 @@ module.exports = function () {
       }
       res.status(200).json({
         message: `Course deleted successfully`,
-        data: deletedCourse
+        data: deletedCourse,
       });
     } catch (error) {
       res.status(500).json({

@@ -14,12 +14,12 @@ const {
   getAllStudents,
   findStudentById,
   findStudentByRegisterNumber,
+  getTotalStudentsCount,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
 const { signJwt } = require("../helpers/jwt");
 const { userMiddleware } = require("../middlewares/middleware");
-const { generateFourDigitRandomNumber } = require("../helpers/randomNumber");
 const { getOrganization } = require("../services/organization");
 require("dotenv").config();
 
@@ -67,10 +67,17 @@ module.exports = function () {
       const users = await getAllStudents(
         limit,
         offset,
-        student.organization_id
+        student?.organization_id || teacher?.organization_id
       );
       if (users && users.length > 0) {
-        res.status(200).json({ message: "Users found", data: users });
+        res.status(200).json({
+          message: "Users found",
+          data: {
+            users: users,
+            offset,
+            totalCount: totalUserCount,
+          },
+        });
       } else {
         res.status(204).json({ message: "User not found", data: null });
       }
@@ -81,6 +88,24 @@ module.exports = function () {
   });
 
   // Get student by username.
+  router.get(
+    "/students/username/:username",
+    userMiddleware,
+    async (req, res) => {
+      try {
+        const { username } = req.params;
+        const user = await findStudentByUsername(username);
+        if (user) {
+          res.status(200).json({ message: "User found", data: user });
+        } else {
+          res.status(422).json({ message: "User not found", data: null });
+        }
+      } catch (error) {
+        console.error("Error while getting user with unique id:", error);
+        res.status(500).send(`Internal Server Error: ${error}`);
+      }
+    }
+  );
   router.get("/students/username/:username", userMiddleware, async (req, res) => {
     try {
       const { username } = req.params;
@@ -187,11 +212,12 @@ module.exports = function () {
         const isStudentExists = await findStudentByRegisterNumber(register_no);
         if (isStudentExists) {
           register_no =
-          organization.name.slice(0, 3) +
-          first_name[0] +
-          father_name[0] +
-          last_name[0] +
-          date + month;
+            organization.name.slice(0, 3) +
+            first_name[0] +
+            father_name[0] +
+            last_name[0] +
+            date +
+            month;
         } else {
           break;
         }
@@ -211,6 +237,7 @@ module.exports = function () {
         organization_id,
         register_no: register_no.toLocaleUpperCase(),
       });
+
       if (student) {
         const token = signJwt(student);
         if (token) {
@@ -321,9 +348,7 @@ You can log in using the below link:
   // Update profile route
   router.post("/students/update_profile", userMiddleware, async (req, res) => {
     const { student, data } = req.body;
-    const updateData = (({ password, student_id, username, ...o }) => o)(
-      data
-    );
+    const updateData = (({ password, student_id, username, ...o }) => o)(data);
     try {
       const updatedStudent = await updateStudentData(
         { username: student.username },
