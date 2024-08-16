@@ -25,22 +25,22 @@ async function userMiddleware(req, res, next) {
     if (tokenData) {
       let student, teacher;
       try {
-        student = await findStudentByUsername(tokenData.username);
-
-        if (!student) {
+        if(tokenData.username){
+          student = await findStudentByUsername(tokenData.username);
+        } else {
+          teacher = await findTeacherByUsername(tokenData.teacher_username);
+        }
+        /* if (!student) {
           res.status(500).json({ message: `Not student` });
           return;
-        }
+        } */
       } catch (e) {
-        teacher = await findTeacherByUsername(tokenData.teacher_username);
-        if (!teacher) {
-          res.status(500).json({ message: `Not teacher` });
+          res.status(500).json({ message: e });
           return;
-        }
       }
 
       const isUserAdmin = await isAdmin(
-        student?.student_id || teacher?.teacher_id
+        student?.student_id || teacher?.teacher_id, student?.organization_id || teacher?.organization_id
       );
       
       if (student || teacher) {

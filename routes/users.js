@@ -106,6 +106,7 @@ module.exports = function () {
       }
     }
   );
+
   router.get("/students/username/:username", userMiddleware, async (req, res) => {
     try {
       const { username } = req.params;
@@ -202,12 +203,13 @@ module.exports = function () {
       const month = moment(birth_date).format("MM");
 
       let register_no =
-      organization.name.slice(0, 3) +
-      first_name[0] +
-      father_name[0] +
-      last_name[0] +
-      date + month;
-      
+        organization.name.slice(0, 3) +
+        first_name[0] +
+        father_name[0] +
+        last_name[0] +
+        date +
+        month;
+
       while (true) {
         const isStudentExists = await findStudentByRegisterNumber(register_no);
         if (isStudentExists) {
