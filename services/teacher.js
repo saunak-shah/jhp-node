@@ -168,7 +168,7 @@ async function isAdmin(id, organization_id) {
     },
   });
 
-  if (student.master_role_id == 1) {
+  if (student?.master_role_id == 1) {
     return true;
   }
   return;

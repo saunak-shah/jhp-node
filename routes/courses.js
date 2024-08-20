@@ -212,6 +212,7 @@ module.exports = function () {
   // only Admin
   // Update Course
   router.post("/courses/:id", userMiddleware, async (req, res) => {
+    console.log("req.body========", req.body)
     const { admin, student } = req.body;
     const id = parseInt(req.params.id);
     if (!admin) {
@@ -221,14 +222,26 @@ module.exports = function () {
       return;
     }
     try {
-      const { data } = req.body;
+      const data  = {
+        course_name: req.body.course_name,
+        file_url: req.body.file_url,
+        course_date: req.body.course_date,
+        course_duration_in_hours: req.body.course_duration_in_hours,
+        course_description: req.body.course_description,
+        course_score: req.body.course_score,
+        course_location: req.body.course_location,
+        course_passing_score: req.body.course_passing_score,
+        course_max_attempts: req.body.course_max_attempts,
+        registration_starting_date: req.body.registration_starting_date,
+        registration_closing_date: req.body.registration_closing_date,
+      };
       const course = await findCourseByCourseId(id);
-      if (course.created_by != student.student_id) {
+      /* if (course?.created_by != student?.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
-      }
+      } */
       if (course) {
         const updatedCourse = await updateCourse({ course_id: id }, data);
         if (!updatedCourse) {
@@ -266,12 +279,12 @@ module.exports = function () {
     }
     try {
       const course = await findCourseByCourseId(id);
-      if (course.created_by != student.student_id) {
+      /* if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
-      }
+      } */
       const deletedCourse = await deleteCourse({ course_id: id });
       if (!deletedCourse) {
         res.status(500).json({

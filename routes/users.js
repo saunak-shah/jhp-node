@@ -283,15 +283,13 @@ You can log in using the below link:
         const isMailSent = await sendEmail(email, subject, text);
         if (!isMailSent) {
           console.error(`Unable to send mail`);
-        } else {
-          res.status(200).json({ message: "Signup successful", data: student });
         }
       } else {
-        res.status(500).send("Internal Server Error");
+        return res.status(500).json({ message: "An error occurred during signup. Please try again later"});
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      res.status(500).send("Internal Server Error");
+      return res.status(500).json({ message: "There is some error. Please try again."});
     }
   });
 
