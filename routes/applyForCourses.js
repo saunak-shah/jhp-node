@@ -254,7 +254,7 @@ module.exports = function () {
           data: deletedApplication,
         });
       } else {
-        res.status(422).json({
+        res.status(204).json({
           message: `Application not found`,
         });
       }

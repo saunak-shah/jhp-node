@@ -86,7 +86,7 @@ module.exports = function () {
           },
         });
       } else {
-        res.status(422).json({ message: "User not found", data: null });
+        res.status(204).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting users:", error);
@@ -114,6 +114,21 @@ module.exports = function () {
     }
   );
 
+  router.get("/students/username/:username", userMiddleware, async (req, res) => {
+    try {
+      const { username } = req.params;
+      const user = await findStudentByUsername(username);
+      if (user) {
+        res.status(200).json({ message: "User found", data: user });
+      } else {
+        res.status(204).json({ message: "User not found", data: null });
+      }
+    } catch (error) {
+      console.error("Error while getting user with unique id:", error);
+      res.status(500).send(`Internal Server Error: ${error}`);
+    }
+  });
+
   // Get student by id.
   router.get("/students/:id", userMiddleware, async (req, res) => {
     try {
@@ -122,7 +137,7 @@ module.exports = function () {
       if (user) {
         res.status(200).json({ message: "User found", data: user });
       } else {
-        res.status(422).json({ message: "User not found", data: null });
+        res.status(204).json({ message: "User not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
@@ -231,6 +246,7 @@ module.exports = function () {
         organization_id,
         register_no: register_no.toLocaleUpperCase(),
       });
+
       if (student) {
         const token = signJwt(student);
         if (token) {
@@ -274,15 +290,13 @@ You can log in using the below link:
         const isMailSent = await sendEmail(email, subject, text);
         if (!isMailSent) {
           console.error(`Unable to send mail`);
-        } else {
-          res.status(200).json({ message: "Signup successful", data: student });
         }
       } else {
-        res.status(500).send("Internal Server Error");
+        return res.status(500).json({ message: "An error occurred during signup. Please try again later"});
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      res.status(500).send("Internal Server Error");
+      return res.status(500).json({ message: "There is some error. Please try again."});
     }
   });
 
@@ -679,7 +693,7 @@ You can log in using the below link:
           res.status(500).json({ message: "Unable to delete student" });
         }
       } else {
-        res.status(422).json({ message: "Student not found" });
+        res.status(204).json({ message: "Student not found" });
       }
     } catch (error) {
       console.error("Error while getting student with unique id:", error);

@@ -147,7 +147,7 @@ module.exports = function () {
 
       if (isAssigned) {
         res.status(200).json({
-          message: `Student assigned successfully`,
+          message: `Teacher assigned successfully`,
           data: isAssigned,
         });
       } else {

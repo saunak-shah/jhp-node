@@ -16,11 +16,13 @@ module.exports = function () {
   // Get all courses
   router.get("/courses/:limit/:offset", userMiddleware, async (req, res) => {
     try {
-      const { student } = req.body;
+      const { student, teacher } = req.body;
+
+      let organizationId = (student) ? student.organization_id : teacher.organization_id;
       const { limit, offset } = req.params;
       const courseCount = await getAllCoursesCount();
       const course = await getAllCourses(
-        student.organization_id,
+        organizationId,
         limit,
         offset
       );
@@ -115,7 +117,7 @@ module.exports = function () {
     const { admin } = req.body;
     if (!admin) {
       res.status(403).json({
-        message: `Only admin`,
+        message: `You dont have access to add Exam. Please contact to admin.`,
       });
       return;
     }
@@ -160,12 +162,15 @@ module.exports = function () {
         return;
       }
 
+      console.log("777777777777", teacher)
       if (course_date < new Date(Date.now()).toISOString()) {
         res.status(422).json({
           message: `Course Date should be greater than today's date.`,
         });
         return;
       }
+      console.log("3333333333333333333", teacher)
+
       const courseData = await createCourse({
         course_name,
         file_url,
@@ -183,6 +188,7 @@ module.exports = function () {
         created_by: teacher.teacher_id,
         organization_id: teacher.organization_id,
       });
+      console.log("vvvvvvvvvvv")
 
       if (courseData) {
         res.status(200).json({
@@ -206,6 +212,7 @@ module.exports = function () {
   // only Admin
   // Update Course
   router.post("/courses/:id", userMiddleware, async (req, res) => {
+    console.log("req.body========", req.body)
     const { admin, student } = req.body;
     const id = parseInt(req.params.id);
     if (!admin) {
@@ -215,14 +222,26 @@ module.exports = function () {
       return;
     }
     try {
-      const { data } = req.body;
+      const data  = {
+        course_name: req.body.course_name,
+        file_url: req.body.file_url,
+        course_date: req.body.course_date,
+        course_duration_in_hours: req.body.course_duration_in_hours,
+        course_description: req.body.course_description,
+        course_score: req.body.course_score,
+        course_location: req.body.course_location,
+        course_passing_score: req.body.course_passing_score,
+        course_max_attempts: req.body.course_max_attempts,
+        registration_starting_date: req.body.registration_starting_date,
+        registration_closing_date: req.body.registration_closing_date,
+      };
       const course = await findCourseByCourseId(id);
-      if (course.created_by != student.student_id) {
+      /* if (course?.created_by != student?.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
-      }
+      } */
       if (course) {
         const updatedCourse = await updateCourse({ course_id: id }, data);
         if (!updatedCourse) {
@@ -260,12 +279,12 @@ module.exports = function () {
     }
     try {
       const course = await findCourseByCourseId(id);
-      if (course.created_by != student.student_id) {
+      /* if (course.created_by != student.student_id) {
         res.status(403).json({
           message: `Unable to update course while creator and updator is not same`,
         });
         return;
-      }
+      } */
       const deletedCourse = await deleteCourse({ course_id: id });
       if (!deletedCourse) {
         res.status(500).json({
