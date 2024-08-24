@@ -6,6 +6,37 @@ const appliedExamOutputData = {
   updated_at: true,
   course_id: true,
   student_id: true,
+  student: {
+    select: {
+      student_id: true,
+      first_name: true,
+      last_name: true,
+      father_name: true,
+      phone_number: true,
+      address: true,
+      email: true,
+      username: true,
+      register_no: true,
+    },
+  },
+  course: {
+    select: {
+      course_id: true,
+      course_name: true,
+      file_url: true,
+      course_date: true,
+      course_duration_in_hours: true,
+      course_description: true,
+      course_score: true,
+      course_location: true,
+      course_passing_score: true,
+      course_max_attempts: true,
+      is_active: true,
+      registration_starting_date: true,
+      registration_closing_date: true,
+      result_date: true,
+    },
+  },
 };
 
 async function applyForCourse(data) {
@@ -41,7 +72,7 @@ async function getAllApplications(limit, offset) {
       created_at: "asc",
     },
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (courses) {
@@ -65,7 +96,7 @@ async function getAllApplicationsByUserId(userId, limit, offset) {
       created_at: "asc",
     },
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (courses) {
@@ -94,7 +125,7 @@ async function getAllApplicationsByCourseId(examId, limit, offset) {
       created_at: "asc",
     },
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (courses) {

@@ -122,7 +122,7 @@ module.exports = function () {
     try {
       // Extract necessary data from request body
       const {
-        student,
+        teacher,
         course_name,
         file_url,
         course_date,
@@ -139,7 +139,7 @@ module.exports = function () {
       } = req.body;
 
       if (
-        !student ||
+        !teacher ||
         !course_name ||
         !file_url ||
         !course_date ||
@@ -180,8 +180,8 @@ module.exports = function () {
         registration_starting_date,
         registration_closing_date,
         category,
-        created_by: student.student_id,
-        organization_id: student.organization_id,
+        created_by: teacher.teacher_id,
+        organization_id: teacher.organization_id,
       });
 
       if (courseData) {

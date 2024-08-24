@@ -148,7 +148,7 @@ async function deleteStudentData(filter) {
   return;
 }
 
-async function getTotalStudentsCount() {
+async function getTotalStudentsCount(organization_id) {
   const studentCount = await prisma.student.count({
     where: {
       organization_id,
@@ -158,15 +158,18 @@ async function getTotalStudentsCount() {
   return studentCount;
 }
 
-async function getAllStudents(limit, offset, organization_id) {
+async function getAllStudents(
+  searchKey,
+  sortBy,
+  organization_id,
+  sortOrder = "asc",
+  limit = 100,
+  offset = 0,
+) {
   const student = await prisma.student.findMany({
-    where: {
-      organization_id,
-    },
+    where: buildWhereClause(organization_id, searchKey),
     select: studentOutputData,
-    orderBy: {
-      birth_date: "asc",
-    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
@@ -175,6 +178,82 @@ async function getAllStudents(limit, offset, organization_id) {
     return student;
   }
   return;
+}
+
+function buildWhereClause(organization_id, searchKey) {
+  let whereClause = {
+    
+  };
+
+  if (searchKey) {
+    whereClause = {
+      organization_id,
+      OR: [
+        {
+          first_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          last_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          address: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          phone_number: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          father_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          register_no: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+      ],
+    };
+  }
+
+  return whereClause;
+}
+
+function buildOrderClause(sortBy, sortOrder) {
+  let orderClause = {
+    birth_date: "asc",
+  };
+
+  if (!sortOrder) {
+    sortOrder = "asc";
+  }
+
+  if (sortBy) {
+    orderClause = {
+      [sortBy]: sortOrder,
+    };
+  }
+
+  return orderClause;
 }
 
 async function findStudentsAssignedToTeacherId(teacher_id) {
@@ -222,7 +301,7 @@ async function getAllAssignees(limit, offset) {
       birth_date: "asc",
     },
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (students) {
@@ -258,5 +337,5 @@ module.exports = {
   findStudentAssignedTeacher,
   getAllAssignees,
   getTotalStudentsCount,
-  getAllAssigneesCount
+  getAllAssigneesCount,
 };
