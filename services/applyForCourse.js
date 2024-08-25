@@ -86,45 +86,76 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
       OR: [
         {
           course: {
-            select: {
-              course_name: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
-            },
-          },
-        },
-
-        {
-          course: {
-            select: {
-              course_description: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            course_name: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           course: {
-            select: {
-              course_location: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            course_description: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           course: {
-            select: {
-              file_url: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            course_location: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
+        {
+          course: {
+            file_url: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          student: {
+            first_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            last_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            father_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            email: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            address: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        }
       ],
     };
   }
