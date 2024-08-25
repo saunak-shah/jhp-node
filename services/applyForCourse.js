@@ -85,33 +85,44 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
       ...whereClause,
       OR: [
         {
-          course_name: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            select: {
+              course_name: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+
+        {
+          course: {
+            select: {
+              course_description: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
           },
         },
         {
-          course_description: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            select: {
+              course_location: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
           },
         },
         {
-          course_location: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          category: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          file_url: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            select: {
+              file_url: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
           },
         },
       ],
