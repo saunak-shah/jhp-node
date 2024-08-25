@@ -16,41 +16,51 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get a student attendance data
-  router.get("/attendance/student/:student_id/:lowerDateLimit/:upperDateLimit", userMiddleware, async (req, res) => {
-    const { teacher } = req.body;
-    const {student_id, lowerDateLimit, upperDateLimit} = req.params
-    try {
-      const studentData = await findStudentById(parseInt(student_id));
-      if (
-        studentData.assigned_to &&
-        studentData.assigned_to != teacher.teacher_id
-      ) {
-        res.status(403).json({
-          message: `Only assigned teacher can fetch the attendance`,
+  router.get(
+    "/attendance/student/:student_id",
+    userMiddleware,
+    async (req, res) => {
+      const { teacher } = req.body;
+      const { student_id } = req.params;
+      const { lowerDateLimit, upperDateLimit } = req.query;
+
+      try {
+        const studentData = await findStudentById(parseInt(student_id));
+        if (
+          studentData.assigned_to &&
+          studentData.assigned_to != teacher.teacher_id
+        ) {
+          res.status(403).json({
+            message: `Only assigned teacher can fetch the attendance`,
+          });
+        }
+        const attendance = await getStudentAttendance(
+          parseInt(student_id),
+          lowerDateLimit,
+          upperDateLimit
+        );
+        if (!attendance) {
+          res.status(422).json({
+            message: `No attendance found`,
+          });
+          return;
+        }
+        res.status(200).json({
+          message: `Attendance found`,
+          data: attendance,
+        });
+      } catch (error) {
+        res.status(500).json({
+          message: `Error while giving attendance - ${error}`,
         });
       }
-      const attendance = await getStudentAttendance(parseInt(student_id), lowerDateLimit, upperDateLimit);
-      if (!attendance) {
-        res.status(422).json({
-          message: `No attendance found`,
-        });
-        return;
-      }
-      res.status(200).json({
-        message: `Attendance found`,
-        data: attendance,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: `Error while giving attendance - ${error}`,
-      });
     }
-  });
+  );
 
   // Get the attendance of all students assigned to some teacher_id
-  router.get("/attendance/:lowerDateLimit/:upperDateLimit", userMiddleware, async (req, res) => {
+  router.get("/attendance", userMiddleware, async (req, res) => {
     const { teacher } = req.body;
-    const {lowerDateLimit, upperDateLimit} = req.params
+    const { lowerDateLimit, upperDateLimit } = req.query;
 
     try {
       const attendance = await getAllStudentsAttendance(
@@ -77,9 +87,11 @@ module.exports = function () {
   });
 
   router.get("/attendance-summary", userMiddleware, async (req, res) => {
-    const {student} = req.body;
+    const { student } = req.body;
+    const { lowerDateLimit, upperDateLimit } = req.query;
+
     try {
-      const attendance = await getAttendanceCountByMonth(student.student_id);
+      const attendance = await getAttendanceCountByMonth(student.student_id, lowerDateLimit, upperDateLimit);
       if (!attendance) {
         res.status(422).json({
           message: `No attendance found`,
@@ -115,7 +127,10 @@ module.exports = function () {
         return;
       }
 
-      const attendanceData = await createAttendance(teacher.teacher_id, attendance);
+      const attendanceData = await createAttendance(
+        teacher.teacher_id,
+        attendance
+      );
 
       if (attendanceData) {
         res.status(200).json({
@@ -152,7 +167,10 @@ module.exports = function () {
         return;
       }
 
-      const attendanceData = await deleteAttendance(teacher.teacher_id, attendance);
+      const attendanceData = await deleteAttendance(
+        teacher.teacher_id,
+        attendance
+      );
 
       if (attendanceData) {
         res.status(200).json({

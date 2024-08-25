@@ -19,13 +19,13 @@ const courseOutputData = {
   result_date: true,
   created_by: true,
   category: true,
-  organization_id: true
+  organization_id: true,
 };
 
 async function createCourse(data) {
   const course = await prisma.course.create({
     data,
-    select: courseOutputData
+    select: courseOutputData,
   });
 
   if (course) {
@@ -48,17 +48,20 @@ async function findCourseByCourseId(courseId) {
   return;
 }
 
-async function getAllCourses(organization_id, limit, offset) {
+async function getAllCourses(
+  searchKey,
+  sortBy,
+  organization_id,
+  sortOrder = "asc",
+  limit = 100,
+  offset = 0
+) {
   const courses = await prisma.course.findMany({
-    where: {
-      organization_id
-    },
+    where: buildWhereClause(organization_id, searchKey),
     select: courseOutputData,
-    orderBy: {
-      course_date: "asc",
-    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (courses) {
@@ -67,10 +70,72 @@ async function getAllCourses(organization_id, limit, offset) {
   return;
 }
 
+function buildWhereClause(organization_id, searchKey) {
+  let whereClause;
+
+  if (searchKey) {
+    whereClause = {
+      organization_id,
+      OR: [
+        {
+          course_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          course_description: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          course_location: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          category: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          file_url: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+      ],
+    };
+  }
+
+  return whereClause;
+}
+
+function buildOrderClause(sortBy, sortOrder) {
+  let orderClause = {
+    course_date: "desc",
+  };
+
+  if (!sortOrder) {
+    sortOrder = "desc";
+  }
+
+  if (sortBy) {
+    orderClause = {
+      [sortBy]: sortOrder,
+    };
+  }
+
+  return orderClause;
+}
+
 async function getAllCoursesCount(organization_id) {
   const coursesCount = await prisma.course.count({
     where: {
-      organization_id
+      organization_id,
     },
   });
 
@@ -89,7 +154,7 @@ async function getAllPendingCourses(limit, offset) {
       course_date: "asc",
     },
     take: parseInt(limit),
-    skip: parseInt(offset)
+    skip: parseInt(offset),
   });
 
   if (courses) {
@@ -143,5 +208,5 @@ module.exports = {
   updateCourse,
   deleteCourse,
   getAllPendingCourses,
-  getAllPendingCoursesCount
+  getAllPendingCoursesCount,
 };
