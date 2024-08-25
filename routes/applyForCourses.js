@@ -20,9 +20,15 @@ module.exports = function () {
   // Get all applications
   router.get("/registrations", userMiddleware, async (req, res) => {
     try {
-      const { limit, offset } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
       const totalRegistrationCount = await getAllApplicationsCount();
-      const registrations = await getAllApplications(limit, offset);
+      const registrations = await getAllApplications(
+        searchKey,
+        sortBy,
+        sortOrder,
+        limit,
+        offset
+      );
       if (registrations) {
         res.status(200).json({
           message: `Fetched all registrations`,
@@ -69,10 +75,13 @@ module.exports = function () {
     async (req, res) => {
       try {
         const { id } = req.params;
-        const { limit, offset } = req.query;
+        const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
         const registrationCount = await getAllApplicationsByUserIdCount(id);
         const registrations = await getAllApplicationsByUserId(
+          searchKey,
+          sortBy,
           id,
+          sortOrder,
           limit,
           offset
         );
@@ -98,12 +107,16 @@ module.exports = function () {
   router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const { limit, offset } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
       const totalUserCount = await getAllApplicationsByCourseIdCount(id);
       const registrations = await getAllApplicationsByCourseId(
-        id,
-        limit,
-        offset
+        searchKey,
+          sortBy,
+          id,
+          sortOrder,
+          limit,
+          offset
       );
       if (registrations) {
         res.status(200).json({

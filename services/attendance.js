@@ -152,7 +152,7 @@ async function isStudentPresentOnDate(student_id, date) {
   return false;
 }
 
-async function getAttendanceCountByMonth(studentId){
+async function getAttendanceCountByMonth(studentId, lowerDateLimit, upperDateLimit){
   // Count data grouped by month
   const dataByMonth = await prisma.$queryRaw`
     SELECT
@@ -162,6 +162,7 @@ async function getAttendanceCountByMonth(studentId){
       "attendance"
     WHERE
       "student_id" = ${studentId}
+      AND "date" BETWEEN ${lowerDateLimit} AND ${upperDateLimit}
     GROUP BY
       month
     ORDER BY

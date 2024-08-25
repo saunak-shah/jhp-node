@@ -75,19 +75,28 @@ module.exports = function () {
   );
 
   // Get teachers.
-  router.get("/teachers/:limit/:offset", userMiddleware, async (req, res) => {
+  router.get("/teachers", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
 
-      const { limit, offset } = req.params;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const totalTeacherCount = await getTeachersCount();
+      const organization_id =
+        student && student?.organization_id
+          ? student?.organization_id
+          : teacher?.organization_id;
+
+      const totalTeacherCount = await getTeachersCount(organization_id);
 
       const teachers = await getAllTeachers(
+        searchKey,
+        sortBy,
+        organization_id,
+        sortOrder,
         limit,
-        offset,
-        student?.organization_id || teacher?.organization_id
+        offset
       );
+
       if (teachers && teachers.length > 0) {
         res.status(200).json({
           message: "Teachers found",

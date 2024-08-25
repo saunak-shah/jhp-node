@@ -20,8 +20,16 @@ module.exports = function () {
     userMiddleware,
     async (req, res) => {
       const teacher_id = parseInt(req.params.teacher_id);
+      const { searchKey, sortBy, sortOrder, limit, offset } = req.query;
       try {
-        const students = await findStudentsAssignedToTeacherId(teacher_id);
+        const students = await findStudentsAssignedToTeacherId(
+          searchKey,
+          sortBy,
+          teacher_id,
+          sortOrder,
+          limit,
+          offset
+        );
         if (!students) {
           res.status(422).json({
             message: `No student found`,
@@ -68,11 +76,23 @@ module.exports = function () {
   );
 
   // Get Result By Users
-  router.get("/assignees/:limit/:offset", userMiddleware, async (req, res) => {
+  router.get("/assignees", userMiddleware, async (req, res) => {
     try {
-      const {limit, offset} = req.params
-      const totalAssigneeCount = await getAllAssigneesCount();
-      const assignees = await getAllAssignees(limit, offset);
+      const { student, teacher } = req.body;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const organization_id =
+        student && student?.organization_id
+          ? student?.organization_id
+          : teacher?.organization_id;
+      const totalAssigneeCount = await getAllAssigneesCount(organization_id);
+      const assignees = await getAllAssignees(
+        searchKey,
+        sortBy,
+        organization_id,
+        sortOrder,
+        limit,
+        offset
+      );
       if (!assignees) {
         res.status(422).json({
           message: `Invalid data`,
@@ -81,7 +101,7 @@ module.exports = function () {
       }
       res.status(200).json({
         message: `Result found`,
-        data: {assignees, offset, totalCount: totalAssigneeCount},
+        data: { assignees, offset, totalCount: totalAssigneeCount },
       });
     } catch (error) {
       res.status(500).json({

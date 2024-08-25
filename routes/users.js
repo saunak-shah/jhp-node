@@ -62,25 +62,28 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sort, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const organization_id = student && student?.organization_id ? student?.organization_id : teacher?.organization_id
+      const organization_id =
+        student && student?.organization_id
+          ? student?.organization_id
+          : teacher?.organization_id;
       const totalUserCount = await getTotalStudentsCount(organization_id);
 
       const users = await getAllStudents(
         searchKey,
-        sort,
+        sortBy,
         organization_id,
         sortOrder,
         limit,
-        offset,
+        offset
       );
-      
+
       if (users && users.length > 0) {
         res.status(200).json({
           message: "Users found",
           data: {
-            users: users,
+            users,
             offset,
             totalCount: totalUserCount,
           },
@@ -113,21 +116,6 @@ module.exports = function () {
       }
     }
   );
-
-  router.get("/students/username/:username", userMiddleware, async (req, res) => {
-    try {
-      const { username } = req.params;
-      const user = await findStudentByUsername(username);
-      if (user) {
-        res.status(200).json({ message: "User found", data: user });
-      } else {
-        res.status(204).json({ message: "User not found", data: null });
-      }
-    } catch (error) {
-      console.error("Error while getting user with unique id:", error);
-      res.status(500).send(`Internal Server Error: ${error}`);
-    }
-  });
 
   // Get student by id.
   router.get("/students/:id", userMiddleware, async (req, res) => {
@@ -292,11 +280,17 @@ You can log in using the below link:
           console.error(`Unable to send mail`);
         }
       } else {
-        return res.status(500).json({ message: "An error occurred during signup. Please try again later"});
+        return res
+          .status(500)
+          .json({
+            message: "An error occurred during signup. Please try again later",
+          });
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      return res.status(500).json({ message: "There is some error. Please try again."});
+      return res
+        .status(500)
+        .json({ message: "There is some error. Please try again." });
     }
   });
 

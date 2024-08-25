@@ -131,15 +131,18 @@ async function deleteTeacherData(filter) {
   return;
 }
 
-async function getAllTeachers(limit, offset, organization_id) {
+async function getAllTeachers(
+  searchKey,
+  sortBy,
+  organization_id,
+  sortOrder = "asc",
+  limit = 100,
+  offset = 0
+) {
   const teacher = await prisma.teacher.findMany({
-    where: {
-      organization_id,
-    },
+    where: buildWhereClause(organization_id, searchKey),
     select: teacherOutputData,
-    orderBy: {
-      teacher_birth_date: "asc",
-    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
@@ -148,6 +151,74 @@ async function getAllTeachers(limit, offset, organization_id) {
     return teacher;
   }
   return;
+}
+
+function buildWhereClause(organization_id, searchKey) {
+  let whereClause;
+
+  if (searchKey) {
+    whereClause = {
+      organization_id,
+      OR: [
+        {
+          teacher_first_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          teacher_last_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          teacher_email: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          teacher_address: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          teacher_phone_number: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          teacher_username: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+      ],
+    };
+  }
+
+  return whereClause;
+}
+
+function buildOrderClause(sortBy, sortOrder) {
+  let orderClause = {
+    teacher_birth_date: "asc",
+  };
+
+  if (!sortOrder) {
+    sortOrder = "asc";
+  }
+
+  if (sortBy) {
+    orderClause = {
+      [sortBy]: sortOrder,
+    };
+  }
+
+  return orderClause;
 }
 
 async function getTeachersCount(organization_id) {
@@ -215,5 +286,5 @@ module.exports = {
   getTeachersCount,
   isAdmin,
   isOnlySupportUser,
-  isOnlyTeacher
+  isOnlyTeacher,
 };
