@@ -16,13 +16,21 @@ const router = express.Router();
 module.exports = function () {
   // Get all teacher's assignees
   router.get(
-    "/teachers/assignes/:teacher_id",
+    "/teachers/assignees/:teacher_id",
     userMiddleware,
     async (req, res) => {
       const teacher_id = parseInt(req.params.teacher_id);
+      const {student, teacher} = req.body;
+
+      const organization_id =
+      student && student?.organization_id
+        ? student?.organization_id
+        : teacher?.organization_id;
+
       const { searchKey, sortBy, sortOrder, limit, offset } = req.query;
       try {
         const students = await findStudentsAssignedToTeacherId(
+          organization_id,
           searchKey,
           sortBy,
           teacher_id,

@@ -47,6 +47,31 @@ module.exports = function () {
   });
 
   // Get application by applicationId
+  router.get("/registrations/check", userMiddleware, async (req, res) => {
+    try {
+      const { courseId, studentId } = req.query;
+      const registration = await getAllApplicationsByUserIdAndCourseId(
+        parseInt(studentId),
+        parseInt(courseId)
+      );
+      if (registration) {
+        res.status(200).json({
+          message: `Fetched registration`,
+          data: registration,
+        });
+      } else {
+        res.status(422).json({
+          message: `Unable to fetch registration`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error while getting registration: ${error}`,
+      });
+    }
+  });
+
+  // Get application by applicationId
   router.get("/registrations/:id", userMiddleware, async (req, res) => {
     try {
       const id = parseInt(parseInt(req.params.id));
@@ -112,11 +137,11 @@ module.exports = function () {
       const totalUserCount = await getAllApplicationsByCourseIdCount(id);
       const registrations = await getAllApplicationsByCourseId(
         searchKey,
-          sortBy,
-          id,
-          sortOrder,
-          limit,
-          offset
+        sortBy,
+        id,
+        sortOrder,
+        limit,
+        offset
       );
       if (registrations) {
         res.status(200).json({
@@ -170,7 +195,7 @@ module.exports = function () {
         course_id
       );
       if (isRegistered && isRegistered.length > 0) {
-        res.status(500).json({
+        res.status(422).json({
           message: `Already registered`,
         });
         return;

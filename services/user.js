@@ -279,6 +279,7 @@ function buildOrderClause(sortBy, sortOrder) {
 }
 
 async function findStudentsAssignedToTeacherId(
+  organization_id,
   searchKey,
   sortBy,
   teacher_id,
