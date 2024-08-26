@@ -18,31 +18,33 @@ const router = express.Router();
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all applications
-  router.get(
-    "/registrations/:limit/:offset",
-    userMiddleware,
-    async (req, res) => {
-      try {
-        const { limit, offset } = req.params;
-        const totalRegistrationCount = await getAllApplicationsCount();
-        const registrations = await getAllApplications(limit, offset);
-        if (registrations) {
-          res.status(200).json({
-            message: `Fetched all registrations`,
-            data: { registrations, offset, totalCount: totalRegistrationCount },
-          });
-        } else {
-          res.status(422).json({
-            message: `Unable to fetch registrations`,
-          });
-        }
-      } catch (error) {
-        res.status(500).json({
-          message: `Internal Server Error while getting registrations: ${error}`,
+  router.get("/registrations", userMiddleware, async (req, res) => {
+    try {
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const totalRegistrationCount = await getAllApplicationsCount();
+      const registrations = await getAllApplications(
+        searchKey,
+        sortBy,
+        sortOrder,
+        limit,
+        offset
+      );
+      if (registrations) {
+        res.status(200).json({
+          message: `Fetched all registrations`,
+          data: { registrations, offset, totalCount: totalRegistrationCount },
+        });
+      } else {
+        res.status(422).json({
+          message: `Unable to fetch registrations`,
         });
       }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error while getting registrations: ${error}`,
+      });
     }
-  );
+  });
 
   // Get application by applicationId
   router.get("/registrations/:id", userMiddleware, async (req, res) => {
@@ -68,14 +70,18 @@ module.exports = function () {
 
   // Get application by userId
   router.get(
-    "/students/registrations/:id/:limit/:offset",
+    "/students/registrations/:id",
     userMiddleware,
     async (req, res) => {
       try {
-        const { id, limit, offset } = req.params;
+        const { id } = req.params;
+        const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
         const registrationCount = await getAllApplicationsByUserIdCount(id);
         const registrations = await getAllApplicationsByUserId(
+          searchKey,
+          sortBy,
           id,
+          sortOrder,
           limit,
           offset
         );
@@ -98,15 +104,24 @@ module.exports = function () {
   );
 
   // Get application by examId
-  router.get("/courses/registrations/:id/:limit/:offset", userMiddleware, async (req, res) => {
+  router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const {id, limit, offset} = req.params;
+      const { id } = req.params;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
       const totalUserCount = await getAllApplicationsByCourseIdCount(id);
-      const registrations = await getAllApplicationsByCourseId(id, limit, offset);
+      const registrations = await getAllApplicationsByCourseId(
+        searchKey,
+          sortBy,
+          id,
+          sortOrder,
+          limit,
+          offset
+      );
       if (registrations) {
         res.status(200).json({
           message: `Fetched registrations`,
-          data: {registrations, offset, totalCount: totalUserCount},
+          data: { registrations, offset, totalCount: totalUserCount },
         });
       } else {
         res.status(422).json({

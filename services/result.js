@@ -1,5 +1,6 @@
 const { parse } = require("dotenv");
 const { prisma } = require("../prisma/client");
+const courses = require("../routes/courses");
 
 const resultOutputData = {
   result_id: true,
@@ -18,6 +19,17 @@ const resultOutputData = {
           category: true,
           course_score: true,
           course_passing_score: true,
+        },
+      },
+      student: {
+        select: {
+          first_name: true,
+          last_name: true,
+          phone_number: true,
+          father_name: true,
+          username: true,
+          register_no: true,
+          email: true,
         },
       },
     },
@@ -108,17 +120,18 @@ async function getAllResultsCount() {
   return resultsCount;
 }
 
-async function getAllResultsByUserId(userId, limit, offset) {
+async function getAllResultsByUserId(
+  searchKey,
+  sortBy,
+  userId,
+  sortOrder,
+  limit,
+  offset
+) {
   const results = await prisma.result.findMany({
-    where: {
-      student_apply_course: {
-        student_id: parseInt(userId),
-      },
-    },
+    where: buildWhereClause(userId, undefined, searchKey),
     select: resultOutputData,
-    orderBy: {
-      created_at: "asc",
-    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
@@ -141,17 +154,20 @@ async function getAllResultsByUserIdCount(userId) {
   return resultsCount;
 }
 
-async function getAllResultsByCourseId(courseId, limit, offset) {
+async function getAllResultsByCourseId(
+  searchKey,
+  sortBy,
+  courseId,
+  sortOrder,
+  limit,
+  offset
+) {
   const results = await prisma.result.findMany({
     where: {
-      student_apply_course: {
-        course_id: parseInt(courseId),
-      },
+      student_apply_course: buildWhereClause(undefined, courseId, searchKey),
     },
     select: resultOutputData,
-    orderBy: {
-      created_at: "asc",
-    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
@@ -160,6 +176,128 @@ async function getAllResultsByCourseId(courseId, limit, offset) {
     return results;
   }
   return;
+}
+
+function buildWhereClause(studentId, courseId, searchKey) {
+  let whereClause;
+
+  if (courseId) {
+    whereClause = {
+      course_id: parseInt(courseId),
+    };
+  } else if (studentId) {
+    whereClause = {
+      student_id: parseInt(studentId),
+    };
+  }
+
+  if (searchKey) {
+    whereClause = {
+      ...whereClause,
+      OR: [
+        {
+          student: {
+            select: {
+              first_name: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              last_name: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              father_name: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              phone_number: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              email: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              register_no: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              username: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+        {
+          student: {
+            select: {
+              address: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
+      ],
+    };
+  }
+
+  return whereClause;
+}
+
+function buildOrderClause(sortBy, sortOrder) {
+  let orderClause = {
+    created_at: "asc",
+  };
+
+  if (!sortOrder) {
+    sortOrder = "asc";
+  }
+
+  if (sortBy) {
+    orderClause = {
+      [sortBy]: sortOrder,
+    };
+  }
+
+  return orderClause;
 }
 
 async function getAllResultsByCourseIdCount(courseId) {
