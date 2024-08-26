@@ -31,18 +31,18 @@ async function createAttendance(teacher_id, attendance) {
     const attendanceDates = attendance[i].checked_dates;
 
     const student = await findStudentById(student_id);
-
     if (student.assigned_to != teacher_id) {
       throw new Error("Only assigned teacher can fill the attendance");
     }
 
     for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
+      const formateDate = moment(attendanceDate, 'DD/MM/YYYY').format()
       const attendance = await prisma.attendance.create({
         data: {
           student_id,
           teacher_id,
-          date: attendanceDate,
+          date: formateDate,
         },
         select: attendanceOutputData,
       });
