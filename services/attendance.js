@@ -1,5 +1,6 @@
 const { prisma } = require("../prisma/client");
 const { findStudentById } = require("./user");
+const moment = require("moment");
 
 const attendanceOutputData = {
   attendance_id: true,
@@ -8,6 +9,19 @@ const attendanceOutputData = {
   teacher_id: true,
   created_at: true,
   updated_at: true,
+  student:{
+    select: {
+      student_id: true,
+      first_name: true,
+      last_name: true,
+      father_name: true,
+      phone_number: true,
+      address: true,
+      email: true,
+      username: true,
+      register_no: true,
+    },
+  }
 };
 
 async function createAttendance(teacher_id, attendance) {
@@ -120,7 +134,7 @@ async function getAllStudentsAttendance(
     select: attendanceOutputData,
   });
 
-  if (attendance) {
+  /* if (attendance) {
     const attendances = {};
 
     for(let i = 0; i < attendance.length; i++) {
@@ -130,8 +144,25 @@ async function getAllStudentsAttendance(
 
     Object.keys(attendances).map((key) => attendances[key] = attendances[key].split(','))
     return attendances;
-  }
-  return;
+  } */
+  const groupedByStudent = attendance.reduce((acc, { date, student }) => {
+    const { student_id, first_name, last_name } = student;
+    const fullName = `${first_name} ${last_name}`;
+    if (!acc[student_id]) {
+      acc[student_id] = {
+        student_id,
+        name: fullName,
+        checked_dates: []
+      };
+    }
+    acc[student_id].checked_dates.push(moment(date).format('DD/MM/YYYY'));
+    return acc;
+  }, {});
+
+  const result = {
+    staff: Object.values(groupedByStudent)
+  };
+  return result;
 }
 
 async function isStudentPresentOnDate(student_id, date) {
