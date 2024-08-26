@@ -85,35 +85,77 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
       ...whereClause,
       OR: [
         {
-          course_name: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            course_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
           },
         },
         {
-          course_description: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            course_description: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
           },
         },
         {
-          course_location: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            course_location: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
           },
         },
         {
-          category: {
-            contains: searchKey,
-            mode: "insensitive",
+          course: {
+            file_url: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
           },
         },
         {
-          file_url: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
+          student: {
+            first_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
         },
+        {
+          student: {
+            last_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            father_name: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            email: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        },
+        {
+          student: {
+            address: {
+              contains: searchKey,
+              mode: "insensitive",
+            }
+          }
+        }
       ],
     };
   }

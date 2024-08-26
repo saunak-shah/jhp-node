@@ -154,11 +154,13 @@ async function getAllTeachers(
 }
 
 function buildWhereClause(organization_id, searchKey) {
-  let whereClause;
+  let whereClause = {
+    organization_id,
+  };
 
   if (searchKey) {
     whereClause = {
-      organization_id,
+      ...whereClause,
       OR: [
         {
           teacher_first_name: {
