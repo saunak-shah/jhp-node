@@ -96,12 +96,6 @@ function buildWhereClause(organization_id, searchKey) {
           },
         },
         {
-          category: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
           file_url: {
             contains: searchKey,
             mode: "insensitive",

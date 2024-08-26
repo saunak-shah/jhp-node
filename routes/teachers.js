@@ -107,7 +107,7 @@ module.exports = function () {
           },
         });
       } else {
-        res.status(422).json({ message: "Teachers not found", data: null });
+        res.status(204).json({ message: "Teachers not found", data: null });
       }
     } catch (error) {
       console.error("Error while getting teachers data:", error);
