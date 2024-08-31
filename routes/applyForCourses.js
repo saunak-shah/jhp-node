@@ -21,7 +21,7 @@ module.exports = function () {
   router.get("/registrations", userMiddleware, async (req, res) => {
     try {
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-      const totalRegistrationCount = await getAllApplicationsCount();
+      const totalRegistrationCount = await getAllApplicationsCount(searchKey);
       const registrations = await getAllApplications(
         searchKey,
         sortBy,
@@ -101,7 +101,7 @@ module.exports = function () {
       try {
         const { id } = req.params;
         const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-        const registrationCount = await getAllApplicationsByUserIdCount(id);
+        const registrationCount = await getAllApplicationsByUserIdCount(id, searchKey);
         const registrations = await getAllApplicationsByUserId(
           searchKey,
           sortBy,
@@ -134,7 +134,7 @@ module.exports = function () {
       const { id } = req.params;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const totalUserCount = await getAllApplicationsByCourseIdCount(id);
+      const totalUserCount = await getAllApplicationsByCourseIdCount(id, searchKey);
       const registrations = await getAllApplicationsByCourseId(
         searchKey,
         sortBy,

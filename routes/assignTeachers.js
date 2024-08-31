@@ -8,6 +8,7 @@ const {
   findStudentAssignedTeacher,
   getAllAssignees,
   getAllAssigneesCount,
+  findStudentsAssignedToTeacherIdCount,
 } = require("../services/user");
 const { findTeacherById } = require("../services/teacher");
 const router = express.Router();
@@ -29,6 +30,7 @@ module.exports = function () {
 
       const { searchKey, sortBy, sortOrder, limit, offset } = req.query;
       try {
+        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id);
         const students = await findStudentsAssignedToTeacherId(
           organization_id,
           searchKey,
@@ -46,7 +48,10 @@ module.exports = function () {
         }
         res.status(200).json({
           message: `Students found`,
-          data: students,
+          data: {
+            users: students,
+            totalCount: parseInt(totalCount)
+          },
         });
       } catch (error) {
         res.status(500).json({

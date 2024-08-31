@@ -223,11 +223,9 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
-async function getTeachersCount(organization_id) {
+async function getTeachersCount(organization_id, searchKey) {
   const teacherCount = await prisma.teacher.count({
-    where: {
-      organization_id,
-    },
+    where: buildWhereClause(organization_id, searchKey),
   });
 
   return teacherCount;

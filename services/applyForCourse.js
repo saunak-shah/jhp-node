@@ -202,8 +202,10 @@ async function getAllApplications(
   return;
 }
 
-async function getAllApplicationsCount() {
-  const applicationsCount = await prisma.student_apply_course.count();
+async function getAllApplicationsCount(searchKey) {
+  const applicationsCount = await prisma.student_apply_course.count({
+    where: buildWhereClause(searchKey)
+});
   return applicationsCount;
 }
 
@@ -229,11 +231,9 @@ async function getAllApplicationsByUserId(
   return;
 }
 
-async function getAllApplicationsByUserIdCount(userId) {
+async function getAllApplicationsByUserIdCount(userId, searchKey) {
   const coursesCount = await prisma.student_apply_course.count({
-    where: {
-      student_id: parseInt(userId),
-    },
+    where: buildWhereClause(searchKey, undefined, userId),
   });
 
   return coursesCount;
@@ -261,11 +261,9 @@ async function getAllApplicationsByCourseId(
   return;
 }
 
-async function getAllApplicationsByCourseIdCount(examId) {
+async function getAllApplicationsByCourseIdCount(examId, searchKey) {
   const coursesCount = await prisma.student_apply_course.count({
-    where: {
-      course_id: parseInt(examId),
-    },
+    where: buildWhereClause(searchKey, examId, undefined),
   });
 
   return coursesCount;

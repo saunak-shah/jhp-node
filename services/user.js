@@ -148,11 +148,9 @@ async function deleteStudentData(filter) {
   return;
 }
 
-async function getTotalStudentsCount(organization_id) {
+async function getTotalStudentsCount(organization_id, searchKey) {
   const studentCount = await prisma.student.count({
-    where: {
-      organization_id,
-    },
+    where: buildWhereClause(organization_id, searchKey),
   });
 
   return studentCount;
@@ -278,6 +276,21 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
+async function findStudentsAssignedToTeacherIdCount(
+  organization_id,
+  searchKey,
+  teacher_id,
+) {
+  const students = await prisma.student.count({
+    where: buildWhereClause(organization_id, searchKey, false, teacher_id),
+  });
+
+  if (students) {
+    return students;
+  }
+  return;
+}
+
 async function findStudentsAssignedToTeacherId(
   organization_id,
   searchKey,
@@ -373,6 +386,7 @@ module.exports = {
   updateStudentData,
   deleteStudentData,
   findStudentsAssignedToTeacherId,
+  findStudentsAssignedToTeacherIdCount,
   findStudentAssignedTeacher,
   getAllAssignees,
   getTotalStudentsCount,
