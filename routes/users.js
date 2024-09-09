@@ -68,7 +68,7 @@ module.exports = function () {
         student && student?.organization_id
           ? student?.organization_id
           : teacher?.organization_id;
-      const totalUserCount = await getTotalStudentsCount(organization_id);
+      const totalUserCount = await getTotalStudentsCount(organization_id, searchKey);
 
       const users = await getAllStudents(
         searchKey,
