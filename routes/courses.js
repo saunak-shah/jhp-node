@@ -22,7 +22,7 @@ module.exports = function () {
       const organizationId = student
         ? student.organization_id
         : teacher.organization_id;
-      const courseCount = await getAllCoursesCount(organizationId);
+      const courseCount = await getAllCoursesCount(organizationId, searchKey);
       const courses = await getAllCourses(
         searchKey,
         sortBy,

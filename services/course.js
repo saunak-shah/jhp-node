@@ -126,11 +126,9 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
-async function getAllCoursesCount(organization_id) {
+async function getAllCoursesCount(organization_id, searchKey) {
   const coursesCount = await prisma.course.count({
-    where: {
-      organization_id,
-    },
+    where: buildWhereClause(organization_id, searchKey),
   });
 
   return coursesCount;
