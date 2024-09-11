@@ -31,10 +31,9 @@ async function createAttendance(teacher_id, attendance) {
     const attendanceDates = attendance[i].checked_dates;
 
     const student = await findStudentById(student_id);
-    if (student.assigned_to != teacher_id) {
+    /* if (student.assigned_to != teacher_id) {
       throw new Error("Only assigned teacher can fill the attendance");
-    }
-
+    } */
     for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
       const formateDate = moment(attendanceDate, 'DD/MM/YYYY').format()
@@ -116,6 +115,47 @@ async function getStudentAttendance(
     };
   }
   return;
+}
+
+async function getAllStudentsAttendanceData(
+  teacher_id,
+  lowerDateLimit = new Date(Date.now - 7 * 24 * 60 * 60 * 1000),
+  upperDateLimit = new Date(Date.now),
+  studentIds
+) {
+  const attendance = await prisma.attendance.findMany({
+    where: {
+      teacher_id,
+      date: {
+        gte: lowerDateLimit,
+        lte: upperDateLimit,
+      },
+      teacher_id: {
+        in: studentIds
+      },
+  
+    },
+    select: attendanceOutputData,
+  });
+
+  const groupedByStudent = attendance.reduce((acc, { date, student }) => {
+    const { student_id, first_name, last_name } = student;
+    const fullName = `${first_name} ${last_name}`;
+    if (!acc[student_id]) {
+      acc[student_id] = {
+        student_id,
+        name: fullName,
+        checked_dates: []
+      };
+    }
+    acc[student_id].checked_dates.push(moment(date).format('DD/MM/YYYY'));
+    return acc;
+  }, {});
+
+  const result = {
+    staff: Object.values(groupedByStudent)
+  };
+  return result;
 }
 
 async function getAllStudentsAttendance(
@@ -214,5 +254,6 @@ module.exports = {
   isStudentPresentOnDate,
   getStudentAttendance,
   getAllStudentsAttendance,
-  getAttendanceCountByMonth
+  getAttendanceCountByMonth,
+  getAllStudentsAttendanceData
 };
