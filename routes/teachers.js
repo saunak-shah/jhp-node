@@ -253,6 +253,7 @@ module.exports = function () {
                 teacher_first_name: teacher.teacher_first_name,
                 teacher_last_name: teacher.teacher_last_name,
                 token: token,
+                master_role_id: teacher.master_role_id,
                 role_access: teacher.master_role?.role_access
               },
             });
