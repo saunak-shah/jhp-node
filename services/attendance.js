@@ -9,7 +9,7 @@ const attendanceOutputData = {
   teacher_id: true,
   created_at: true,
   updated_at: true,
-  student:{
+  student: {
     select: {
       student_id: true,
       first_name: true,
@@ -21,7 +21,7 @@ const attendanceOutputData = {
       username: true,
       register_no: true,
     },
-  }
+  },
 };
 
 async function createAttendance(teacher_id, attendance) {
@@ -36,7 +36,7 @@ async function createAttendance(teacher_id, attendance) {
     } */
     for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
-      const formateDate = moment(attendanceDate, 'DD/MM/YYYY').format()
+      const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
       const attendance = await prisma.attendance.create({
         data: {
           student_id,
@@ -79,8 +79,8 @@ async function deleteAttendance(teacher_id, attendance) {
         },
       });
 
-      if(attendanceData.count > 0){
-        attendances.push(attendance[i])
+      if (attendanceData.count > 0) {
+        attendances.push(attendance[i]);
       }
     }
   }
@@ -131,9 +131,8 @@ async function getAllStudentsAttendanceData(
         lte: upperDateLimit,
       },
       teacher_id: {
-        in: studentIds
+        in: studentIds,
       },
-  
     },
     select: attendanceOutputData,
   });
@@ -145,15 +144,15 @@ async function getAllStudentsAttendanceData(
       acc[student_id] = {
         student_id,
         name: fullName,
-        checked_dates: []
+        checked_dates: [],
       };
     }
-    acc[student_id].checked_dates.push(moment(date).format('DD/MM/YYYY'));
+    acc[student_id].checked_dates.push(moment(date).format("DD/MM/YYYY"));
     return acc;
   }, {});
 
   const result = {
-    staff: Object.values(groupedByStudent)
+    staff: Object.values(groupedByStudent),
   };
   return result;
 }
@@ -192,15 +191,15 @@ async function getAllStudentsAttendance(
       acc[student_id] = {
         student_id,
         name: fullName,
-        checked_dates: []
+        checked_dates: [],
       };
     }
-    acc[student_id].checked_dates.push(moment(date).format('DD/MM/YYYY'));
+    acc[student_id].checked_dates.push(moment(date).format("DD/MM/YYYY"));
     return acc;
   }, {});
 
   const result = {
-    staff: Object.values(groupedByStudent)
+    staff: Object.values(groupedByStudent),
   };
   return result;
 }
@@ -223,7 +222,11 @@ async function isStudentPresentOnDate(student_id, date) {
   return false;
 }
 
-async function getAttendanceCountByMonth(studentId, lowerDateLimit, upperDateLimit){
+async function getAttendanceCountByMonth(
+  studentId,
+  lowerDateLimit,
+  upperDateLimit
+) {
   // Count data grouped by month
   const dataByMonth = await prisma.$queryRaw`
     SELECT
@@ -240,13 +243,56 @@ async function getAttendanceCountByMonth(studentId, lowerDateLimit, upperDateLim
       month ASC;
   `;
 
-  for(let i = 0; i < dataByMonth.length; i++){
-    dataByMonth[i].monthNumber = new Date(dataByMonth[i].month).getMonth() + 1
-    dataByMonth[i].count = Number(dataByMonth[i].count)
+  for (let i = 0; i < dataByMonth.length; i++) {
+    dataByMonth[i].monthNumber = new Date(dataByMonth[i].month).getMonth() + 1;
+    dataByMonth[i].count = Number(dataByMonth[i].count);
   }
 
-  return dataByMonth
+  return dataByMonth;
 }
+
+async function getAttendanceCountByAnyMonth(formatDate, teacher) {
+
+  let dataByMonth;
+  if(teacher && teacher.master_role_id === 2){
+    dataByMonth = await prisma.$queryRaw`
+      SELECT 
+        a.student_id,
+        s.first_name,
+        s.last_name,
+        COUNT(*)::integer AS attendance_count
+      FROM
+        attendance as a
+      LEFT JOIN student s on s.student_id = a.student_id
+      WHERE 
+        date_trunc('month', a.date) = date_trunc('month', ${formatDate}::date)
+        AND teacher_id = ${teacher.teacher_id}
+      GROUP BY 
+        a.student_id, s.first_name, s.last_name
+      ORDER BY
+        a.student_id`;
+  } else{
+    dataByMonth = await prisma.$queryRaw`
+      SELECT 
+        a.student_id,
+        s.first_name,
+        s.last_name,
+        COUNT(*)::integer AS attendance_count
+      FROM
+        attendance as a
+      LEFT JOIN student s on s.student_id = a.student_id
+      WHERE 
+        date_trunc('month', a.date) = date_trunc('month', ${formatDate}::date)
+      GROUP BY 
+        a.student_id, s.first_name, s.last_name
+      ORDER BY
+        a.student_id`;
+  }
+  
+
+  return dataByMonth;
+}
+
 
 module.exports = {
   createAttendance,
@@ -255,5 +301,6 @@ module.exports = {
   getStudentAttendance,
   getAllStudentsAttendance,
   getAttendanceCountByMonth,
-  getAllStudentsAttendanceData
+  getAllStudentsAttendanceData,
+  getAttendanceCountByAnyMonth
 };

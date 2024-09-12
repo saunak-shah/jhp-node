@@ -8,7 +8,9 @@ const {
   deleteAttendance,
   getAttendanceCountByMonth,
   getAllStudentsAttendanceData,
+  getAttendanceCountByAnyMonth
 } = require("../services/attendance");
+const moment = require("moment");
 
 const { findStudentById, getAllStudents } = require("../services/user");
 
@@ -148,6 +150,32 @@ module.exports = function () {
         });
         return;
       }
+      res.status(200).json({
+        message: `attendance found`,
+        data: attendance,
+      });
+    } catch (error) {
+      console.error("Error getting attendance:", error);
+      res.status(500).json({
+        message: `Error while fetching attendance - ${error}`,
+      });
+    }
+  });
+
+  router.post("/attendance_report", userMiddleware, async (req, res) => {
+    const { teacher, dateMonth } = req.body;
+
+    let formatDate = moment(dateMonth).format("YYYY-MM-DD")    
+    try {
+      let attendance = await getAttendanceCountByAnyMonth(formatDate, teacher);
+      
+      if (!attendance) {
+        res.status(422).json({
+          message: `No attendance found`,
+        });
+        return;
+      }
+
       res.status(200).json({
         message: `attendance found`,
         data: attendance,
