@@ -227,25 +227,28 @@ async function getAttendanceCountByMonth(
   lowerDateLimit,
   upperDateLimit
 ) {
+  lowerDateLimit = moment().subtract(5, 'month').startOf('month').format()
+  upperDateLimit = moment().format()
   // Count data grouped by month
   const dataByMonth = await prisma.$queryRaw`
     SELECT
       DATE_TRUNC('month', "date") AS month,
-      COUNT(*) AS count
+      COUNT(*) AS attendance_count
     FROM
       "attendance"
     WHERE
       "student_id" = ${studentId}
-      AND "date" BETWEEN ${lowerDateLimit} AND ${upperDateLimit}
+      AND "date" BETWEEN CAST(${lowerDateLimit} AS timestamp) AND CAST(${upperDateLimit} AS timestamp) 
     GROUP BY
       month
     ORDER BY
-      month ASC;
+      month DESC;
   `;
 
   for (let i = 0; i < dataByMonth.length; i++) {
+    dataByMonth[i].month = moment(dataByMonth[i].month).format('MMM YYYY');
     dataByMonth[i].monthNumber = new Date(dataByMonth[i].month).getMonth() + 1;
-    dataByMonth[i].count = Number(dataByMonth[i].count);
+    dataByMonth[i].attendance_count = Number(dataByMonth[i].attendance_count);
   }
 
   return dataByMonth;
