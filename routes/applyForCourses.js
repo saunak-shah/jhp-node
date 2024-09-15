@@ -134,7 +134,7 @@ module.exports = function () {
       const { id } = req.params;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const totalUserCount = await getAllApplicationsByCourseIdCount(id, searchKey);
+      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
       const registrations = await getAllApplicationsByCourseId(
         searchKey,
         sortBy,
@@ -146,7 +146,7 @@ module.exports = function () {
       if (registrations) {
         res.status(200).json({
           message: `Fetched registrations`,
-          data: { registrations, offset, totalCount: totalUserCount },
+          data: { registrations, offset, totalCount: registrationCount },
         });
       } else {
         res.status(422).json({
