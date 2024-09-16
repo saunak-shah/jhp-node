@@ -11,6 +11,7 @@ const {
   getAllApplicationsCount,
   getAllApplicationsByUserIdCount,
   getAllApplicationsByCourseIdCount,
+  getAllApplicationsByCourseIdToDownload,
 } = require("../services/applyForCourse");
 const { findCourseByCourseId } = require("../services/course");
 const router = express.Router();
@@ -136,6 +137,38 @@ module.exports = function () {
 
       const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
       const registrations = await getAllApplicationsByCourseId(
+        searchKey,
+        sortBy,
+        id,
+        sortOrder,
+        limit,
+        offset
+      );
+      if (registrations) {
+        res.status(200).json({
+          message: `Fetched registrations`,
+          data: { registrations, offset, totalCount: registrationCount },
+        });
+      } else {
+        res.status(422).json({
+          message: `Unable to fetch registrations`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error while getting applications: ${error}`,
+      });
+    }
+  });
+
+  // Get application by examId
+  router.get("/download/courses/registrations/:id", userMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
+      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
+      const registrations = await getAllApplicationsByCourseIdToDownload(
         searchKey,
         sortBy,
         id,
