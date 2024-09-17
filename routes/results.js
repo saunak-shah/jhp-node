@@ -10,6 +10,7 @@ const {
   deleteResult,
   getAllResultsByCourseIdCount,
   getAllResultsByUserIdCount,
+  getAllResultsByCourseIdToDownload,
 } = require("../services/result");
 const router = express.Router();
 
@@ -40,7 +41,6 @@ module.exports = function () {
   // Get Result By Courses
   router.get("/courses/result/:id", userMiddleware, async (req, res) => {
     const { id } = req.params;
-
     const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
     try {
@@ -53,6 +53,45 @@ module.exports = function () {
         limit,
         offset
       );
+
+      if (!result) {
+        res.status(422).json({
+          message: `No Result found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `Result found`,
+        data: {
+          result,
+          offset,
+          totalCount: resultCount,
+        },
+      });
+    } catch (error) {
+      console.error("Error getting results:", error);
+      res.status(500).json({
+        message: `Error while listing result - ${id}`,
+      });
+    }
+  });
+
+  // Get Result By Courses
+  router.get("/download/courses/result/:id", userMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
+    try {
+      const resultCount = await getAllResultsByCourseIdCount(id);
+      const result = await getAllResultsByCourseIdToDownload(
+        searchKey,
+        sortBy,
+        id,
+        sortOrder,
+        limit,
+        offset
+      );
+
       if (!result) {
         res.status(422).json({
           message: `No Result found`,
