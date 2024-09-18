@@ -121,41 +121,41 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
             first_name: {
               contains: searchKey,
               mode: "insensitive",
-            }
-          }
+            },
+          },
         },
         {
           student: {
             last_name: {
               contains: searchKey,
               mode: "insensitive",
-            }
-          }
+            },
+          },
         },
         {
           student: {
             father_name: {
               contains: searchKey,
               mode: "insensitive",
-            }
-          }
+            },
+          },
         },
         {
           student: {
             email: {
               contains: searchKey,
               mode: "insensitive",
-            }
-          }
+            },
+          },
         },
         {
           student: {
             address: {
               contains: searchKey,
               mode: "insensitive",
-            }
-          }
-        }
+            },
+          },
+        },
       ],
     };
   }
@@ -204,8 +204,8 @@ async function getAllApplications(
 
 async function getAllApplicationsCount(searchKey) {
   const applicationsCount = await prisma.student_apply_course.count({
-    where: buildWhereClause(searchKey)
-});
+    where: buildWhereClause(searchKey),
+  });
   return applicationsCount;
 }
 
@@ -257,6 +257,62 @@ async function getAllApplicationsByCourseId(
 
   if (applications) {
     return applications;
+  }
+  return;
+}
+
+async function getAllApplicationsByCourseIdToDownload(
+  searchKey,
+  sortBy,
+  examId,
+  sortOrder = "asc",
+  limit = 100,
+  offset = 0
+) {
+  const applications = await prisma.student_apply_course.findMany({
+    where: buildWhereClause(searchKey, examId, undefined),
+    select: {
+      student_apply_course_id: true,
+      created_at: true,
+      updated_at: true,
+      student: {
+        select: {
+          first_name: true,
+          last_name: true,
+          phone_number: true,
+          email: true,
+          gender: true
+        },
+      },
+      course: {
+        select: {
+          course_name: true,
+        },
+      },
+    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
+    take: parseInt(limit),
+    skip: parseInt(offset),
+  });
+
+  const data = [];
+  for(let i = 0; i < applications.length; i++){
+    const application = applications[i];
+    data.push({
+      registration_id: application.student_apply_course_id,
+      created_at: application.created_at,
+      updated_at: application.updated_at,
+      student_name: application.student.first_name + application.student.last_name,
+      course: application.course.course_name,
+      phone_number: application.student.phone_number,
+      email: application.student.email,
+      gender: application.student.gender,
+    })
+  }
+
+  if (data && data.length > 0) {
+    console.log("🚀 ~ file: applyForCourse.js:334 ~ data:", data)
+    return data;
   }
   return;
 }
@@ -321,6 +377,7 @@ module.exports = {
   getAllApplicationsByCourseIdCount,
   getAllApplicationsByUserId,
   getAllApplicationsByUserIdCount,
+  getAllApplicationsByCourseIdToDownload,
   updateApplication,
   deleteApplication,
   getAllApplicationsByUserIdAndCourseId,

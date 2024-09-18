@@ -1,6 +1,4 @@
-const { parse } = require("dotenv");
 const { prisma } = require("../prisma/client");
-const courses = require("../routes/courses");
 
 const resultOutputData = {
   result_id: true,
@@ -8,6 +6,8 @@ const resultOutputData = {
   updated_at: true,
   student_apply_course_id: true,
   score: true,
+  course_passing_score: true,
+  course_score: true,
   creator_id: true,
   student_apply_course: {
     select: {
@@ -173,6 +173,66 @@ async function getAllResultsByCourseId(
   });
 
   if (results) {
+    return results;
+  }
+  return;
+}
+
+async function getAllResultsByCourseIdToDownload(
+  searchKey,
+  sortBy,
+  courseId,
+  sortOrder,
+  limit,
+  offset
+) {
+  const results = await prisma.result.findMany({
+    where: {
+      student_apply_course: buildWhereClause(undefined, courseId, searchKey),
+    },
+    select: {
+      result_id: true,
+      student_apply_course: {
+        select: {
+          course: {
+            select: {
+              course_name: true,
+            },
+          },
+          student: {
+            select: {
+              first_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+      score: true,
+      course_passing_score: true,
+      course_score: true,
+      created_at: true,
+      updated_at: true,
+      student_apply_course_id: true,
+    },
+    orderBy: buildOrderClause(sortBy, sortOrder),
+    take: parseInt(limit),
+    skip: parseInt(offset),
+  });
+
+  const data = []
+
+  if (results) {
+    for(let i = 0; i < results.length; i++){
+      data.push({
+        result_id: results[i].result_id,
+        student_apply_course_id: results[i].student_apply_course_id,
+        student_name: results[i].student_apply_course.student.first_name + " " + results[i].student_apply_course.student.last_name,
+        course_name: results[i].student_apply_course.course.course_name,
+        score: results[i].score,
+        course_score: results[i].course_score,
+        course_passing_score: results[i].course_passing_score,
+      })
+    }
     return results;
   }
   return;
@@ -345,6 +405,7 @@ module.exports = {
   getAllResultsCount,
   getAllResultsByCourseId,
   getAllResultsByCourseIdCount,
+  getAllResultsByCourseIdToDownload,
   getAllResultsByUserId,
   getAllResultsByUserIdCount,
   updateResult,
