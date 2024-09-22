@@ -310,6 +310,40 @@ module.exports = function () {
     }
   });
 
+  // Update profile route
+  router.post("/teachers/update_my_profile", userMiddleware, async (req, res) => {
+    const { teacher, data, admin } = req.body;
+    try {
+      const updatedTeacher = await updateTeacherData(
+        { teacher_id: teacher.teacher_id },
+        data
+      );
+
+      if (updatedTeacher) {
+        const data = (({
+          teacher_password,
+          teacher_id,
+          teacher_username,
+          ...o
+        }) => o)(updatedTeacher);
+        res.status(200).json({
+          message: `Teacher profile updated successfully.`,
+          data: {
+            user: data,
+          },
+        });
+      } else {
+        res.status(422).json({
+          message: `Invalid data`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error: ${error}`,
+      });
+    }
+  });
+
   // Change password
   router.post("/teachers/change_password", userMiddleware, async (req, res) => {
     const { teacher, oldPassword, newPassword } = req.body;
