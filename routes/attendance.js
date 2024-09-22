@@ -139,12 +139,41 @@ module.exports = function () {
     const { lowerDateLimit, upperDateLimit } = req.query;
 
     try {
+      let result = [];
+      // let current = moment("2024-09"); // Setting to September 2024 for the given scenario
+
+      for (let i = 0; i < 7; i++) {
+        const monthName = current.format("MMM YYYY");
+        const monthNumber = current.month() + 1; // moment.js month is zero-indexed, add 1 for a 1-indexed result
+        result.push({
+          month: monthName,
+          attendance_count: 0,
+          monthNumber: monthNumber
+        });
+        // Move to the previous month
+        // current.subtract(1, 'months');
+      }
+
+      result.reverse();
+    
       const attendance = await getAttendanceCountByMonth(
         student.student_id,
         lowerDateLimit,
         upperDateLimit
       );
-      if (!attendance) {
+      // Loop through the result array
+      result.forEach(resultItem => {
+        // Find if there's a corresponding month in the attendance array
+        const attendanceItem = attendance.find(item => item.month === resultItem.month);
+
+        // If found, update the attendance_count of the result item
+        if (attendanceItem) {
+          resultItem.attendance_count = attendanceItem.attendance_count;
+        }
+      });
+      result.reverse();
+      
+      if (!result) {
         res.status(422).json({
           message: `No attendance found`,
         });
@@ -152,7 +181,7 @@ module.exports = function () {
       }
       res.status(200).json({
         message: `attendance found`,
-        data: attendance,
+        data: result,
       });
     } catch (error) {
       console.error("Error getting attendance:", error);
