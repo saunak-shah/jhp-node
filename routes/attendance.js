@@ -7,9 +7,12 @@ const {
   createAttendance,
   deleteAttendance,
   getAttendanceCountByMonth,
+  getAllStudentsAttendanceData,
+  getAttendanceCountByAnyMonth
 } = require("../services/attendance");
+const moment = require("moment");
 
-const { findStudentById } = require("../services/user");
+const { findStudentById, getAllStudents } = require("../services/user");
 
 const router = express.Router();
 
@@ -59,24 +62,69 @@ module.exports = function () {
 
   // Get the attendance of all students assigned to some teacher_id
   router.get("/attendance", userMiddleware, async (req, res) => {
-    const { teacher } = req.body;
-    const { lowerDateLimit, upperDateLimit } = req.query;
+    const { student, teacher } = req.body;
+    const {
+      lowerDateLimit,
+      upperDateLimit,
+      limit,
+      searchKey,
+      offset,
+      sortBy,
+      sortOrder,
+    } = req.query;
 
     try {
-      const attendance = await getAllStudentsAttendance(
+      const organization_id =
+        student && student?.organization_id
+          ? student?.organization_id
+          : teacher?.organization_id;
+
+      let users = await getAllStudents(
+        searchKey,
+        sortBy,
+        organization_id,
+        sortOrder,
+        limit,
+        offset
+      );
+
+      users = users.map((user) => ({
+        ...user,
+        checked_dates: [],
+      }));
+
+      const studentIds = users.map((e) => e.student_id);
+
+      const attendanceData = await getAllStudentsAttendanceData(
         teacher.teacher_id,
         lowerDateLimit,
-        upperDateLimit
+        upperDateLimit,
+        studentIds
       );
-      if (!attendance) {
-        res.status(422).json({
-          message: `No attendance found`,
-        });
-        return;
-      }
-      res.status(200).json({
+
+      users.forEach((user) => {
+        user.name = user.first_name + " " + user.last_name;
+        // Find the matching staff member based on student_id
+        if (attendanceData.staff && attendanceData.staff.length > 0) {
+          let staffMember = attendanceData.staff.find(
+            (staff) => staff.student_id === user.student_id
+          );
+          if (staffMember) {
+            // If found, push all dates from staffMember.checked_dates into user.checked_dates
+            user.checked_dates.push(...staffMember.checked_dates);
+          }
+        }
+      });
+
+      // Dummy response
+      /* const attendance = [{
+      student_id: 1,
+      name: "saunak shah",
+      checked_dates: []
+    }] */
+      return res.status(200).json({
         message: `attendance found`,
-        data: attendance,
+        data: users,
       });
     } catch (error) {
       console.error("Error getting attendance:", error);
@@ -91,13 +139,72 @@ module.exports = function () {
     const { lowerDateLimit, upperDateLimit } = req.query;
 
     try {
-      const attendance = await getAttendanceCountByMonth(student.student_id, lowerDateLimit, upperDateLimit);
+      let result = [];
+      // let current = moment("2024-09"); // Setting to September 2024 for the given scenario
+
+      for (let i = 0; i < 7; i++) {
+        const monthName = current.format("MMM YYYY");
+        const monthNumber = current.month() + 1; // moment.js month is zero-indexed, add 1 for a 1-indexed result
+        result.push({
+          month: monthName,
+          attendance_count: 0,
+          monthNumber: monthNumber
+        });
+        // Move to the previous month
+        // current.subtract(1, 'months');
+      }
+
+      result.reverse();
+    
+      const attendance = await getAttendanceCountByMonth(
+        student.student_id,
+        lowerDateLimit,
+        upperDateLimit
+      );
+      // Loop through the result array
+      result.forEach(resultItem => {
+        // Find if there's a corresponding month in the attendance array
+        const attendanceItem = attendance.find(item => item.month === resultItem.month);
+
+        // If found, update the attendance_count of the result item
+        if (attendanceItem) {
+          resultItem.attendance_count = attendanceItem.attendance_count;
+        }
+      });
+      result.reverse();
+      
+      if (!result) {
+        res.status(422).json({
+          message: `No attendance found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `attendance found`,
+        data: result,
+      });
+    } catch (error) {
+      console.error("Error getting attendance:", error);
+      res.status(500).json({
+        message: `Error while fetching attendance - ${error}`,
+      });
+    }
+  });
+
+  router.post("/attendance_report", userMiddleware, async (req, res) => {
+    const { teacher, dateMonth } = req.body;
+
+    let formatDate = moment(dateMonth).format("YYYY-MM-DD")    
+    try {
+      let attendance = await getAttendanceCountByAnyMonth(formatDate, teacher);
+      
       if (!attendance) {
         res.status(422).json({
           message: `No attendance found`,
         });
         return;
       }
+
       res.status(200).json({
         message: `attendance found`,
         data: attendance,

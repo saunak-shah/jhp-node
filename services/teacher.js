@@ -15,7 +15,11 @@ const teacherOutputData = {
   updated_at: true,
   organization_id: true,
   master_role_id: true,
-  master_role: true
+  master_role: {
+    select: {
+      role_access: true,
+    },
+  },
 };
 
 async function createTeacherData(data) {

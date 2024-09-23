@@ -178,7 +178,7 @@ module.exports = function () {
         return;
       }
 
-      if (password.length <= 4 || password.length >= 12) {
+      if (password.length < 4 || password.length >= 12) {
         res
           .status(422)
           .send("Password length should be between 4 to 12 characters.");

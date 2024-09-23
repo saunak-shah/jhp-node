@@ -176,7 +176,7 @@ module.exports = function () {
         return;
       }
 
-      if (teacher_password.length <= 4 || teacher_password.length >= 12) {
+      if (teacher_password.length < 4 || teacher_password.length >= 12) {
         res
           .status(422)
           .send("Password length should be between 4 to 12 characters.");
@@ -253,7 +253,8 @@ module.exports = function () {
                 teacher_first_name: teacher.teacher_first_name,
                 teacher_last_name: teacher.teacher_last_name,
                 token: token,
-                role_access: teacher.master_role.role_access
+                master_role_id: teacher.master_role_id,
+                role_access: teacher.master_role?.role_access
               },
             });
           } else {
