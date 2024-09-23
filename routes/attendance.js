@@ -140,7 +140,7 @@ module.exports = function () {
 
     try {
       let result = [];
-      // let current = moment("2024-09"); // Setting to September 2024 for the given scenario
+      let current = moment(); // Setting to September 2024 for the given scenario
 
       for (let i = 0; i < 7; i++) {
         const monthName = current.format("MMM YYYY");
@@ -151,7 +151,7 @@ module.exports = function () {
           monthNumber: monthNumber
         });
         // Move to the previous month
-        // current.subtract(1, 'months');
+        current.subtract(1, 'months');
       }
 
       result.reverse();
