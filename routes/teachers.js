@@ -187,7 +187,7 @@ module.exports = function () {
         !validateEmail(teacher_email) ||
         !validatePhoneNumber(teacher_phone_number)
       ) {
-        res.status(422).send("Invalid data");
+        res.status(422).json({ message: "Invalid email or phone number." });
         return;
       }
 
@@ -218,7 +218,7 @@ module.exports = function () {
         res.status(200).json({ message: "Signup successful", data: teacher });
         // }
       } else {
-        res.status(500).send("Internal Server Error");
+        res.status(500).json({ message: "There is some error with server."});
       }
     } catch (error) {
       console.error("Error during signup:", error);
