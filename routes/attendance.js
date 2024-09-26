@@ -8,8 +8,11 @@ const {
   deleteAttendance,
   getAttendanceCountByMonth,
   getAllStudentsAttendanceData,
-  getAttendanceCountByAnyMonth
+  getAttendanceCountByAnyMonth,
 } = require("../services/attendance");
+const {
+  findStudentsAssignedToTeacherId,
+} = require("../services/user");
 const moment = require("moment");
 
 const { findStudentById, getAllStudents } = require("../services/user");
@@ -79,14 +82,28 @@ module.exports = function () {
           ? student?.organization_id
           : teacher?.organization_id;
 
-      let users = await getAllStudents(
-        searchKey,
-        sortBy,
-        organization_id,
-        sortOrder,
-        limit,
-        offset
-      );
+      let users = [];
+      // teacher login
+      if(teacher.master_role_id === 2){
+        users = await findStudentsAssignedToTeacherId(
+          organization_id,
+          searchKey,
+          sortBy,
+          teacher.teacher_id,
+          sortOrder,
+          limit,
+          offset
+        );
+      } else {
+        users = await getAllStudents(
+          searchKey,
+          sortBy,
+          organization_id,
+          sortOrder,
+          limit,
+          offset
+        );
+      }
 
       users = users.map((user) => ({
         ...user,
@@ -96,7 +113,7 @@ module.exports = function () {
       const studentIds = users.map((e) => e.student_id);
 
       const attendanceData = await getAllStudentsAttendanceData(
-        teacher.teacher_id,
+        teacher,
         lowerDateLimit,
         upperDateLimit,
         studentIds
@@ -115,13 +132,6 @@ module.exports = function () {
           }
         }
       });
-
-      // Dummy response
-      /* const attendance = [{
-      student_id: 1,
-      name: "saunak shah",
-      checked_dates: []
-    }] */
       return res.status(200).json({
         message: `attendance found`,
         data: users,
