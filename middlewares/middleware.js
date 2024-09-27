@@ -26,9 +26,9 @@ async function userMiddleware(req, res, next) {
       let student, teacher;
       try {
         if(tokenData.username){
-          student = await findStudentByUsername(tokenData.username);
+          student = await findStudentByUsername(tokenData.username.toLowerCase());
         } else {
-          teacher = await findTeacherByUsername(tokenData.teacher_username);
+          teacher = await findTeacherByUsername(tokenData.teacher_username.toLowerCase());
         }
         /* if (!student) {
           res.status(500).json({ message: `Not student` });

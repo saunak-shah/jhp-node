@@ -44,7 +44,7 @@ module.exports = function () {
   router.get("/students/check_username/:username", async (req, res) => {
     try {
       const { username } = req.params;
-      const isUsernamePresent = await findStudentByUsername(username);
+      const isUsernamePresent = await findStudentByUsername(username.toLowerCase());
       if (isUsernamePresent) {
         res
           .status(422)
@@ -104,7 +104,7 @@ module.exports = function () {
     async (req, res) => {
       try {
         const { username } = req.params;
-        const user = await findStudentByUsername(username);
+        const user = await findStudentByUsername(username.toLowerCase());
         if (user) {
           res.status(200).json({ message: "User found", data: user });
         } else {
@@ -170,7 +170,7 @@ module.exports = function () {
         return;
       }
 
-      const isUsernamePresent = await findStudentByUsername(username);
+      const isUsernamePresent = await findStudentByUsername(username.toLowerCase());
       if (isUsernamePresent) {
         res
           .status(422)
@@ -242,7 +242,7 @@ module.exports = function () {
             message: `Signup successful for student`,
             data: {
               student_id: student.student_id,
-              username: student.username,
+              username: student.username.toLowerCase(),
               first_name: student.first_name,
               last_name: student.last_name,
               register_no: student.register_no,
@@ -266,7 +266,7 @@ Hello ${student.first_name}
                 
 Thank you for registering with us. Below are your login details. Please keep them secure and do not share them with anyone.
 
-<b>Username:</b> ${student.username} 
+<b>Username:</b> ${student.username.toLowerCase()} 
 <b>Password:</b> ${password} 
                 
 You can log in using the below link: 
@@ -304,7 +304,7 @@ You can log in using the below link:
       return;
     }
     try {
-      const student = await findStudentByUsername(username);
+      const student = await findStudentByUsername(username.toLowerCase());
       if (student) {
         const isValidPassword = bcrypt.isValidPassword(
           student.password,
@@ -317,7 +317,7 @@ You can log in using the below link:
               message: `Login successful for student`,
               data: {
                 student_id: student.student_id,
-                username: student.username,
+                username: student.username.toLowerCase(),
                 first_name: student.first_name,
                 last_name: student.last_name,
                 register_no: student.register_no,
@@ -352,7 +352,7 @@ You can log in using the below link:
     const updateData = (({ password, student_id, username, ...o }) => o)(data);
     try {
       const updatedStudent = await updateStudentData(
-        { username: student.username },
+        { username: student.username.toLowerCase() },
         updateData
       );
       if (updatedStudent) {
@@ -433,14 +433,14 @@ You can log in using the below link:
   router.post("/students/forgot_password", async (req, res) => {
     const { username, email } = req.body;
     try {
-      const studentByUsername = await findStudentByUsername(username);
+      const studentByUsername = await findStudentByUsername(username.toLowerCase());
       if (
         studentByUsername &&
         studentByUsername.email.toLowerCase() == email.toLowerCase()
       ) {
         const token = crypto.randomBytes(20).toString("hex");
         const updatedStudent = await updateStudentData(
-          { username },
+          { username: username.toLowerCase() },
           {
             reset_password_token: token,
             reset_password_token_expiration: new Date(
@@ -530,7 +530,7 @@ You can log in using the below link:
       const updatedStudent = await updateStudentData(
         {
           reset_password_token: token,
-          username,
+          username: username.toLowerCase(),
         },
         {
           password: bcrypt.createHash(password),

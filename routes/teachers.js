@@ -41,7 +41,7 @@ module.exports = function () {
   router.get("/teachers/check_username/:username", async (req, res) => {
     try {
       const { username } = req.params;
-      const isUsernamePresent = await findTeacherByUsername(username);
+      const isUsernamePresent = await findTeacherByUsername(username.toLowerCase());
       if (isUsernamePresent) {
         res
           .status(422)
@@ -61,7 +61,7 @@ module.exports = function () {
     async (req, res) => {
       try {
         const { username } = req.params;
-        const user = await findTeacherByUsername(username);
+        const user = await findTeacherByUsername(username.toLowerCase());
         if (user) {
           res.status(200).json({ message: "Teacher found", data: user });
         } else {
@@ -168,7 +168,7 @@ module.exports = function () {
         return;
       }
 
-      const isUsernamePresent = await findTeacherByUsername(teacher_username);
+      const isUsernamePresent = await findTeacherByUsername(teacher_username.toLowerCase());
       if (isUsernamePresent) {
         res
           .status(422)
@@ -202,7 +202,7 @@ module.exports = function () {
         teacher_password: encPassword,
         teacher_birth_date,
         teacher_gender,
-        teacher_username,
+        teacher_username: teacher_username.toLowerCase(),
         organization_id,
         master_role_id,
       });
@@ -236,7 +236,7 @@ module.exports = function () {
       return;
     }
     try {
-      const teacher = await findTeacherByUsername(username);
+      const teacher = await findTeacherByUsername(username.toLowerCase());
       if (teacher) {
         const isValidPassword = bcrypt.isValidPassword(
           teacher.teacher_password,
@@ -249,7 +249,7 @@ module.exports = function () {
               message: `Login successful for teacher`,
               data: {
                 teacher_id: teacher.teacher_id,
-                teacher_username: teacher.teacher_username,
+                teacher_username: teacher.teacher_username.toLowerCase(),
                 teacher_first_name: teacher.teacher_first_name,
                 teacher_last_name: teacher.teacher_last_name,
                 token: token,
@@ -283,7 +283,7 @@ module.exports = function () {
     const { teacher, data, admin } = req.body;
     try {
       const updatedTeacher = await updateTeacherData(
-        { teacher_username: data.teacher_username },
+        { teacher_username: data.teacher_username.toLowerCase() },
         data
       );
 
@@ -395,14 +395,14 @@ module.exports = function () {
   router.post("/teachers/forgot_password", async (req, res) => {
     const { username, email } = req.body;
     try {
-      const teacherByUsername = await findTeacherByUsername(username);
+      const teacherByUsername = await findTeacherByUsername(username.toLowerCase());
       if (
         teacherByUsername &&
         teacherByUsername.teacher_email.toLowerCase() == email.toLowerCase()
       ) {
         const token = crypto.randomBytes(20).toString("hex");
         const updatedTeacher = await updateTeacherData(
-          { teacher_username: username },
+          { teacher_username: username.toLowerCase() },
           {
             teacher_reset_password_token: token,
             teacher_reset_password_token_expiration: new Date(
@@ -492,7 +492,7 @@ module.exports = function () {
       const updatedTeacherData = await updateTeacherData(
         {
           teacher_reset_password_token: token,
-          teacher_username: username,
+          teacher_username: username.toLowerCase(),
         },
         {
           teacher_password: bcrypt.createHash(password),
