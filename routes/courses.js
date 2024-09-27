@@ -218,7 +218,7 @@ module.exports = function () {
     const id = parseInt(req.params.id);
     if (!admin) {
       res.status(403).json({
-        message: `Only admin`,
+        message: `Only admin can update exam course.`,
       });
       return;
     }
