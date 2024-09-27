@@ -95,8 +95,8 @@ model teacher {
   teacher_id                              Int         @id @default(autoincrement())
   teacher_first_name                      String
   teacher_last_name                       String
-  teacher_phone_number                    String      @unique
-  teacher_email                           String      @unique
+  teacher_phone_number                    String      
+  teacher_email                           String      
   teacher_address                         String
   teacher_password                        String      @unique
   teacher_birth_date                      DateTime
