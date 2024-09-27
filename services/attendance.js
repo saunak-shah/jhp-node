@@ -30,23 +30,28 @@ async function createAttendance(teacher_id, attendance) {
     const student_id = attendance[i].student_id;
     const attendanceDates = attendance[i].checked_dates;
 
-    const student = await findStudentById(student_id);
     /* if (student.assigned_to != teacher_id) {
       throw new Error("Only assigned teacher can fill the attendance");
     } */
     for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
-      const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
-      const attendance = await prisma.attendance.create({
-        data: {
-          student_id,
-          teacher_id,
-          date: formateDate,
-        },
-        select: attendanceOutputData,
-      });
 
-      attendances.push(attendance);
+      let startDate = moment(attendanceDate, 'DD/MM/YYYY').startOf('day').format();
+      let endDate = moment(attendanceDate, 'DD/MM/YYYY').endOf('day').format();
+      // check with date and student_id if data exist then ignore it.
+      const studentDate = await getAttendanceDateForStudent(student_id, startDate, endDate);
+      if(studentDate && studentDate.length <= 0){
+        const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
+        const attendance = await prisma.attendance.create({
+          data: {
+            student_id,
+            teacher_id,
+            date: formateDate,
+          },
+          select: attendanceOutputData,
+        });
+        attendances.push(attendance);
+      }
     }
   }
 
@@ -88,6 +93,26 @@ async function deleteAttendance(teacher_id, attendance) {
   return attendances;
 }
 
+async function getAttendanceDateForStudent(
+  student_id, startDate, endDate
+) {
+  console.log("start=====", startDate)
+  console.log("end=====", endDate)
+  const attendance = await prisma.attendance.findMany({
+    where: {
+      student_id,
+      date: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: attendanceOutputData,
+  });
+  console.log("attendance", attendance)
+
+  return attendance;
+}
+
 async function getStudentAttendance(
   student_id,
   lowerDateLimit = new Date(Date.now - 7 * 24 * 60 * 60 * 1000),
@@ -118,19 +143,24 @@ async function getStudentAttendance(
 }
 
 async function getAllStudentsAttendanceData(
-  teacher_id,
+  teacher,
   lowerDateLimit = new Date(Date.now - 7 * 24 * 60 * 60 * 1000),
   upperDateLimit = new Date(Date.now),
   studentIds
 ) {
+
+  /* let teacher_id = undefined;
+  if(teacher.master_role_id === 2){
+    teacher_id = teacher.teacher_id;
+  } */
   const attendance = await prisma.attendance.findMany({
     where: {
-      teacher_id,
+      /* teacher_id, */
       date: {
         gte: lowerDateLimit,
         lte: upperDateLimit,
       },
-      teacher_id: {
+      student_id: {
         in: studentIds,
       },
     },
@@ -305,5 +335,6 @@ module.exports = {
   getAllStudentsAttendance,
   getAttendanceCountByMonth,
   getAllStudentsAttendanceData,
-  getAttendanceCountByAnyMonth
+  getAttendanceCountByAnyMonth,
+  getAttendanceDateForStudent
 };
