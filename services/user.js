@@ -35,7 +35,7 @@ async function createStudentData(data) {
 async function findStudentByUsername(username) {
   const student = await prisma.student.findUnique({
     where: {
-      username,
+      username: username.toLowerCase(),
     },
     select: studentOutputData,
   });
@@ -94,7 +94,7 @@ async function findStudentByResetPasswordToken(token) {
 async function findStudentByResetEmailToken(username, token) {
   const student = await prisma.student.findFirst({
     where: {
-      username,
+      username: username.toLowerCase(),
       reset_email_token: token,
       reset_email_token_expiration: {
         gte: new Date(),

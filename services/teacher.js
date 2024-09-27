@@ -37,7 +37,7 @@ async function createTeacherData(data) {
 async function findTeacherByUsername(username) {
   const teacher = await prisma.teacher.findUnique({
     where: {
-      teacher_username: username,
+      teacher_username: username.toLowerCase(),
     },
     select: teacherOutputData,
   });
@@ -82,7 +82,7 @@ async function findTeacherByResetPasswordToken(token) {
 async function findTeacherByResetEmailToken(username, token) {
   const teacher = await prisma.teacher.findFirst({
     where: {
-      teacher_username: username,
+      teacher_username: username.toLowerCase(),
       teacher_reset_email_token: token,
       teacher_reset_email_token_expiration: {
         gte: new Date(),
