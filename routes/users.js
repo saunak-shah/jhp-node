@@ -675,9 +675,9 @@ You can log in using the below link:
   router.delete("/students/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const { student } = req.body;
-      if (student && student.student_id == id) {
-        const deletedStudent = await deleteStudentData({ student_id: id });
+      // const { student } = req.body;
+      // if (student && student.student_id == id) {
+        const deletedStudent = await deleteStudentData({ student_id: parseInt(id) });
         if (deletedStudent) {
           res.status(200).json({
             message: "Student deleted",
@@ -686,9 +686,9 @@ You can log in using the below link:
         } else {
           res.status(500).json({ message: "Unable to delete student" });
         }
-      } else {
-        res.status(204).json({ message: "Student not found" });
-      }
+      // } else {
+      //   res.status(204).json({ message: "Student not found" });
+      // }
     } catch (error) {
       console.error("Error while getting student with unique id:", error);
       res.status(500).send(`Internal Server Error: ${error}`);
