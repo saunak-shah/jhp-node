@@ -677,7 +677,9 @@ You can log in using the below link:
       const { id } = req.params;
       // const { student } = req.body;
       // if (student && student.student_id == id) {
-        const deletedStudent = await deleteStudentData({ student_id: id });
+
+        const deletedStudent = await deleteStudentData({ student_id: parseInt(id) });
+
         if (deletedStudent) {
           res.status(200).json({
             message: "Student deleted",
