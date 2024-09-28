@@ -75,7 +75,7 @@ module.exports = function () {
         sortBy,
         organization_id,
         sortOrder,
-        limit,
+        !limit || limit == "null" || limit == "undefined" ? totalUserCount: limit,
         offset
       );
 
