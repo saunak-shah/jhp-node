@@ -11,6 +11,7 @@ const {
   getAllResultsByCourseIdCount,
   getAllResultsByUserIdCount,
   getAllResultsByCourseIdToDownload,
+  findResultByRegistrationId,
 } = require("../services/result");
 const router = express.Router();
 
@@ -23,6 +24,27 @@ module.exports = function () {
       const result = await findResultByResultId(id);
       if (!result) {
         res.status(422).json({
+          message: `No Result found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `Result found`,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: `Error while listing result - ${id}`,
+      });
+    }
+  });
+
+  router.get("/application/result/:id", userMiddleware, async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+      const result = await findResultByRegistrationId(id);
+      if (!result) {
+        res.status(200).json({
           message: `No Result found`,
         });
         return;
