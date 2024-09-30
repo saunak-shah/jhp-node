@@ -11,6 +11,7 @@ const {
   getAllResultsByCourseIdCount,
   getAllResultsByUserIdCount,
   getAllResultsByCourseIdToDownload,
+  findResultByRegistrationId,
 } = require("../services/result");
 const router = express.Router();
 
@@ -23,6 +24,27 @@ module.exports = function () {
       const result = await findResultByResultId(id);
       if (!result) {
         res.status(422).json({
+          message: `No Result found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `Result found`,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: `Error while listing result - ${id}`,
+      });
+    }
+  });
+
+  router.get("/application/result/:id", userMiddleware, async (req, res) => {
+    const id = parseInt(req.params.id);
+    try {
+      const result = await findResultByRegistrationId(id);
+      if (!result) {
+        res.status(200).json({
           message: `No Result found`,
         });
         return;
@@ -153,7 +175,7 @@ module.exports = function () {
   // only Admin
   // Create Result
   router.post("/result", userMiddleware, async (req, res) => {
-    const { admin, student } = req.body;
+    const { admin, student, teacher } = req.body;
     if (!admin) {
       res.status(403).json({
         message: `Only admin`,
@@ -161,37 +183,43 @@ module.exports = function () {
       return;
     }
     try {
-      const { registration_id, score } = req.body;
-      if (!registration_id || !score) {
+      const { student_apply_course_id, score } = req.body;
+      if (!student_apply_course_id || !score) {
         res.status(400).json({
           message: `Fill all the fields properly.`,
         });
         return;
       }
 
-      const courseScores = await getCourseScore(registration_id);
+      const courseScores = await getCourseScore(parseInt(student_apply_course_id));
+      if(!courseScores){
+        res.status(422).json({
+          message: `Invalid application id`,
+        });
+        return;
+      }
 
       const result = await createResult({
-        student_apply_course_id: registration_id,
-        score,
-        creator_id: student.student_id,
-        course_score: courseScores.course_score,
+        student_apply_course_id: parseInt(student_apply_course_id),
+        score: parseInt(score),
+        creator_id: parseInt(teacher.teacher_id),
+        course_score: parseInt(courseScores.course_score),
         course_passing_score: parseInt(courseScores.course_passing_score),
       });
 
       if (result) {
         res.status(200).json({
-          message: `Result created successfully`,
+          message: `Result updated successfully`,
           data: result,
         });
       } else {
         res.status(500).json({
-          message: `Unable to create result`,
+          message: `Unable to update result`,
         });
       }
     } catch (error) {
       res.status(500).json({
-        message: `Error while creating result: ${error}`,
+        message: `Error while updating result: ${error}`,
       });
     }
   });

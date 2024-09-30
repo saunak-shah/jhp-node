@@ -37,8 +37,12 @@ const resultOutputData = {
 };
 
 async function createResult(data) {
-  const result = await prisma.result.create({
-    data,
+  const result = await prisma.result.upsert({
+    where: {
+      student_apply_course_id: parseInt(data.student_apply_course_id)
+    },
+    update: data,
+    create: data,
     select: resultOutputData,
   });
 

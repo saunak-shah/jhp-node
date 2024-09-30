@@ -28,7 +28,7 @@ module.exports = function () {
         sortBy,
         organizationId,
         sortOrder,
-        limit,
+        !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
         offset
       );
       if (courses) {
