@@ -176,10 +176,10 @@ module.exports = function () {
         return;
       }
 
-      if (teacher_password.length < 4 || teacher_password.length >= 12) {
+      if (teacher_password.length <= 4) {
         res
           .status(422)
-          .send("Password length should be between 4 to 12 characters.");
+          .send("Password length should be greater then 4 characters.");
         return;
       }
 
@@ -476,10 +476,10 @@ module.exports = function () {
     try {
       const token = req.params.token;
       const { password, username } = req.body;
-      if (password.length <= 4 || password.length >= 12) {
+      if (password.length <= 4) {
         res
           .status(422)
-          .send("Password length should be between 4 to 12 characters.");
+          .send("Password length should be greater then 4 characters.");
         return;
       }
       const teacherData = await findTeacherByResetPasswordToken(token);

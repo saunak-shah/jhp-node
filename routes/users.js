@@ -395,10 +395,10 @@ You can log in using the below link:
     }
     try {
       if (bcrypt.isValidPassword(student.password, oldPassword)) {
-        if (newPassword.length <= 4 || newPassword.length >= 12) {
+        if (newPassword.length <= 4) {
           res
             .status(422)
-            .send("New Password length should be between 4 to 12 characters.");
+            .send("New password length should be greater then 4 characters.");
           return;
         }
         const newEncPassword = bcrypt.createHash(newPassword);
@@ -514,10 +514,10 @@ You can log in using the below link:
     try {
       const token = req.params.token;
       const { password, username } = req.body;
-      if (password.length <= 4 || password.length >= 12) {
+      if (password.length <= 4) {
         res
           .status(422)
-          .send("Password length should be between 4 to 12 characters.");
+          .send("Password length should be greater then 4 characters.");
         return;
       }
       const studentData = await findStudentByResetPasswordToken(token);
