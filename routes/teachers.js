@@ -357,10 +357,10 @@ module.exports = function () {
     }
     try {
       if (bcrypt.isValidPassword(teacher.teacher_password, oldPassword)) {
-        if (newPassword.length <= 4 || newPassword.length >= 12) {
+        if (newPassword.length <= 4) {
           res
             .status(422)
-            .send("New Password length should be between 4 to 12 characters.");
+            .send("Password length should be greater then 4 characters.");
           return;
         }
         const newEncPassword = bcrypt.createHash(newPassword);
