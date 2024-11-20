@@ -3,22 +3,6 @@ const { findTeacherByUsername, isAdmin } = require("../services/teacher");
 const { findStudentByUsername } = require("../services/user");
 
 async function userMiddleware(req, res, next) {
-  
-  if(req.method == 'GET'){
-    if(req.params.limit && req.params.offset){
-      const limit = parseInt(req.params.limit, 10);
-      const offset = parseInt(req.params.offset, 10);
-
-      // Validate the input
-      if (isNaN(limit) || isNaN(offset) || limit < 1 || offset < 0) {
-          return res.status(400).send('Invalid limit or offset');
-      }
-
-      req.params.limit = limit
-      req.params.offset = offset
-    }
-  }
-
   const jwtToken = req.get("Authorization");
   if (jwtToken) {
     const tokenData = verifyJwt(jwtToken);
