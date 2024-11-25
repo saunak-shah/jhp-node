@@ -181,12 +181,18 @@ module.exports = function () {
       if (password.length <= 4) {
         res
           .status(422)
-          .send("Password length should be greater then 4 characters.");
+          .json({ message: "Password length should be greater then 4 characters.", data: false });
         return;
       }
 
-      if (!validateEmail(email) || !validatePhoneNumber(phone_number)) {
-        res.status(422).send("Invalid data");
+      if (!validateEmail(email)) {
+        res.status(422)
+        .json({ message: "Email is invalid.", data: false });
+        return;
+      }
+      if (!validatePhoneNumber(phone_number)) {
+        res.status(422)
+        .json({ message: "Phone number is invalid.", data: false });
         return;
       }
 
