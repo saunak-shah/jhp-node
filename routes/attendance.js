@@ -12,6 +12,8 @@ const {
 } = require("../services/attendance");
 const {
   findStudentsAssignedToTeacherId,
+  findStudentsAssignedToTeacherIdCount,
+  getTotalStudentsCount
 } = require("../services/user");
 const moment = require("moment");
 
@@ -83,8 +85,11 @@ module.exports = function () {
           : teacher?.organization_id;
 
       let users = [];
+      let totalCount = 0;
       // teacher login
       if(teacher.master_role_id === 2){
+      totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher.teacher_id);
+
         users = await findStudentsAssignedToTeacherId(
           organization_id,
           searchKey,
@@ -95,6 +100,8 @@ module.exports = function () {
           offset
         );
       } else {
+        totalCount = await getTotalStudentsCount(organization_id, searchKey);
+
         users = await getAllStudents(
           searchKey,
           sortBy,
@@ -134,7 +141,11 @@ module.exports = function () {
       });
       return res.status(200).json({
         message: `attendance found`,
-        data: users,
+        data: {
+          users,
+          offset,
+          totalCount,
+        },
       });
     } catch (error) {
       console.error("Error getting attendance:", error);
