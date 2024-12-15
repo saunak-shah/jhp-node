@@ -202,14 +202,14 @@ module.exports = function () {
       const organization = await getOrganization(organization_id);
       const date = moment(birth_date).format("DD");
       const month = moment(birth_date).format("MM");
+      const randomNo = Number(Date.now().toString().slice(-2));
 
       let register_no =
         organization.name.slice(0, 3) +
         first_name[0] +
-        father_name[0] +
         last_name[0] +
         date +
-        month;
+        month + randomNo;
 
       while (true) {
         const isStudentExists = await findStudentByRegisterNumber(register_no);
