@@ -272,9 +272,11 @@ module.exports = function () {
   router.delete("/courses/:id", userMiddleware, async (req, res) => {
     const { admin, student } = req.body;
     const id = parseInt(req.params.id);
+    console.log("admin", admin)
+
     if (!admin) {
       res.status(403).json({
-        message: `Only admin`,
+        message: `You are not authorize to perform this action.`,
       });
       return;
     }

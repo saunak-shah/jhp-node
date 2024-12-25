@@ -30,29 +30,29 @@ async function createAttendance(teacher_id, attendance) {
     const student_id = attendance[i].student_id;
     const attendanceDates = attendance[i].checked_dates;
 
-    /* if (student.assigned_to != teacher_id) {
-      throw new Error("Only assigned teacher can fill the attendance");
-    } */
-    for (let j = 0; j < attendanceDates.length; j++) {
-      const attendanceDate = attendanceDates[j];
-
-      let startDate = moment(attendanceDate, 'DD/MM/YYYY').startOf('day').format();
-      let endDate = moment(attendanceDate, 'DD/MM/YYYY').endOf('day').format();
-      // check with date and student_id if data exist then ignore it.
-      const studentDate = await getAttendanceDateForStudent(student_id, startDate, endDate);
-      if(studentDate && studentDate.length <= 0){
-        const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
-        const attendance = await prisma.attendance.create({
-          data: {
-            student_id,
-            teacher_id,
-            date: formateDate,
-          },
-          select: attendanceOutputData,
-        });
-        attendances.push(attendance);
+    if(attendanceDates && attendanceDates.length > 0){
+      for (let j = 0; j < attendanceDates.length; j++) {
+        const attendanceDate = attendanceDates[j];
+  
+        let startDate = moment(attendanceDate, 'DD/MM/YYYY').startOf('day').format();
+        let endDate = moment(attendanceDate, 'DD/MM/YYYY').endOf('day').format();
+        // check with date and student_id if data exist then ignore it.
+        const studentDate = await getAttendanceDateForStudent(student_id, startDate, endDate);
+        if(studentDate && studentDate.length <= 0){
+          const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
+          const attendance = await prisma.attendance.create({
+            data: {
+              student_id,
+              teacher_id,
+              date: formateDate,
+            },
+            select: attendanceOutputData,
+          });
+          attendances.push(attendance);
+        }
       }
     }
+    
   }
 
   if (attendances && attendances.length > 0) {
@@ -65,17 +65,29 @@ async function deleteAttendance(teacher_id, attendance) {
   let attendances = [];
   for (let i = 0; i < attendance.length; i++) {
     const student_id = attendance[i].student_id;
-    const attendanceDates = attendance[i].checked_dates;
+    const attendanceDate = attendance[i].date;
 
     const student = await findStudentById(student_id);
-
-    if (student.assigned_to != teacher_id) {
+    /* if (student.assigned_to != teacher_id) {
       throw new error("Only assigned teacher can delete the attendance");
+    } */
+    if(attendanceDate && attendanceDate.length > 0){
+      const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
+      const attendanceData = await prisma.attendance.deleteMany({
+        where: {
+          student_id,
+          teacher_id,
+          date: formateDate,
+        },
+      });
+      if (attendanceData.count > 0) {
+        attendances.push(attendance[i]);
+      }
     }
+    
 
-    for (let j = 0; j < attendanceDates.length; j++) {
+    /* for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
-
       const attendanceData = await prisma.attendance.deleteMany({
         where: {
           student_id,
@@ -87,7 +99,7 @@ async function deleteAttendance(teacher_id, attendance) {
       if (attendanceData.count > 0) {
         attendances.push(attendance[i]);
       }
-    }
+    } */
   }
 
   return attendances;
@@ -96,8 +108,6 @@ async function deleteAttendance(teacher_id, attendance) {
 async function getAttendanceDateForStudent(
   student_id, startDate, endDate
 ) {
-  console.log("start=====", startDate)
-  console.log("end=====", endDate)
   const attendance = await prisma.attendance.findMany({
     where: {
       student_id,
@@ -108,7 +118,6 @@ async function getAttendanceDateForStudent(
     },
     select: attendanceOutputData,
   });
-  console.log("attendance", attendance)
 
   return attendance;
 }

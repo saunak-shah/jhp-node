@@ -148,9 +148,9 @@ async function deleteStudentData(filter) {
   return;
 }
 
-async function getTotalStudentsCount(organization_id, searchKey) {
+async function getTotalStudentsCount(organization_id, searchKey, teacherId = undefined) {
   const studentCount = await prisma.student.count({
-    where: buildWhereClause(organization_id, searchKey),
+    where: buildWhereClause(organization_id, searchKey, teacherId),
   });
 
   return studentCount;
@@ -162,10 +162,11 @@ async function getAllStudents(
   organization_id,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  teacherId = undefined
 ) {
   const student = await prisma.student.findMany({
-    where: buildWhereClause(organization_id, searchKey),
+    where: buildWhereClause(organization_id, searchKey, teacherId),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -181,18 +182,19 @@ async function getAllStudents(
 function buildWhereClause(
   organization_id,
   searchKey,
-  assigneeCheck = false,
+  // assigneeCheck = false,
   teacher_id = undefined
 ) {
   let whereClause;
 
-  if (assigneeCheck) {
+ /*  if (assigneeCheck) {
     whereClause = {
       assigned_to: {
         not: null,
       },
     };
-  } else if (teacher_id) {
+  } */ 
+  if (teacher_id) {
     whereClause = {
       assigned_to: parseInt(teacher_id),
     };
@@ -282,7 +284,7 @@ async function findStudentsAssignedToTeacherIdCount(
   teacher_id,
 ) {
   const students = await prisma.student.count({
-    where: buildWhereClause(organization_id, searchKey, false, teacher_id),
+    where: buildWhereClause(organization_id, searchKey, teacher_id),
   });
 
   if (students) {
@@ -301,7 +303,7 @@ async function findStudentsAssignedToTeacherId(
   offset = 0
 ) {
   const students = await prisma.student.findMany({
-    where: buildWhereClause(organization_id, searchKey, false, teacher_id),
+    where: buildWhereClause(organization_id, searchKey, teacher_id),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),

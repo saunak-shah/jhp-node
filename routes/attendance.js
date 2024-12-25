@@ -76,6 +76,7 @@ module.exports = function () {
       offset,
       sortBy,
       sortOrder,
+      teacherId
     } = req.query;
 
     try {
@@ -100,7 +101,7 @@ module.exports = function () {
           offset
         );
       } else {
-        totalCount = await getTotalStudentsCount(organization_id, searchKey);
+        totalCount = await getTotalStudentsCount(organization_id, searchKey, teacherId);
 
         users = await getAllStudents(
           searchKey,
@@ -108,7 +109,8 @@ module.exports = function () {
           organization_id,
           sortOrder,
           limit,
-          offset
+          offset,
+          teacherId
         );
       }
 
@@ -240,7 +242,7 @@ module.exports = function () {
 
   // Create attendance
   router.post("/attendance", userMiddleware, async (req, res) => {
-    const { teacher, attendance } = req.body;
+    const { teacher, attendance, removals } = req.body;
     if (!teacher) {
       res.status(403).json({
         message: `Only teacher can create attendance`,
@@ -255,21 +257,24 @@ module.exports = function () {
         return;
       }
 
+
       const attendanceData = await createAttendance(
         teacher.teacher_id,
         attendance
       );
 
-      if (attendanceData) {
-        res.status(200).json({
-          message: `Attendance created successfully`,
-          data: attendanceData,
-        });
-      } else {
-        res.status(500).json({
-          message: `Unable to fill attendanceData`,
-        });
+      // removal attendance
+      if(removals && removals.length > 0){
+        const removalData = await deleteAttendance(
+          teacher.teacher_id,
+          removals
+        );
       }
+
+      res.status(200).json({
+        message: `Attendance filled successfully`,
+        data: attendanceData,
+      });
     } catch (error) {
       res.status(500).json({
         message: `Error while filling attendanceData: ${error}`,

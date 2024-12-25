@@ -68,15 +68,23 @@ module.exports = function () {
         student && student?.organization_id
           ? student?.organization_id
           : teacher?.organization_id;
-      const totalUserCount = await getTotalStudentsCount(organization_id, searchKey);
 
+
+      let teacherId = teacher.teacher_id;
+      // Admin role
+      if(Number(teacher.master_role_id) === 1){
+        teacherId = undefined;
+      }
+      const totalUserCount = await getTotalStudentsCount(organization_id, searchKey, teacherId);
+      
       const users = await getAllStudents(
         searchKey,
         sortBy,
         organization_id,
         sortOrder,
         !limit || limit == "null" || limit == "undefined" ? totalUserCount: limit,
-        offset
+        offset,
+        teacherId
       );
 
       if (users && users.length > 0) {
