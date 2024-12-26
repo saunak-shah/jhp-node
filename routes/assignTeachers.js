@@ -124,6 +124,51 @@ module.exports = function () {
   });
 
   // Create and Update Assignee
+  router.post("/teachers/assign", userMiddleware, async (req, res) => {
+    const { teacher } = req.body;
+    try {
+      const { student_id, teacher_id, assignee } = req.body;
+
+      const student = await findStudentById(student_id);
+      if (!student) {
+        res.status(422).json({
+          message: `Invalid student`,
+        });
+        return;
+      }
+
+      const isValidTeacher = await findTeacherById(assignee);
+      if (!isValidTeacher) {
+        res.status(422).json({
+          message: `Invalid teacher`,
+        });
+        return;
+      }
+
+      
+      const isAssigned = await updateStudentData(
+        { student_id },
+        { assigned_to: assignee }
+      );
+
+      if (isAssigned) {
+        res.status(200).json({
+          message: `Teacher assigned successfully`,
+          data: isAssigned,
+        });
+      } else {
+        res.status(500).json({
+          message: `Unable to assign teacher`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Error while assigning teacher to student: ${error}`,
+      });
+    }
+  });
+
+  // Create and Update Assignee
   router.post("/assign", userMiddleware, async (req, res) => {
     const { teacher } = req.body;
     /* if (!teacher) {
