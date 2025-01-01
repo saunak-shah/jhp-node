@@ -1,7 +1,7 @@
 const express = require("express");
 const { userMiddleware } = require("../middlewares/middleware");
 const { createGroup, getAllGroups, getAllCoursesCount, findGroupById, updateGroup, deleteGroup } = require("../services/groupService");
-const { updateTeacherData } = require("../services/teacher");
+const { updateTeacherData, findTeacherById } = require("../services/teacher");
 const router = express.Router();
 
 module.exports = function () {
@@ -80,7 +80,7 @@ module.exports = function () {
 
   // Update Course
   router.post("/group/:id", userMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id);
     const {group_name, teacher_assignee} = req.body;
 
     // validation
@@ -104,16 +104,33 @@ module.exports = function () {
         teacher_ids: req.body.teacher_assignee,
       };
 
-      const course = await findGroupById(id);
+      const groupData = await findGroupById(groupId);
+      const teacherIds = groupData.teacher_ids;
+      const newTeacherIds = teacherData.group_ids;
 
-      /* if (course?.created_by != student?.student_id) {
-        res.status(403).json({
-          message: `Unable to update course while creator and updator is not same`,
-        });
-        return;
-      } */
-      if (course) {
-        const updatedCourse = await updateGroup({ group_id: id }, data);
+      // check if any teacher removes, If remove then need to remove group id from that teacher
+
+      // teacher data
+      if (groupData) {
+
+        teacher_assignee.map(async (teacherId)=>{
+          // teacher find and bind group_ids with new group
+          const teacherData = await findTeacherById(teacherId);
+          
+          if(!teacherData.group_ids.includes(teacherId)){
+            const groupIds = [...teacherData.group_ids, groupId]
+            console.log("groupIdsgroupIds", groupIds);
+
+            const updatedTeacher = await updateTeacherData(
+              { teacher_id: teacherId },
+              {group_ids: groupIds}
+            );
+          }
+        })
+
+        const updatedCourse = await updateGroup({ group_id: groupId }, data);
+
+
         if (!updatedCourse) {
           res.status(500).json({
             message: `Unable to update group.`,
