@@ -131,6 +131,7 @@ model groups {
   updated_at                 DateTime     @default(now()) @map("updated_at")
 }
 
+
 model course {
   course_id                  Int          @id @default(autoincrement())
   created_at                 DateTime     @default(now()) @map("created_at")
