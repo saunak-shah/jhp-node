@@ -447,6 +447,11 @@ You can log in using the below link:
   router.post("/students/forgot_password", async (req, res) => {
     const { username, email } = req.body;
     try {
+      if (!validateEmail(email)) {
+        res.status(422)
+        .json({ message: "Email is invalid.", data: false });
+        return;
+      }
       const studentByUsername = await findStudentByUsername(username.toLowerCase());
       if (
         studentByUsername &&
@@ -472,12 +477,25 @@ You can log in using the below link:
 
         const to = email.toLowerCase();
         const subject = "Password Reset";
-        const text =
-          `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n` +
-          `Please click on the following link, or paste this into your browser to complete the process:\n\n` +
-          `${process.env.BASE_URL}/users/reset/${token}\n\n` +
-          `If you did not request this, please ignore this email and your password will remain unchanged.\n`;
-        const isMailSent = await sendEmail(to, subject, text);
+
+          const html = `
+          <html>
+            <body>
+              <pre>
+Hello ${studentByUsername.first_name} ${studentByUsername.last_name} 
+                
+You are receiving this because you (or someone else) have requested the reset of the password for your account.
+
+<p>Please click on the following link, or paste this into your browser to complete the process:</p>
+<p><a href="${process.env.BASE_URL}/reset_password/${token}" target="_blank">${process.env.BASE_URL}/reset_password/${token}</a></p>
+<p>If you did not request this, please ignore this email and your password will remain unchanged.</p>         
+You can log in using the below link:     
+<a href="https://software.jhpparivar.in">https://software.jhpparivar.in</a>
+                </pre>
+            </body>
+          </html>`;
+
+        const isMailSent = await sendEmail(to, subject, html);
         if (isMailSent) {
           res.status(200).json({
             message: `Password reset link sent on email.`,
@@ -502,36 +520,22 @@ You can log in using the below link:
     }
   });
 
-  // Password reset form
-  router.get("/students/reset/:token", async (req, res) => {
-    try {
-      const token = req.params.token;
-      const studentData = await findStudentByResetPasswordToken(token);
-      if (!studentData) {
-        return res
-          .status(422)
-          .send("Password reset token is invalid or has expired");
-      } else {
-        res.status(200).json({
-          message: `Correct Student.`,
-        });
-      }
-      return;
-    } catch (error) {
-      console.error(error);
-      res.status(500).send("Internal Server Error");
-    }
-  });
-
   // Password reset
-  router.post("/students/reset/:token", async (req, res) => {
+  router.post("/students/reset_password/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const { password, username } = req.body;
+      const { password, cpassword } = req.body;
+      if (password !== cpassword) {
+        res
+          .status(422)
+          .json({ message: "Password and confirm password should be same.", data: false });
+        return;
+      }
+
       if (password.length <= 4) {
         res
           .status(422)
-          .send("Password length should be greater then 4 characters.");
+          .json({ message: "Password length should be greater then 4 characters.", data: false });
         return;
       }
       const studentData = await findStudentByResetPasswordToken(token);
@@ -544,7 +548,7 @@ You can log in using the below link:
       const updatedStudent = await updateStudentData(
         {
           reset_password_token: token,
-          username: username.toLowerCase(),
+          username: studentData.username.toLowerCase(),
         },
         {
           password: bcrypt.createHash(password),
