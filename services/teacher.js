@@ -20,6 +20,7 @@ const teacherOutputData = {
       role_access: true,
     },
   },
+  group_ids: true
 };
 
 async function createTeacherData(data) {

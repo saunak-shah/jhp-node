@@ -196,8 +196,9 @@ function buildWhereClause(
   } */ 
   if (teacher_id) {
     whereClause = {
-      assigned_to: parseInt(teacher_id),
-    };
+      assigned_to: Array.isArray(teacher_id)
+        ? { in: teacher_id.map(id => parseInt(id)) } : parseInt(teacher_id)
+    }
   }
 
   if (searchKey) {

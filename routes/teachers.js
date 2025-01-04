@@ -79,7 +79,7 @@ module.exports = function () {
     try {
       const { student, teacher } = req.body;
 
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      let { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
       const organization_id =
         student && student?.organization_id
@@ -96,6 +96,10 @@ module.exports = function () {
         limit,
         offset
       );
+
+      if(!sortBy){
+        sortBy = 'teacher_first_name'
+      }
 
       if (teachers && teachers.length > 0) {
         res.status(200).json({
@@ -254,7 +258,8 @@ module.exports = function () {
                 teacher_last_name: teacher.teacher_last_name,
                 token: token,
                 master_role_id: teacher.master_role_id,
-                role_access: teacher.master_role?.role_access
+                role_access: teacher.master_role?.role_access,
+                group_ids: teacher.group_ids
               },
             });
           } else {

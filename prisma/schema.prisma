@@ -107,6 +107,7 @@ model teacher {
   updated_at                              DateTime    @default(now()) @map("updated_at")
   master_role_id                          Int
   master_role                             master_role @relation(fields: [master_role_id], references: [master_role_id], onDelete: Cascade)
+  group_ids                               Int[]       @default([])
 
   organization_id Int
   organization    organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
@@ -121,6 +122,15 @@ model teacher {
   @@index([teacher_reset_password_token])
   @@index([teacher_reset_password_token, teacher_reset_password_token_expiration])
 }
+
+model groups {
+  group_id                   Int         @id @default(autoincrement())
+  group_name                 String 
+  teacher_ids                Int[]        @default([])
+  created_at                 DateTime     @default(now()) @map("created_at")
+  updated_at                 DateTime     @default(now()) @map("updated_at")
+}
+
 
 model course {
   course_id                  Int          @id @default(autoincrement())

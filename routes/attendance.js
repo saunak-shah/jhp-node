@@ -15,6 +15,9 @@ const {
   findStudentsAssignedToTeacherIdCount,
   getTotalStudentsCount
 } = require("../services/user");
+const {
+  findGroupById
+} = require("../services/groupService");
 const moment = require("moment");
 
 const { findStudentById, getAllStudents } = require("../services/user");
@@ -76,7 +79,8 @@ module.exports = function () {
       offset,
       sortBy,
       sortOrder,
-      teacherId
+      teacherId,
+      group_ids
     } = req.query;
 
     try {
@@ -89,17 +93,33 @@ module.exports = function () {
       let totalCount = 0;
       // teacher login
       if(teacher.master_role_id === 2){
-      totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher.teacher_id);
+        if(teacher.group_ids && teacher.group_ids.length > 0){
+          // get teacher ids from group_ids
+          const teachers = await findGroupById(teacher.group_ids[0]);
+          totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teachers.teacher_ids);
 
-        users = await findStudentsAssignedToTeacherId(
-          organization_id,
-          searchKey,
-          sortBy,
-          teacher.teacher_id,
-          sortOrder,
-          limit,
-          offset
-        );
+          users = await findStudentsAssignedToTeacherId(
+            organization_id,
+            searchKey,
+            sortBy,
+            teachers.teacher_ids,
+            sortOrder,
+            limit,
+            offset
+          );
+        } else{
+          totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher.teacher_id);
+
+          users = await findStudentsAssignedToTeacherId(
+            organization_id,
+            searchKey,
+            sortBy,
+            teacher.teacher_id,
+            sortOrder,
+            limit,
+            offset
+          );
+        }
       } else {
         totalCount = await getTotalStudentsCount(organization_id, searchKey, teacherId);
 
@@ -256,7 +276,6 @@ module.exports = function () {
         });
         return;
       }
-
 
       const attendanceData = await createAttendance(
         teacher.teacher_id,
