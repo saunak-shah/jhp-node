@@ -38,6 +38,12 @@ const appliedExamOutputData = {
       result_date: true,
     },
   },
+  result: {
+    select: {
+      reg_id: true,
+      score: true
+    }
+  }
 };
 
 async function applyForCourse(data) {
@@ -250,18 +256,23 @@ async function getAllApplicationsByCourseId(
   limit = 100,
   offset = 0
 ) {
-  const applications = await prisma.student_apply_course.findMany({
-    where: buildWhereClause(searchKey, examId, undefined),
-    select: appliedExamOutputData,
-    orderBy: buildOrderClause(sortBy, sortOrder),
-    take: parseInt(limit),
-    skip: parseInt(offset),
-  });
-
-  if (applications) {
-    return applications;
-  }
-  return;
+ try {
+   const applications = await prisma.student_apply_course.findMany({
+     
+     where: buildWhereClause(searchKey, examId, undefined),
+     select: appliedExamOutputData,
+     orderBy: buildOrderClause(sortBy, sortOrder),
+     take: parseInt(limit),
+     skip: parseInt(offset),
+   });
+ 
+   if (applications) {
+     return applications;
+   }
+   return;
+ } catch (error) {
+    throw new Error(error?.message || 'Unable to fetch applications')
+ }
 }
 
 async function getAllApplicationsByCourseIdToDownload(

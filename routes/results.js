@@ -99,42 +99,46 @@ module.exports = function () {
   });
 
   // Get Result By Courses
-  router.get("/download/courses/result/:id", userMiddleware, async (req, res) => {
-    const { id } = req.params;
-    const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+  router.get(
+    "/download/courses/result/:id",
+    userMiddleware,
+    async (req, res) => {
+      const { id } = req.params;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-    try {
-      const resultCount = await getAllResultsByCourseIdCount(id);
-      const result = await getAllResultsByCourseIdToDownload(
-        searchKey,
-        sortBy,
-        id,
-        sortOrder,
-        limit,
-        offset
-      );
+      try {
+        const resultCount = await getAllResultsByCourseIdCount(id);
+        const result = await getAllResultsByCourseIdToDownload(
+          searchKey,
+          sortBy,
+          id,
+          sortOrder,
+          limit,
+          offset
+        );
 
-      if (!result) {
-        res.status(422).json({
-          message: `No Result found`,
+        if (!result) {
+          res.status(422).json({
+            message: `No Result found`,
+          });
+          return;
+        }
+        res.status(200).json({
+          message: `Result found`,
+          data: {
+            result,
+            offset,
+            totalCount: resultCount,
+          },
         });
-        return;
+      } catch (error) {
+        console.error("Error getting results:", error);
+        res.status(500).json({
+          message: `Error while listing result - ${id}`,
+        });
       }
-      res.status(200).json({
-        message: `Result found`,
-        data: {
-          result,
-          offset,
-          totalCount: resultCount,
-        },
-      });
-    } catch (error) {
-      console.error("Error getting results:", error);
-      res.status(500).json({
-        message: `Error while listing result - ${id}`,
-      });
     }
-  });
+  );
 
   // Get Result By User Id
   router.get("/students/result/:id", userMiddleware, async (req, res) => {
@@ -183,7 +187,12 @@ module.exports = function () {
       return;
     }
     try {
-      const { student_apply_course_id, score } = req.body;
+      
+      const { data } = req.body;
+      if (!data) {
+        throw new Error(`Unable to find data`);
+      }
+      const { student_apply_course_id, score } = data;
       if (!student_apply_course_id || !score) {
         res.status(400).json({
           message: `Fill all the fields properly.`,
@@ -191,8 +200,10 @@ module.exports = function () {
         return;
       }
 
-      const courseScores = await getCourseScore(parseInt(student_apply_course_id));
-      if(!courseScores){
+      const courseScores = await getCourseScore(
+        parseInt(student_apply_course_id)
+      );
+      if (!courseScores) {
         res.status(422).json({
           message: `Invalid application id`,
         });
@@ -228,7 +239,7 @@ module.exports = function () {
   // Update Result
   router.post("/result/:id", userMiddleware, async (req, res) => {
     const { admin } = req.body;
-    const resultId = parseInt(req.params.id);
+    const reg_id = req.params.id;
     if (!admin) {
       res.status(403).json({
         message: `Only admin`,
@@ -237,9 +248,9 @@ module.exports = function () {
     }
     try {
       const { data } = req.body;
-      const result = await findResultByResultId(resultId);
+      const result = await findResultByRegistrationId(reg_id);
       if (result) {
-        const updatedResult = await updateResult({ result_id: resultId }, data);
+        const updatedResult = await updateResult({ reg_id }, data);
         if (!updatedResult) {
           res.status(500).json({
             message: `Unable to update result.`,
