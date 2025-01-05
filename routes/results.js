@@ -40,7 +40,7 @@ module.exports = function () {
   });
 
   router.get("/application/result/:id", userMiddleware, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     try {
       const result = await findResultByRegistrationId(id);
       if (!result) {
@@ -200,7 +200,7 @@ module.exports = function () {
       }
 
       const result = await createResult({
-        student_apply_course_id: parseInt(student_apply_course_id),
+        reg_id: courseScores.reg_id,
         score: parseInt(score),
         creator_id: parseInt(teacher.teacher_id),
         course_score: parseInt(courseScores.course_score),

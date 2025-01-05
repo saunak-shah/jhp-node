@@ -4,6 +4,7 @@ const appliedExamOutputData = {
   student_apply_course_id: true,
   created_at: true,
   updated_at: true,
+  reg_id: true,
   course_id: true,
   student_id: true,
   student: {
@@ -54,7 +55,9 @@ async function applyForCourse(data) {
 async function findApplicationByRegistrationId(registrationId) {
   const application = await prisma.student_apply_course.findUnique({
     where: {
-      student_apply_course_id: registrationId,
+      student_apply_course: {
+        reg_id: registrationId,
+      },
     },
     select: appliedExamOutputData,
   });
@@ -281,7 +284,7 @@ async function getAllApplicationsByCourseIdToDownload(
           last_name: true,
           phone_number: true,
           email: true,
-          gender: true
+          gender: true,
         },
       },
       course: {
@@ -296,22 +299,22 @@ async function getAllApplicationsByCourseIdToDownload(
   });
 
   const data = [];
-  for(let i = 0; i < applications.length; i++){
+  for (let i = 0; i < applications.length; i++) {
     const application = applications[i];
     data.push({
       registration_id: application.student_apply_course_id,
       created_at: application.created_at,
       updated_at: application.updated_at,
-      student_name: application.student.first_name + application.student.last_name,
+      student_name:
+        application.student.first_name + application.student.last_name,
       course: application.course.course_name,
       phone_number: application.student.phone_number,
       email: application.student.email,
       gender: application.student.gender,
-    })
+    });
   }
 
   if (data && data.length > 0) {
-    console.log("🚀 ~ file: applyForCourse.js:334 ~ data:", data)
     return data;
   }
   return;
