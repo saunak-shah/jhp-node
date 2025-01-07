@@ -30,15 +30,24 @@ async function createAttendance(teacher_id, attendance) {
     const student_id = attendance[i].student_id;
     const attendanceDates = attendance[i].checked_dates;
 
-    if(attendanceDates && attendanceDates.length > 0){
+    if (attendanceDates && attendanceDates.length > 0) {
       for (let j = 0; j < attendanceDates.length; j++) {
         const attendanceDate = attendanceDates[j];
-  
-        let startDate = moment(attendanceDate, 'DD/MM/YYYY').startOf('day').format();
-        let endDate = moment(attendanceDate, 'DD/MM/YYYY').endOf('day').format();
+        let startDate = moment(attendanceDate, "DD/MM/YYYY")
+          .startOf("day")
+          .format();
+        let endDate = moment(attendanceDate, "DD/MM/YYYY")
+          .endOf("day")
+          .format();
+
         // check with date and student_id if data exist then ignore it.
-        const studentDate = await getAttendanceDateForStudent(student_id, startDate, endDate);
-        if(studentDate && studentDate.length <= 0){
+        const studentDate = await getAttendanceDateForStudent(
+          student_id,
+          startDate,
+          endDate
+        );
+
+        if (studentDate && studentDate.length <= 0) {
           const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
           const attendance = await prisma.attendance.create({
             data: {
@@ -52,7 +61,6 @@ async function createAttendance(teacher_id, attendance) {
         }
       }
     }
-    
   }
 
   if (attendances && attendances.length > 0) {
@@ -71,7 +79,7 @@ async function deleteAttendance(teacher_id, attendance) {
     /* if (student.assigned_to != teacher_id) {
       throw new error("Only assigned teacher can delete the attendance");
     } */
-    if(attendanceDate && attendanceDate.length > 0){
+    if (attendanceDate && attendanceDate.length > 0) {
       const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
       const attendanceData = await prisma.attendance.deleteMany({
         where: {
@@ -84,7 +92,6 @@ async function deleteAttendance(teacher_id, attendance) {
         attendances.push(attendance[i]);
       }
     }
-    
 
     /* for (let j = 0; j < attendanceDates.length; j++) {
       const attendanceDate = attendanceDates[j];
@@ -105,9 +112,7 @@ async function deleteAttendance(teacher_id, attendance) {
   return attendances;
 }
 
-async function getAttendanceDateForStudent(
-  student_id, startDate, endDate
-) {
+async function getAttendanceDateForStudent(student_id, startDate, endDate) {
   const attendance = await prisma.attendance.findMany({
     where: {
       student_id,
@@ -157,7 +162,6 @@ async function getAllStudentsAttendanceData(
   upperDateLimit = new Date(Date.now),
   studentIds
 ) {
-
   /* let teacher_id = undefined;
   if(teacher.master_role_id === 2){
     teacher_id = teacher.teacher_id;
@@ -266,8 +270,8 @@ async function getAttendanceCountByMonth(
   lowerDateLimit,
   upperDateLimit
 ) {
-  lowerDateLimit = moment().subtract(5, 'month').startOf('month').format()
-  upperDateLimit = moment().format()
+  lowerDateLimit = moment().subtract(5, "month").startOf("month").format();
+  upperDateLimit = moment().format();
   // Count data grouped by month
   const dataByMonth = await prisma.$queryRaw`
     SELECT
@@ -285,7 +289,7 @@ async function getAttendanceCountByMonth(
   `;
 
   for (let i = 0; i < dataByMonth.length; i++) {
-    dataByMonth[i].month = moment(dataByMonth[i].month).format('MMM YYYY');
+    dataByMonth[i].month = moment(dataByMonth[i].month).format("MMM YYYY");
     dataByMonth[i].monthNumber = new Date(dataByMonth[i].month).getMonth() + 1;
     dataByMonth[i].attendance_count = Number(dataByMonth[i].attendance_count);
   }
@@ -293,48 +297,136 @@ async function getAttendanceCountByMonth(
   return dataByMonth;
 }
 
-async function getAttendanceCountByAnyMonth(formatDate, teacher) {
-
+async function getAttendanceCountByAnyMonth(
+  formatDate,
+  teacher,
+  searchKey,
+  lowerDateLimit,
+  upperDateLimit
+) {
   let dataByMonth;
-  if(teacher && teacher.master_role_id === 2){
-    dataByMonth = await prisma.$queryRaw`
-      SELECT 
-        a.student_id,
-        s.first_name,
-        s.last_name,
+  const params = [formatDate];
+  const query = [
+    `SELECT 
+        CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
         COUNT(*)::integer AS attendance_count
       FROM
         attendance as a
       LEFT JOIN student s on s.student_id = a.student_id
       WHERE 
-        date_trunc('month', a.date) = date_trunc('month', ${formatDate}::date)
-        AND teacher_id = ${teacher.teacher_id}
-      GROUP BY 
-        a.student_id, s.first_name, s.last_name
-      ORDER BY
-        a.student_id`;
-  } else{
-    dataByMonth = await prisma.$queryRaw`
-      SELECT 
-        a.student_id,
-        s.first_name,
-        s.last_name,
-        COUNT(*)::integer AS attendance_count
-      FROM
-        attendance as a
-      LEFT JOIN student s on s.student_id = a.student_id
-      WHERE 
-        date_trunc('month', a.date) = date_trunc('month', ${formatDate}::date)
-      GROUP BY 
-        a.student_id, s.first_name, s.last_name
-      ORDER BY
-        a.student_id`;
+        date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)`,
+  ];
+
+  if (lowerDateLimit) {
+    params.push(moment(lowerDateLimit).format('YYYY-MM-DD'));
+    query.push(`AND a.date >= $${params.length}::date`);
   }
-  
+
+  if (upperDateLimit) {
+    params.push(moment(upperDateLimit).format('YYYY-MM-DD'));
+    query.push(`AND a.date <= $${params.length}::date`);
+  }
+
+  if (teacher && teacher.master_role_id === 2) {
+    params.push(teacher.teacher_id);
+    query.push(`AND teacher_id = $${params.length}`);
+  }
+
+  if (searchKey) {
+    params.push(`%${searchKey}%`);
+    query.push(
+      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+    );
+  }
+
+  query.push(`GROUP BY a.student_id, s.first_name, s.last_name, s.father_name`);
+
+  dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
+
+  return dataByMonth.length;
+}
+
+async function getAttendanceDataByAnyMonth(
+  searchKey,
+  sortBy,
+  sortOrder,
+  formatDate,
+  teacher,
+  limit,
+  offset,
+  lowerDateLimit,
+  upperDateLimit
+) {
+  let dataByMonth;
+  const params = [formatDate];
+
+  let query = [
+    `
+      SELECT 
+        CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
+        COUNT(*)::integer as attendance_count
+      FROM
+        attendance as a
+      LEFT JOIN student s on s.student_id = a.student_id
+      WHERE 
+        date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)
+        `,
+  ];
+
+  if (lowerDateLimit) {
+    params.push(moment(lowerDateLimit).format('YYYY-MM-DD'));
+    query.push(`AND a.date::date >= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`);
+  }
+
+  if (upperDateLimit) {
+    params.push(moment(upperDateLimit).format('YYYY-MM-DD'));
+    query.push(`AND a.date::date <= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`);
+  }
+
+  if (teacher && teacher.master_role_id === 2) {
+    params.push(teacher.teacher_id);
+    query.push(`AND teacher_id = $${params.length}`);
+  }
+
+  if (searchKey) {
+    params.push(`%${searchKey}%`);
+    query.push(
+      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+    );
+  }
+
+  query.push(`GROUP BY a.student_id, s.first_name, s.last_name, s.father_name`);
+
+  if (sortBy && sortOrder) {
+    query.push(`ORDER BY ${sortBy} ${sortOrder}`);
+  } else {
+    query.push(`ORDER BY attendance_count desc`);
+  }
+  params.push(Number(limit), Number(offset));
+  query.push(`LIMIT $${params.length - 1} OFFSET $${params.length}`);
+
+  dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
   return dataByMonth;
 }
 
+async function getAttendanceCountByAnyDate(formatDate, teacher) {
+  let dataByDate;
+  if (teacher && teacher.master_role_id === 2) {
+    dataByDate = await prisma.$queryRaw`
+        SELECT * FROM attendance as a
+        WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
+        AND teacher_id = ${teacher.teacher_id}
+      `;
+  } else {
+    dataByDate = await prisma.$queryRaw`
+    SELECT * FROM attendance as a
+    WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
+    `;
+  }
+
+  return dataByDate ? dataByDate.length : 0;
+}
 
 module.exports = {
   createAttendance,
@@ -345,5 +437,7 @@ module.exports = {
   getAttendanceCountByMonth,
   getAllStudentsAttendanceData,
   getAttendanceCountByAnyMonth,
-  getAttendanceDateForStudent
+  getAttendanceCountByAnyDate,
+  getAttendanceDateForStudent,
+  getAttendanceDataByAnyMonth,
 };

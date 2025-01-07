@@ -54,7 +54,6 @@ module.exports = function () {
     }
 
     const groupData = await createGroup({group_name, teacher_ids: teacher_assignee});
-    console.log("groupData================", groupData)
     // update group_ id in respective teachers
     const group_id = groupData.group_id;
     teacher_assignee.map(async (teacherId)=>{
@@ -119,7 +118,6 @@ module.exports = function () {
           
           if(!teacherData.group_ids.includes(teacherId)){
             const groupIds = [...teacherData.group_ids, groupId]
-            console.log("groupIdsgroupIds", groupIds);
 
             const updatedTeacher = await updateTeacherData(
               { teacher_id: teacherId },

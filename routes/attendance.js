@@ -9,15 +9,15 @@ const {
   getAttendanceCountByMonth,
   getAllStudentsAttendanceData,
   getAttendanceCountByAnyMonth,
+  getAttendanceCountByAnyDate,
+  getAttendanceDataByAnyMonth,
 } = require("../services/attendance");
 const {
   findStudentsAssignedToTeacherId,
   findStudentsAssignedToTeacherIdCount,
-  getTotalStudentsCount
+  getTotalStudentsCount,
 } = require("../services/user");
-const {
-  findGroupById
-} = require("../services/groupService");
+const { findGroupById } = require("../services/groupService");
 const moment = require("moment");
 
 const { findStudentById, getAllStudents } = require("../services/user");
@@ -80,7 +80,7 @@ module.exports = function () {
       sortBy,
       sortOrder,
       teacherId,
-      group_ids
+      group_ids,
     } = req.query;
 
     try {
@@ -92,11 +92,15 @@ module.exports = function () {
       let users = [];
       let totalCount = 0;
       // teacher login
-      if(teacher.master_role_id === 2){
-        if(teacher.group_ids && teacher.group_ids.length > 0){
+      if (teacher.master_role_id === 2) {
+        if (teacher.group_ids && teacher.group_ids.length > 0) {
           // get teacher ids from group_ids
           const teachers = await findGroupById(teacher.group_ids[0]);
-          totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teachers.teacher_ids);
+          totalCount = await findStudentsAssignedToTeacherIdCount(
+            organization_id,
+            searchKey,
+            teachers.teacher_ids
+          );
 
           users = await findStudentsAssignedToTeacherId(
             organization_id,
@@ -107,8 +111,12 @@ module.exports = function () {
             limit,
             offset
           );
-        } else{
-          totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher.teacher_id);
+        } else {
+          totalCount = await findStudentsAssignedToTeacherIdCount(
+            organization_id,
+            searchKey,
+            teacher.teacher_id
+          );
 
           users = await findStudentsAssignedToTeacherId(
             organization_id,
@@ -121,7 +129,11 @@ module.exports = function () {
           );
         }
       } else {
-        totalCount = await getTotalStudentsCount(organization_id, searchKey, teacherId);
+        totalCount = await getTotalStudentsCount(
+          organization_id,
+          searchKey,
+          teacherId
+        );
 
         users = await getAllStudents(
           searchKey,
@@ -191,23 +203,25 @@ module.exports = function () {
         result.push({
           month: monthName,
           attendance_count: 0,
-          monthNumber: monthNumber
+          monthNumber: monthNumber,
         });
         // Move to the previous month
-        current.subtract(1, 'months');
+        current.subtract(1, "months");
       }
 
       result.reverse();
-    
+
       const attendance = await getAttendanceCountByMonth(
         student.student_id,
         lowerDateLimit,
         upperDateLimit
       );
       // Loop through the result array
-      result.forEach(resultItem => {
+      result.forEach((resultItem) => {
         // Find if there's a corresponding month in the attendance array
-        const attendanceItem = attendance.find(item => item.month === resultItem.month);
+        const attendanceItem = attendance.find(
+          (item) => item.month === resultItem.month
+        );
 
         // If found, update the attendance_count of the result item
         if (attendanceItem) {
@@ -215,7 +229,7 @@ module.exports = function () {
         }
       });
       result.reverse();
-      
+
       if (!result) {
         res.status(422).json({
           message: `No attendance found`,
@@ -237,10 +251,38 @@ module.exports = function () {
   router.post("/attendance_report", userMiddleware, async (req, res) => {
     const { teacher, dateMonth } = req.body;
 
-    let formatDate = moment(dateMonth).format("YYYY-MM-DD")    
+    let {
+      limit,
+      offset,
+      searchKey,
+      sortBy,
+      sortOrder,
+      lowerDateLimit,
+      upperDateLimit,
+    } = req.query;
+    let formatDate = moment(dateMonth).format("YYYY-MM-DD");
+
     try {
-      let attendance = await getAttendanceCountByAnyMonth(formatDate, teacher);
-      
+      const totalAttendanceCount = await getAttendanceCountByAnyMonth(
+        formatDate,
+        teacher,
+        searchKey,
+        lowerDateLimit,
+        upperDateLimit
+      );
+
+      const attendance = await getAttendanceDataByAnyMonth(
+        searchKey,
+        sortBy,
+        sortOrder,
+        formatDate,
+        teacher,
+        limit,
+        offset,
+        lowerDateLimit,
+        upperDateLimit
+      );
+
       if (!attendance) {
         res.status(422).json({
           message: `No attendance found`,
@@ -248,10 +290,26 @@ module.exports = function () {
         return;
       }
 
-      res.status(200).json({
-        message: `attendance found`,
-        data: attendance,
-      });
+      if (attendance && attendance.length > 0) {
+        res.status(200).json({
+          message: "Attendance found",
+          data: {
+            attendance,
+            offset,
+            totalCount: totalAttendanceCount,
+          },
+        });
+      } else {
+        res.status(200).json({
+          message: `No attendance found`,
+          data: {
+            attendance: [],
+            offset,
+            totalCount: totalAttendanceCount,
+          },
+        });
+        return;
+      }
     } catch (error) {
       console.error("Error getting attendance:", error);
       res.status(500).json({
@@ -259,6 +317,7 @@ module.exports = function () {
       });
     }
   });
+      
 
   // Create attendance
   router.post("/attendance", userMiddleware, async (req, res) => {
@@ -283,7 +342,7 @@ module.exports = function () {
       );
 
       // removal attendance
-      if(removals && removals.length > 0){
+      if (removals && removals.length > 0) {
         const removalData = await deleteAttendance(
           teacher.teacher_id,
           removals
@@ -337,6 +396,36 @@ module.exports = function () {
     } catch (error) {
       res.status(500).json({
         message: `Error while deleting attendance: ${error}`,
+      });
+    }
+  });
+
+  router.post("/attendance_report_by_day", userMiddleware, async (req, res) => {
+    const { teacher, date } = req.body;
+
+    let formatDate = moment(date, "YYYY-MM-DD").format();
+
+    try {
+      let attendanceCount = await getAttendanceCountByAnyDate(
+        formatDate,
+        teacher
+      );
+
+      if (!attendanceCount && attendanceCount.toString() != "0") {
+        res.status(422).json({
+          message: `No attendance found`,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        message: `attendance found`,
+        data: attendanceCount,
+      });
+    } catch (error) {
+      console.error("Error getting attendance:", error);
+      res.status(500).json({
+        message: `Error while fetching attendance - ${error}`,
       });
     }
   });
