@@ -88,6 +88,10 @@ module.exports = function () {
 
       const totalTeacherCount = await getTeachersCount(organization_id, searchKey);
 
+      if(!sortBy){
+        sortBy = 'teacher_first_name'
+      }
+
       const teachers = await getAllTeachers(
         searchKey,
         sortBy,
@@ -96,10 +100,6 @@ module.exports = function () {
         limit,
         offset
       );
-
-      if(!sortBy){
-        sortBy = 'teacher_first_name'
-      }
 
       if (teachers && teachers.length > 0) {
         res.status(200).json({
