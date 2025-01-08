@@ -324,8 +324,10 @@ async function findStudentsAssignedToTeacherId(
 
 async function findStudentsAssignedToTeacherData(organization_id) {
   const students = await prisma.$queryRaw`
-    SELECT COUNT(*) AS student_count, t.teacher_first_name AS teachers FROM student s, teacher t GROUP BY s.assigned_to,t.teacher_first_name, s.organization_id HAVING s.organization_id = ${organization_id}
-  `;
+    SELECT COUNT(s.student_id) AS student_count, t.teacher_first_name as teachers from student s
+      JOIN teacher t ON s.assigned_to = t.teacher_id
+      WHERE s.organization_id = ${organization_id}
+      GROUP BY teacher_first_name ORDER BY student_count DESC`;
   if (students) {
     return students;
   }
