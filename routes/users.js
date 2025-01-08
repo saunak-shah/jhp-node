@@ -15,6 +15,7 @@ const {
   findStudentById,
   findStudentByRegisterNumber,
   getTotalStudentsCount,
+  findStudentsAssignedToTeacherData,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -44,7 +45,9 @@ module.exports = function () {
   router.get("/students/check_username/:username", async (req, res) => {
     try {
       const { username } = req.params;
-      const isUsernamePresent = await findStudentByUsername(username.toLowerCase());
+      const isUsernamePresent = await findStudentByUsername(
+        username.toLowerCase()
+      );
       if (isUsernamePresent) {
         res
           .status(422)
@@ -69,20 +72,25 @@ module.exports = function () {
           ? student?.organization_id
           : teacher?.organization_id;
 
-
       let teacherId = teacher.teacher_id;
       // Admin role
-      if(Number(teacher.master_role_id) === 1){
+      if (Number(teacher.master_role_id) === 1) {
         teacherId = undefined;
       }
-      const totalUserCount = await getTotalStudentsCount(organization_id, searchKey, teacherId);
-      
+      const totalUserCount = await getTotalStudentsCount(
+        organization_id,
+        searchKey,
+        teacherId
+      );
+
       const users = await getAllStudents(
         searchKey,
         sortBy,
         organization_id,
         sortOrder,
-        !limit || limit == "null" || limit == "undefined" ? totalUserCount: limit,
+        !limit || limit == "null" || limit == "undefined"
+          ? totalUserCount
+          : limit,
         offset,
         teacherId
       );
@@ -178,7 +186,9 @@ module.exports = function () {
         return;
       }
 
-      const isUsernamePresent = await findStudentByUsername(username.toLowerCase());
+      const isUsernamePresent = await findStudentByUsername(
+        username.toLowerCase()
+      );
       if (isUsernamePresent) {
         res
           .status(422)
@@ -189,18 +199,21 @@ module.exports = function () {
       if (password.length <= 4) {
         res
           .status(422)
-          .json({ message: "Password length should be greater then 4 characters.", data: false });
+          .json({
+            message: "Password length should be greater then 4 characters.",
+            data: false,
+          });
         return;
       }
 
       if (!validateEmail(email)) {
-        res.status(422)
-        .json({ message: "Email is invalid.", data: false });
+        res.status(422).json({ message: "Email is invalid.", data: false });
         return;
       }
       if (!validatePhoneNumber(phone_number)) {
-        res.status(422)
-        .json({ message: "Phone number is invalid.", data: false });
+        res
+          .status(422)
+          .json({ message: "Phone number is invalid.", data: false });
         return;
       }
 
@@ -217,7 +230,8 @@ module.exports = function () {
         first_name[0] +
         last_name[0] +
         date +
-        month + randomNo;
+        month +
+        randomNo;
 
       while (true) {
         const isStudentExists = await findStudentByRegisterNumber(register_no);
@@ -294,11 +308,9 @@ You can log in using the below link:
           console.error(`Unable to send mail`);
         }
       } else {
-        return res
-          .status(500)
-          .json({
-            message: "An error occurred during signup. Please try again later",
-          });
+        return res.status(500).json({
+          message: "An error occurred during signup. Please try again later",
+        });
       }
     } catch (error) {
       console.error("Error during signup:", error);
@@ -448,11 +460,12 @@ You can log in using the below link:
     const { username, email } = req.body;
     try {
       if (!validateEmail(email)) {
-        res.status(422)
-        .json({ message: "Email is invalid.", data: false });
+        res.status(422).json({ message: "Email is invalid.", data: false });
         return;
       }
-      const studentByUsername = await findStudentByUsername(username.toLowerCase());
+      const studentByUsername = await findStudentByUsername(
+        username.toLowerCase()
+      );
       if (
         studentByUsername &&
         studentByUsername.email.toLowerCase() == email.toLowerCase()
@@ -478,7 +491,7 @@ You can log in using the below link:
         const to = email.toLowerCase();
         const subject = "Password Reset";
 
-          const html = `
+        const html = `
           <html>
             <body>
               <pre>
@@ -528,14 +541,20 @@ You can log in using the below link:
       if (password !== cpassword) {
         res
           .status(422)
-          .json({ message: "Password and confirm password should be same.", data: false });
+          .json({
+            message: "Password and confirm password should be same.",
+            data: false,
+          });
         return;
       }
 
       if (password.length <= 4) {
         res
           .status(422)
-          .json({ message: "Password length should be greater then 4 characters.", data: false });
+          .json({
+            message: "Password length should be greater then 4 characters.",
+            data: false,
+          });
         return;
       }
       const studentData = await findStudentByResetPasswordToken(token);
@@ -696,16 +715,18 @@ You can log in using the below link:
       // const { student } = req.body;
       // if (student && student.student_id == id) {
 
-        const deletedStudent = await deleteStudentData({ student_id: parseInt(id) });
+      const deletedStudent = await deleteStudentData({
+        student_id: parseInt(id),
+      });
 
-        if (deletedStudent) {
-          res.status(200).json({
-            message: "Student deleted",
-            data: { student: deletedStudent },
-          });
-        } else {
-          res.status(500).json({ message: "Unable to delete student" });
-        }
+      if (deletedStudent) {
+        res.status(200).json({
+          message: "Student deleted",
+          data: { student: deletedStudent },
+        });
+      } else {
+        res.status(500).json({ message: "Unable to delete student" });
+      }
       // } else {
       //   res.status(204).json({ message: "Student not found" });
       // }
@@ -714,6 +735,35 @@ You can log in using the below link:
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
+
+  router.get(
+    "/students-assign-graph-data",
+    userMiddleware,
+    async (req, res) => {
+      const { admin, teacher } = req.body;
+      if (!admin) {
+        throw new Error("Only admin");
+      }
+
+      const data = await findStudentsAssignedToTeacherData(
+        teacher?.organization_id
+      );
+
+      const teachers = [];
+      const studentCount = [];
+
+      for (let i = 0; i < data.length; i++) {
+        teachers.push(data[i].teachers);
+        studentCount.push(parseInt(data[i].student_count));
+      }
+      res.status(200).json({
+        message: `Data fetched successfully`,
+        data: {
+          teachers, studentCount
+        },
+      });
+    }
+  );
 
   return router;
 };

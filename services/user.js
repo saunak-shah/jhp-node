@@ -148,7 +148,11 @@ async function deleteStudentData(filter) {
   return;
 }
 
-async function getTotalStudentsCount(organization_id, searchKey, teacherId = undefined) {
+async function getTotalStudentsCount(
+  organization_id,
+  searchKey,
+  teacherId = undefined
+) {
   const studentCount = await prisma.student.count({
     where: buildWhereClause(organization_id, searchKey, teacherId),
   });
@@ -187,18 +191,19 @@ function buildWhereClause(
 ) {
   let whereClause;
 
- /*  if (assigneeCheck) {
+  /*  if (assigneeCheck) {
     whereClause = {
       assigned_to: {
         not: null,
       },
     };
-  } */ 
+  } */
   if (teacher_id) {
     whereClause = {
       assigned_to: Array.isArray(teacher_id)
-        ? { in: teacher_id.map(id => parseInt(id)) } : parseInt(teacher_id)
-    }
+        ? { in: teacher_id.map((id) => parseInt(id)) }
+        : parseInt(teacher_id),
+    };
   }
 
   if (searchKey) {
@@ -282,7 +287,7 @@ function buildOrderClause(sortBy, sortOrder) {
 async function findStudentsAssignedToTeacherIdCount(
   organization_id,
   searchKey,
-  teacher_id,
+  teacher_id
 ) {
   const students = await prisma.student.count({
     where: buildWhereClause(organization_id, searchKey, teacher_id),
@@ -311,6 +316,16 @@ async function findStudentsAssignedToTeacherId(
     skip: parseInt(offset),
   });
 
+  if (students) {
+    return students;
+  }
+  return;
+}
+
+async function findStudentsAssignedToTeacherData(organization_id) {
+  const students = await prisma.$queryRaw`
+    SELECT COUNT(*) AS student_count, t.teacher_first_name AS teachers FROM student s, teacher t GROUP BY s.assigned_to,t.teacher_first_name, s.organization_id HAVING s.organization_id = ${organization_id}
+  `;
   if (students) {
     return students;
   }
@@ -394,4 +409,5 @@ module.exports = {
   getAllAssignees,
   getTotalStudentsCount,
   getAllAssigneesCount,
+  findStudentsAssignedToTeacherData,
 };

@@ -318,12 +318,12 @@ async function getAttendanceCountByAnyMonth(
   ];
 
   if (lowerDateLimit) {
-    params.push(moment(lowerDateLimit).format('YYYY-MM-DD'));
+    params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
     query.push(`AND a.date >= $${params.length}::date`);
   }
 
   if (upperDateLimit) {
-    params.push(moment(upperDateLimit).format('YYYY-MM-DD'));
+    params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
     query.push(`AND a.date <= $${params.length}::date`);
   }
 
@@ -374,13 +374,17 @@ async function getAttendanceDataByAnyMonth(
   ];
 
   if (lowerDateLimit) {
-    params.push(moment(lowerDateLimit).format('YYYY-MM-DD'));
-    query.push(`AND a.date::date >= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`);
+    params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
+    query.push(
+      `AND a.date::date >= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`
+    );
   }
 
   if (upperDateLimit) {
-    params.push(moment(upperDateLimit).format('YYYY-MM-DD'));
-    query.push(`AND a.date::date <= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`);
+    params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
+    query.push(
+      `AND a.date::date <= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`
+    );
   }
 
   if (teacher && teacher.master_role_id === 2) {
@@ -428,6 +432,49 @@ async function getAttendanceCountByAnyDate(formatDate, teacher) {
   return dataByDate ? dataByDate.length : 0;
 }
 
+async function getAttendanceCountForGraph(lowerDateLimit, upperDateLimit) {
+  // Fetch grouped attendance data from the database
+  const attendance = await prisma.attendance.groupBy({
+    by: ["date"],
+    where: {
+      date: {
+        gte: lowerDateLimit,
+        lte: upperDateLimit,
+      },
+    },
+    _count: {
+      _all: true,
+    },
+  });
+
+  // Create a map of attendance data for quick lookup
+  const attendanceMap = attendance.reduce((acc, item) => {
+    acc[moment(item.date).format("YYYY-MM-DD")] = item._count._all;
+    return acc;
+  }, {});
+
+  // Generate the full range of dates between lowerDateLimit and upperDateLimit
+  const fullDateRange = [];
+  let currentDate = moment(lowerDateLimit);
+  const endDate = moment(upperDateLimit);
+
+  while (currentDate.isSameOrBefore(endDate)) {
+    fullDateRange.push(currentDate.format("YYYY-MM-DD"));
+    currentDate.add(1, "day");
+  }
+
+  // Populate the attendance count for each date in the range
+  const attendanceDate = [];
+  const attendanceCount = [];
+
+  fullDateRange.forEach((date) => {
+    attendanceDate.push(moment(date).format("DD-MM-YYYY"));
+    attendanceCount.push(attendanceMap[date] || 0); // Default to 0 if no attendance
+  });
+
+  return { attendanceCount, attendanceDate };
+}
+
 module.exports = {
   createAttendance,
   deleteAttendance,
@@ -440,4 +487,5 @@ module.exports = {
   getAttendanceCountByAnyDate,
   getAttendanceDateForStudent,
   getAttendanceDataByAnyMonth,
+  getAttendanceCountForGraph,
 };
