@@ -20,7 +20,6 @@ const {
 } = require("../services/user");
 const { findGroupById } = require("../services/groupService");
 const moment = require("moment");
-const dayjs = require("dayjs");
 
 const { findStudentById, getAllStudents } = require("../services/user");
 
@@ -444,8 +443,8 @@ module.exports = function () {
           return;
         }
 
-        const defaultStartDate = dayjs().subtract(7, "day");
-        const defaultEndDate = dayjs();
+        const defaultStartDate = moment().subtract(7, "day");
+        const defaultEndDate = moment();
         const { lowerDateLimit, upperDateLimit } = req.params;
 
         const startDate = lowerDateLimit ? lowerDateLimit : defaultStartDate;
