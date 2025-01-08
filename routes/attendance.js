@@ -11,6 +11,7 @@ const {
   getAttendanceCountByAnyMonth,
   getAttendanceCountByAnyDate,
   getAttendanceDataByAnyMonth,
+  getAttendanceCountForGraph,
 } = require("../services/attendance");
 const {
   findStudentsAssignedToTeacherId,
@@ -19,6 +20,7 @@ const {
 } = require("../services/user");
 const { findGroupById } = require("../services/groupService");
 const moment = require("moment");
+const dayjs = require("dayjs");
 
 const { findStudentById, getAllStudents } = require("../services/user");
 
@@ -317,7 +319,6 @@ module.exports = function () {
       });
     }
   });
-      
 
   // Create attendance
   router.post("/attendance", userMiddleware, async (req, res) => {
@@ -429,6 +430,44 @@ module.exports = function () {
       });
     }
   });
+
+  router.get(
+    "/attendance_report_for_graph/:lowerDateLimit/:upperDateLimit",
+    userMiddleware,
+    async (req, res) => {
+      try {
+        const { admin } = req.body;
+        if (!admin) {
+          res.status(422).json({
+            message: `Only Admin`,
+          });
+          return;
+        }
+
+        const defaultStartDate = dayjs().subtract(7, "day");
+        const defaultEndDate = dayjs();
+        const { lowerDateLimit, upperDateLimit } = req.params;
+
+        const startDate = lowerDateLimit ? lowerDateLimit : defaultStartDate;
+        const endDate = upperDateLimit ? upperDateLimit : defaultEndDate;
+
+        const data = await getAttendanceCountForGraph(
+          new Date(startDate).toISOString(),
+          new Date(endDate).toISOString()
+        );
+
+        res.status(200).json({
+          message: `attendance found`,
+          data,
+        });
+      } catch (error) {
+        console.error("Error getting attendance:", error);
+        res.status(500).json({
+          message: `Error while fetching attendance - ${error}`,
+        });
+      }
+    }
+  );
 
   return router;
 };
