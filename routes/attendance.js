@@ -436,12 +436,12 @@ module.exports = function () {
     async (req, res) => {
       try {
         const { admin } = req.body;
-        if (!admin) {
+        /* if (!admin) {
           res.status(422).json({
             message: `Only Admin`,
           });
           return;
-        }
+        } */
 
         const defaultStartDate = moment().subtract(7, "day");
         const defaultEndDate = moment();

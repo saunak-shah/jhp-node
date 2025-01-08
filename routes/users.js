@@ -741,9 +741,9 @@ You can log in using the below link:
     userMiddleware,
     async (req, res) => {
       const { admin, teacher } = req.body;
-      if (!admin) {
+      /* if (!admin) {
         throw new Error("Only admin");
-      }
+      } */
 
       const data = await findStudentsAssignedToTeacherData(
         teacher?.organization_id
