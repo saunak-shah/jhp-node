@@ -443,19 +443,21 @@ async function getAttendanceCountByAnyDate(formatDate, teacher) {
 
   // Flatten and deduplicate teacher_ids from the groups table
   const teacherIds = [...new Set(groups.flatMap((group) => group.teacher_ids))];
+
   let dataByDate;
+  const params = [formatDate, teacher.organization_id];
+  let query = [
+    `SELECT * FROM attendance a LEFT JOIN teacher t ON a.teacher_id = t.teacher_id
+        WHERE DATE(a.date) = ($${
+          params.length - 1
+        }::timestamptz AT TIME ZONE 'UTC')::date
+        AND t.organization_id = $${params.length}`,
+  ];
   if (teacher && teacher.master_role_id === 2) {
-    dataByDate = await prisma.$queryRaw`
-        SELECT * FROM attendance as a
-        WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
-        AND teacher_id = ANY(${Prisma.sql`${teacherIds}`})
-      `;
-  } else {
-    dataByDate = await prisma.$queryRaw`
-        SELECT * FROM attendance as a
-        WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
-      `;
+    params.push(Prisma.sql`${teacherIds}`);
+    query.push(`AND t.teacher_id = ANY($${params.length})`);
   }
+  dataByDate = await prisma.$queryRawUnsafe(query.join(" "), ...params);
   return dataByDate ? dataByDate.length : 0;
 }
 
