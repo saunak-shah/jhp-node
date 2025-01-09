@@ -1,3 +1,4 @@
+const { Prisma } = require("@prisma/client");
 const { prisma } = require("../prisma/client");
 const { findStudentById } = require("./user");
 const moment = require("moment");
@@ -415,20 +416,46 @@ async function getAttendanceDataByAnyMonth(
 }
 
 async function getAttendanceCountByAnyDate(formatDate, teacher) {
+  // Fetch all the group_ids from the teacher table
+  const teachers = await prisma.teacher.findUnique({
+    where: {
+      teacher_id: teacher.teacher_id,
+    },
+    select: {
+      group_ids: true,
+    },
+  });
+
+  // Extract unique group_ids from the teacher table
+  const groupIds = teachers?.group_ids ?? [];
+
+  // Fetch all the teacher_ids from the groups table for the filtered groupIds
+  const groups = await prisma.groups.findMany({
+    where: {
+      group_id: {
+        in: groupIds,
+      },
+    },
+    select: {
+      teacher_ids: true,
+    },
+  });
+
+  // Flatten and deduplicate teacher_ids from the groups table
+  const teacherIds = [...new Set(groups.flatMap((group) => group.teacher_ids))];
   let dataByDate;
   if (teacher && teacher.master_role_id === 2) {
     dataByDate = await prisma.$queryRaw`
         SELECT * FROM attendance as a
         WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
-        AND teacher_id = ${teacher.teacher_id}
+        AND teacher_id = ANY(${Prisma.sql`${teacherIds}`})
       `;
   } else {
     dataByDate = await prisma.$queryRaw`
-    SELECT * FROM attendance as a
-    WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
-    `;
+        SELECT * FROM attendance as a
+        WHERE DATE(a.date) = (${formatDate}::timestamptz AT TIME ZONE 'UTC')::date
+      `;
   }
-
   return dataByDate ? dataByDate.length : 0;
 }
 
