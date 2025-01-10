@@ -394,6 +394,45 @@ async function getAllAssigneesCount(organization_id) {
   return studentsCount;
 }
 
+async function findStudentsByAgeGroup(organization_id) {
+  const data = await prisma.$queryRawUnsafe(`
+    SELECT
+        CASE
+            WHEN age(current_date, birth_date) < INTERVAL '11 years' THEN '0-10 years'
+            WHEN age(current_date, birth_date) < INTERVAL '21 years' THEN '11-20 years'
+            WHEN age(current_date, birth_date) < INTERVAL '31 years' THEN '21-30 years'
+            WHEN age(current_date, birth_date) < INTERVAL '41 years' THEN '31-40 years'
+            WHEN age(current_date, birth_date) < INTERVAL '51 years' THEN '41-50 years'
+            WHEN age(current_date, birth_date) < INTERVAL '61 years' THEN '51-60 years'
+            WHEN age(current_date, birth_date) < INTERVAL '71 years' THEN '61-70 years'
+            WHEN age(current_date, birth_date) < INTERVAL '81 years' THEN '71-80 years'
+            WHEN age(current_date, birth_date) < INTERVAL '91 years' THEN '81-90 years'
+            ELSE '91+ years'
+        END AS age_range,
+      COUNT(*) AS student_count
+    FROM student
+    WHERE organization_id = $1
+    GROUP BY age_range
+    ORDER BY age_range
+`, organization_id)
+
+  return data;
+}
+
+async function findStudentsByGenderGroup(organization_id) {
+  const data = await prisma.$queryRawUnsafe(`
+    SELECT
+      gender,
+      COUNT(*) AS student_count
+    FROM student
+    WHERE organization_id = $1
+    GROUP BY gender
+    ORDER BY gender
+`, organization_id)
+
+  return data;
+}
+
 module.exports = {
   findStudentByUsername,
   findStudentByEmail,
@@ -412,4 +451,6 @@ module.exports = {
   getTotalStudentsCount,
   getAllAssigneesCount,
   findStudentsAssignedToTeacherData,
+  findStudentsByAgeGroup,
+  findStudentsByGenderGroup
 };

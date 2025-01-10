@@ -16,6 +16,8 @@ const {
   findStudentByRegisterNumber,
   getTotalStudentsCount,
   findStudentsAssignedToTeacherData,
+  findStudentsByGenderGroup,
+  findStudentsByAgeGroup,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -760,6 +762,66 @@ You can log in using the below link:
         message: `Data fetched successfully`,
         data: {
           teachers, studentCount
+        },
+      });
+    }
+  );
+
+  router.get(
+    "/students-age-group-data",
+    userMiddleware,
+    async (req, res) => {
+      const { admin, teacher } = req.body;
+      /* if (!admin) {
+        throw new Error("Only admin");
+      } */
+
+      const data = await findStudentsByAgeGroup(
+        teacher?.organization_id
+      );
+
+      const ageGroup = [];
+      const studentCount = [];
+
+      for (let i = 0; i < data.length; i++) {
+        ageGroup.push(data[i].age_range);
+        studentCount.push(parseInt(data[i].student_count));
+      }
+
+      res.status(200).json({
+        message: `Data fetched successfully`,
+        data: {
+          ageGroup, studentCount
+        },
+      });
+    }
+  );
+
+  router.get(
+    "/students-gender-group-data",
+    userMiddleware,
+    async (req, res) => {
+      const { admin, teacher } = req.body;
+      /* if (!admin) {
+        throw new Error("Only admin");
+      } */
+
+      const data = await findStudentsByGenderGroup(
+        teacher?.organization_id
+      );
+
+      const genderGroup = [];
+      const studentCount = [];
+
+      for (let i = 0; i < data.length; i++) {
+        genderGroup.push(data[i].gender);
+        studentCount.push(parseInt(data[i].student_count));
+      }
+
+      res.status(200).json({
+        message: `Data fetched successfully`,
+        data: {
+          genderGroup, studentCount
         },
       });
     }
