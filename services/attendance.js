@@ -336,7 +336,7 @@ async function getAttendanceCountByAnyMonth(
   if (searchKey) {
     params.push(`%${searchKey}%`);
     query.push(
-      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+      `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
     );
   }
 
@@ -396,7 +396,7 @@ async function getAttendanceDataByAnyMonth(
   if (searchKey) {
     params.push(`%${searchKey}%`);
     query.push(
-      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+     `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
     );
   }
 
