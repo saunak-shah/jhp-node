@@ -336,7 +336,7 @@ async function getAttendanceCountByAnyMonth(
   if (searchKey) {
     params.push(`%${searchKey}%`);
     query.push(
-      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+      `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
     );
   }
 
@@ -396,7 +396,7 @@ async function getAttendanceDataByAnyMonth(
   if (searchKey) {
     params.push(`%${searchKey}%`);
     query.push(
-      `AND (s.first_name LIKE $${params.length} OR s.last_name LIKE $${params.length} OR s.father_name LIKE $${params.length})`
+     `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
     );
   }
 
@@ -446,7 +446,7 @@ async function getAttendanceCountByAnyDate(formatDate, teacher) {
 
   let dataByDate;
   const params = [formatDate, teacher.organization_id];
-  let query = [
+  /* let query = [
     `SELECT * FROM attendance a LEFT JOIN teacher t ON a.teacher_id = t.teacher_id
         WHERE DATE(a.date) = ($${
           params.length - 1
@@ -456,6 +456,16 @@ async function getAttendanceCountByAnyDate(formatDate, teacher) {
   if (teacher && teacher.master_role_id === 2) {
     params.push(Prisma.sql`${teacherIds}`);
     query.push(`AND t.teacher_id = ANY($${params.length})`);
+  } */
+  let query = [
+    `SELECT * FROM attendance a LEFT JOIN teacher t ON a.teacher_id = t.teacher_id
+      WHERE DATE(a.date) = ($1::date) 
+      AND t.organization_id = $${params.length}`,
+  ];
+    
+  if (teacher && teacher.master_role_id === 2) {
+    params.push(teacherIds); // Push the array as a parameter
+    query.push(`AND t.teacher_id = ANY(ARRAY[$${params.length}])`);
   }
   dataByDate = await prisma.$queryRawUnsafe(query.join(" "), ...params);
   return dataByDate ? dataByDate.length : 0;

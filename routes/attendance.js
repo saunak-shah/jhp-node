@@ -250,8 +250,7 @@ module.exports = function () {
   });
 
   router.post("/attendance_report", userMiddleware, async (req, res) => {
-    const { teacher, dateMonth } = req.body;
-
+    const { teacher, date } = req.body;
     let {
       limit,
       offset,
@@ -261,7 +260,10 @@ module.exports = function () {
       lowerDateLimit,
       upperDateLimit,
     } = req.query;
-    let formatDate = moment(dateMonth).format("YYYY-MM-DD");
+    let formatDate = moment(date).format("YYYY-MM-DD");
+
+    lowerDateLimit = moment.utc(`${req.query.lowerDateLimit}`).toISOString();
+    upperDateLimit = moment.utc(`${req.query.upperDateLimit}`).toISOString();
 
     try {
       const totalAttendanceCount = await getAttendanceCountByAnyMonth(
@@ -403,7 +405,7 @@ module.exports = function () {
   router.post("/attendance_report_by_day", userMiddleware, async (req, res) => {
     const { teacher, date } = req.body;
 
-    let formatDate = moment(date, "YYYY-MM-DD").format();
+    let formatDate = moment(date, "YYYY-MM-DD").format("YYYY-MM-DD");
 
     try {
       let attendanceCount = await getAttendanceCountByAnyDate(
@@ -443,16 +445,12 @@ module.exports = function () {
           return;
         } */
 
-        const defaultStartDate = moment().subtract(7, "day");
-        const defaultEndDate = moment();
-        const { lowerDateLimit, upperDateLimit } = req.params;
-
-        const startDate = lowerDateLimit ? lowerDateLimit : defaultStartDate;
-        const endDate = upperDateLimit ? upperDateLimit : defaultEndDate;
+        let lowerDateLimit = moment.utc(`${req.params.lowerDateLimit}`).toISOString();
+        let upperDateLimit = moment.utc(`${req.params.upperDateLimit}`).toISOString();
 
         const data = await getAttendanceCountForGraph(
-          new Date(startDate).toISOString(),
-          new Date(endDate).toISOString()
+          lowerDateLimit,
+          upperDateLimit
         );
 
         res.status(200).json({
