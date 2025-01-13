@@ -151,10 +151,20 @@ async function deleteStudentData(filter) {
 async function getTotalStudentsCount(
   organization_id,
   searchKey,
-  teacherId = undefined
+  teacherId = undefined,
+  gender,
+  fromDate,
+  toDate
 ) {
   const studentCount = await prisma.student.count({
-    where: buildWhereClause(organization_id, searchKey, teacherId),
+    where: buildWhereClause(
+      organization_id,
+      searchKey,
+      teacherId,
+      gender,
+      fromDate,
+      toDate
+    ),
   });
 
   return studentCount;
@@ -167,10 +177,20 @@ async function getAllStudents(
   sortOrder = "asc",
   limit = 100,
   offset = 0,
-  teacherId = undefined
+  teacherId = undefined,
+  gender,
+  fromDate,
+  toDate
 ) {
   const student = await prisma.student.findMany({
-    where: buildWhereClause(organization_id, searchKey, teacherId),
+    where: buildWhereClause(
+      organization_id,
+      searchKey,
+      teacherId,
+      gender,
+      fromDate,
+      toDate
+    ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -187,7 +207,10 @@ function buildWhereClause(
   organization_id,
   searchKey,
   // assigneeCheck = false,
-  teacher_id = undefined
+  teacher_id = undefined,
+  gender,
+  fromDate,
+  toDate
 ) {
   let whereClause;
 
@@ -203,6 +226,31 @@ function buildWhereClause(
       assigned_to: Array.isArray(teacher_id)
         ? { in: teacher_id.map((id) => parseInt(id)) }
         : parseInt(teacher_id),
+    };
+  }
+
+  if (gender) {
+    whereClause = {
+      ...whereClause,
+      gender,
+    };
+  }
+
+  if (fromDate) {
+    whereClause = {
+      ...whereClause,
+      created_at: {
+        gte: new Date(fromDate),
+      },
+    };
+  }
+
+  if (toDate) {
+    whereClause = {
+      ...whereClause,
+      created_at: {
+        lte: new Date(toDate),
+      },
     };
   }
 
@@ -229,12 +277,12 @@ function buildWhereClause(
             mode: "insensitive",
           },
         },
-        {
-          address: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
+        // {
+        //   address: {
+        //     contains: searchKey,
+        //     mode: "insensitive",
+        //   },
+        // },
         {
           phone_number: {
             contains: searchKey,
@@ -247,18 +295,18 @@ function buildWhereClause(
             mode: "insensitive",
           },
         },
-        {
-          register_no: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          username: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
+        // {
+        //   register_no: {
+        //     contains: searchKey,
+        //     mode: "insensitive",
+        //   },
+        // },
+        // {
+        //   username: {
+        //     contains: searchKey,
+        //     mode: "insensitive",
+        //   },
+        // },
       ],
     };
   }
@@ -287,10 +335,20 @@ function buildOrderClause(sortBy, sortOrder) {
 async function findStudentsAssignedToTeacherIdCount(
   organization_id,
   searchKey,
-  teacher_id
+  teacher_id,
+  gender,
+  fromDate,
+  toDate
 ) {
   const students = await prisma.student.count({
-    where: buildWhereClause(organization_id, searchKey, teacher_id),
+    where: buildWhereClause(
+      organization_id,
+      searchKey,
+      teacher_id,
+      gender,
+      fromDate,
+      toDate
+    ),
   });
 
   if (students) {
@@ -306,10 +364,20 @@ async function findStudentsAssignedToTeacherId(
   teacher_id,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  gender,
+  fromDate,
+  toDate
 ) {
   const students = await prisma.student.findMany({
-    where: buildWhereClause(organization_id, searchKey, teacher_id),
+    where: buildWhereClause(
+      organization_id,
+      searchKey,
+      teacher_id,
+      gender,
+      fromDate,
+      toDate
+    ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -395,7 +463,8 @@ async function getAllAssigneesCount(organization_id) {
 }
 
 async function findStudentsByAgeGroup(organization_id) {
-  const data = await prisma.$queryRawUnsafe(`
+  const data = await prisma.$queryRawUnsafe(
+    `
     SELECT
         CASE
             WHEN age(current_date, birth_date) < INTERVAL '11 years' THEN '0-10 years'
@@ -414,13 +483,16 @@ async function findStudentsByAgeGroup(organization_id) {
     WHERE organization_id = $1
     GROUP BY age_range
     ORDER BY age_range
-`, organization_id)
+`,
+    organization_id
+  );
 
   return data;
 }
 
 async function findStudentsByGenderGroup(organization_id) {
-  const data = await prisma.$queryRawUnsafe(`
+  const data = await prisma.$queryRawUnsafe(
+    `
     SELECT
       gender,
       COUNT(*) AS student_count
@@ -428,7 +500,9 @@ async function findStudentsByGenderGroup(organization_id) {
     WHERE organization_id = $1
     GROUP BY gender
     ORDER BY gender
-`, organization_id)
+`,
+    organization_id
+  );
 
   return data;
 }
@@ -452,5 +526,5 @@ module.exports = {
   getAllAssigneesCount,
   findStudentsAssignedToTeacherData,
   findStudentsByAgeGroup,
-  findStudentsByGenderGroup
+  findStudentsByGenderGroup,
 };
