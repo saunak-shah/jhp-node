@@ -4,7 +4,7 @@ const resultOutputData = {
   result_id: true,
   created_at: true,
   updated_at: true,
-  student_apply_course_id: true,
+  reg_id: true,
   score: true,
   course_passing_score: true,
   course_score: true,
@@ -13,6 +13,7 @@ const resultOutputData = {
     select: {
       student_id: true,
       course_id: true,
+      reg_id: true,
       course: {
         select: {
           course_name: true,
@@ -39,7 +40,7 @@ const resultOutputData = {
 async function createResult(data) {
   const result = await prisma.result.upsert({
     where: {
-      student_apply_course_id: parseInt(data.student_apply_course_id)
+      reg_id: data.reg_id,
     },
     update: data,
     create: data,
@@ -58,6 +59,7 @@ async function getCourseScore(registration_id) {
       student_apply_course_id: parseInt(registration_id),
     },
     select: {
+      reg_id: true,
       course: {
         select: {
           course_score: true,
@@ -71,6 +73,7 @@ async function getCourseScore(registration_id) {
     return {
       course_score: result.course.course_score,
       course_passing_score: result.course.course_passing_score,
+      reg_id: result.reg_id,
     };
   }
 }
@@ -92,7 +95,7 @@ async function findResultByResultId(resultId) {
 async function findResultByRegistrationId(registration_id) {
   const result = await prisma.result.findUnique({
     where: {
-      student_apply_course_id: parseInt(registration_id),
+      reg_id: registration_id,
     },
     select: resultOutputData,
   });
@@ -223,19 +226,22 @@ async function getAllResultsByCourseIdToDownload(
     skip: parseInt(offset),
   });
 
-  const data = []
+  const data = [];
 
   if (results) {
-    for(let i = 0; i < results.length; i++){
+    for (let i = 0; i < results.length; i++) {
       data.push({
         result_id: results[i].result_id,
         student_apply_course_id: results[i].student_apply_course_id,
-        student_name: results[i].student_apply_course.student.first_name + " " + results[i].student_apply_course.student.last_name,
+        student_name:
+          results[i].student_apply_course.student.first_name +
+          " " +
+          results[i].student_apply_course.student.last_name,
         course_name: results[i].student_apply_course.course.course_name,
         score: results[i].score,
         course_score: results[i].course_score,
         course_passing_score: results[i].course_passing_score,
-      })
+      });
     }
     return results;
   }
