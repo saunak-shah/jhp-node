@@ -340,6 +340,7 @@ module.exports = function () {
 
       const attendanceData = await createAttendance(
         teacher.teacher_id,
+        teacher.master_role_id,
         attendance
       );
 
