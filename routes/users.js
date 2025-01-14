@@ -67,7 +67,16 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const {
+        limit,
+        offset,
+        searchKey,
+        sortBy,
+        sortOrder,
+        gender,
+        fromDate,
+        toDate,
+      } = req.query;
 
       const organization_id =
         student && student?.organization_id
@@ -82,7 +91,10 @@ module.exports = function () {
       const totalUserCount = await getTotalStudentsCount(
         organization_id,
         searchKey,
-        teacherId
+        teacherId,
+        gender,
+        fromDate,
+        toDate
       );
 
       const users = await getAllStudents(
@@ -94,7 +106,10 @@ module.exports = function () {
           ? totalUserCount
           : limit,
         offset,
-        teacherId
+        teacherId,
+        gender,
+        fromDate,
+        toDate
       );
 
       if (users && users.length > 0) {
@@ -114,6 +129,7 @@ module.exports = function () {
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
+       
 
   // Get student by username.
   router.get(
@@ -199,12 +215,10 @@ module.exports = function () {
       }
 
       if (password.length <= 4) {
-        res
-          .status(422)
-          .json({
-            message: "Password length should be greater then 4 characters.",
-            data: false,
-          });
+        res.status(422).json({
+          message: "Password length should be greater then 4 characters.",
+          data: false,
+        });
         return;
       }
 
@@ -376,13 +390,14 @@ You can log in using the below link:
 
   // Update profile route
   router.post("/students/update_profile", userMiddleware, async (req, res) => {
-    const { student, data } = req.body;
+    const { student, data, teacher } = req.body;
     const updateData = (({ password, student_id, username, ...o }) => o)(data);
     try {
       const updatedStudent = await updateStudentData(
-        { username: student.username.toLowerCase() },
+        { username: teacher.master_role_id == 1 ? data.username.toLowerCase() : student.username.toLowerCase()  },
         updateData
       );
+
       if (updatedStudent) {
         res.status(200).json({
           message: `User profile updated successfully.`,
@@ -541,22 +556,18 @@ You can log in using the below link:
       const token = req.params.token;
       const { password, cpassword } = req.body;
       if (password !== cpassword) {
-        res
-          .status(422)
-          .json({
-            message: "Password and confirm password should be same.",
-            data: false,
-          });
+        res.status(422).json({
+          message: "Password and confirm password should be same.",
+          data: false,
+        });
         return;
       }
 
       if (password.length <= 4) {
-        res
-          .status(422)
-          .json({
-            message: "Password length should be greater then 4 characters.",
-            data: false,
-          });
+        res.status(422).json({
+          message: "Password length should be greater then 4 characters.",
+          data: false,
+        });
         return;
       }
       const studentData = await findStudentByResetPasswordToken(token);
@@ -761,41 +772,37 @@ You can log in using the below link:
       res.status(200).json({
         message: `Data fetched successfully`,
         data: {
-          teachers, studentCount
+          teachers,
+          studentCount,
         },
       });
     }
   );
 
-  router.get(
-    "/students-age-group-data",
-    userMiddleware,
-    async (req, res) => {
-      const { admin, teacher } = req.body;
-      /* if (!admin) {
+  router.get("/students-age-group-data", userMiddleware, async (req, res) => {
+    const { admin, teacher } = req.body;
+    /* if (!admin) {
         throw new Error("Only admin");
       } */
 
-      const data = await findStudentsByAgeGroup(
-        teacher?.organization_id
-      );
+    const data = await findStudentsByAgeGroup(teacher?.organization_id);
 
-      const ageGroup = [];
-      const studentCount = [];
+    const ageGroup = [];
+    const studentCount = [];
 
-      for (let i = 0; i < data.length; i++) {
-        ageGroup.push(data[i].age_range);
-        studentCount.push(parseInt(data[i].student_count));
-      }
-
-      res.status(200).json({
-        message: `Data fetched successfully`,
-        data: {
-          ageGroup, studentCount
-        },
-      });
+    for (let i = 0; i < data.length; i++) {
+      ageGroup.push(data[i].age_range);
+      studentCount.push(parseInt(data[i].student_count));
     }
-  );
+
+    res.status(200).json({
+      message: `Data fetched successfully`,
+      data: {
+        ageGroup,
+        studentCount,
+      },
+    });
+  });
 
   router.get(
     "/students-gender-group-data",
@@ -806,9 +813,7 @@ You can log in using the below link:
         throw new Error("Only admin");
       } */
 
-      const data = await findStudentsByGenderGroup(
-        teacher?.organization_id
-      );
+      const data = await findStudentsByGenderGroup(teacher?.organization_id);
 
       const genderGroup = [];
       const studentCount = [];
@@ -821,7 +826,8 @@ You can log in using the below link:
       res.status(200).json({
         message: `Data fetched successfully`,
         data: {
-          genderGroup, studentCount
+          genderGroup,
+          studentCount,
         },
       });
     }

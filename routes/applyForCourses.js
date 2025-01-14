@@ -234,9 +234,12 @@ module.exports = function () {
         return;
       }
 
+      const registrationId = "JHP" + Date.now()
+
       const registration = await applyForCourse({
         student_id: student.student_id,
         course_id,
+        reg_id: registrationId
       });
 
       if (registration) {
