@@ -8,6 +8,7 @@ const attendanceOutputData = {
   date: true,
   student_id: true,
   teacher_id: true,
+  attendance_by: true,
   created_at: true,
   updated_at: true,
   student: {
@@ -25,7 +26,7 @@ const attendanceOutputData = {
   },
 };
 
-async function createAttendance(teacher_id, attendance) {
+async function createAttendance(teacher_id, master_role_id, attendance) {
   const attendances = [];
   for (let i = 0; i < attendance.length; i++) {
     const student_id = attendance[i].student_id;
@@ -50,10 +51,20 @@ async function createAttendance(teacher_id, attendance) {
 
         if (studentDate && studentDate.length <= 0) {
           const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
+          const attendanceFilledTeacher = teacher_id;
+          let assignedTeacher;
+          if (master_role_id == 1) {
+            const studentData = await findStudentById(student_id);
+            if (!studentData) {
+              throw new Error(`Unable to find student with id: ${student_id}`);
+            }
+            assignedTeacher = studentData.assigned_to;
+          }
           const attendance = await prisma.attendance.create({
             data: {
               student_id,
-              teacher_id,
+              teacher_id: master_role_id == 1 ? assignedTeacher : teacher_id,
+              attendance_by: attendanceFilledTeacher,
               date: formateDate,
             },
             select: attendanceOutputData,
@@ -396,7 +407,7 @@ async function getAttendanceDataByAnyMonth(
   if (searchKey) {
     params.push(`%${searchKey}%`);
     query.push(
-     `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
+      `AND (s.first_name ILIKE $${params.length} OR s.last_name ILIKE $${params.length} OR s.father_name ILIKE $${params.length})`
     );
   }
 
@@ -462,8 +473,8 @@ async function getAttendanceCountByAnyDate(formatDate, teacher) {
       WHERE DATE(a.date) = ($1::date) 
       AND t.organization_id = $${params.length}`,
   ];
-    
-  if (teacher && teacher.master_role_id === 2) {
+
+  if (teacher && teacher.master_role_id === 2 && teacherIds.length > 0) {
     params.push(teacherIds); // Push the array as a parameter
     query.push(`AND t.teacher_id = ANY(ARRAY[$${params.length}])`);
   }
