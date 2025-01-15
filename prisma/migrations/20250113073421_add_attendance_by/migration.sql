@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "attendance" ADD COLUMN     "attendance_by" INTEGER NOT NULL;
+ALTER TABLE "attendance" ADD COLUMN     "attendance_by" INTEGER;

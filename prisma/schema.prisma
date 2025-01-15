@@ -212,7 +212,7 @@ model attendance {
   student       student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
   teacher_id    Int
   teacher       teacher  @relation(fields: [teacher_id], references: [teacher_id], onDelete: Cascade)
-  attendance_by Int 
+  attendance_by Int?
 
   @@unique([date, student_id])
   @@index([date])
