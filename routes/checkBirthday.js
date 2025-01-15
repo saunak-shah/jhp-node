@@ -6,14 +6,14 @@ const { sendEmail } = require("../helpers/sendEmail");
 const router = express.Router();
 
 module.exports = function () {
-    router.post("/send-birthday-email", userMiddleware, async (req, res) => {
+    router.get("/send-birthday-email", async (req, res) => {
         try {
             const { admin } = req.body;
-            if (!admin) {
+            /* if (!admin) {
                 res.status(400).json({
                     message: `Only Admin`,
                 });
-            }
+            } */
             const peopleWithBirthdays = await getPeopleWithTodayBirthdays();
 
             if (peopleWithBirthdays.length > 0) {
