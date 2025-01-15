@@ -94,8 +94,8 @@ model teacher {
   teacher_id                              Int         @id @default(autoincrement())
   teacher_first_name                      String
   teacher_last_name                       String
-  teacher_phone_number                    String      
-  teacher_email                           String      
+  teacher_phone_number                    String
+  teacher_email                           String
   teacher_address                         String
   teacher_password                        String      @unique
   teacher_birth_date                      DateTime
@@ -124,13 +124,12 @@ model teacher {
 }
 
 model groups {
-  group_id                   Int         @id @default(autoincrement())
-  group_name                 String 
-  teacher_ids                Int[]        @default([])
-  created_at                 DateTime     @default(now()) @map("created_at")
-  updated_at                 DateTime     @default(now()) @map("updated_at")
+  group_id    Int      @id @default(autoincrement())
+  group_name  String
+  teacher_ids Int[]    @default([])
+  created_at  DateTime @default(now()) @map("created_at")
+  updated_at  DateTime @default(now()) @map("updated_at")
 }
-
 
 model course {
   course_id                  Int          @id @default(autoincrement())
@@ -175,6 +174,7 @@ model student_apply_course {
   student_apply_course_id Int      @id @default(autoincrement())
   created_at              DateTime @default(now()) @map("created_at")
   updated_at              DateTime @default(now()) @map("updated_at")
+  reg_id                  String   @unique
   course_id               Int
   course                  course   @relation(fields: [course_id], references: [course_id], onDelete: Cascade)
   student_id              Int
@@ -188,16 +188,16 @@ model student_apply_course {
 }
 
 model result {
-  result_id               Int                  @id @default(autoincrement())
-  created_at              DateTime             @default(now()) @map("created_at")
-  updated_at              DateTime             @default(now()) @map("updated_at")
-  student_apply_course_id Int                  @unique
-  score                   Float
-  course_passing_score    Float
-  course_score            Float
-  student_apply_course    student_apply_course @relation(fields: [student_apply_course_id], references: [student_apply_course_id], onDelete: Cascade)
-  creator_id              Int
-  teacher                 teacher              @relation(fields: [creator_id], references: [teacher_id], onDelete: Cascade)
+  result_id            Int                  @id @default(autoincrement())
+  created_at           DateTime             @default(now()) @map("created_at")
+  updated_at           DateTime             @default(now()) @map("updated_at")
+  score                Float
+  course_passing_score Float
+  course_score         Float
+  reg_id               String                  @unique
+  student_apply_course student_apply_course @relation(fields: [reg_id], references: [reg_id], onDelete: Cascade)
+  creator_id           Int
+  teacher              teacher              @relation(fields: [creator_id], references: [teacher_id], onDelete: Cascade)
 
   @@index([result_id])
   @@index([creator_id])
@@ -212,6 +212,7 @@ model attendance {
   student       student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
   teacher_id    Int
   teacher       teacher  @relation(fields: [teacher_id], references: [teacher_id], onDelete: Cascade)
+  attendance_by Int 
 
   @@unique([date, student_id])
   @@index([date])
