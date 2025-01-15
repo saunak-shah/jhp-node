@@ -67,7 +67,7 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const {
+      let {
         limit,
         offset,
         searchKey,
@@ -88,6 +88,8 @@ module.exports = function () {
       if (Number(teacher.master_role_id) === 1) {
         teacherId = undefined;
       }
+      fromDate = moment(fromDate).format();
+      toDate = moment(toDate).format();
       const totalUserCount = await getTotalStudentsCount(
         organization_id,
         searchKey,

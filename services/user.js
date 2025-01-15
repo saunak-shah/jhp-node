@@ -212,7 +212,7 @@ function buildWhereClause(
   fromDate,
   toDate
 ) {
-  let whereClause;
+  let whereClause = {};
 
   /*  if (assigneeCheck) {
     whereClause = {
@@ -236,23 +236,16 @@ function buildWhereClause(
     };
   }
 
-  if (fromDate) {
-    whereClause = {
-      ...whereClause,
-      created_at: {
-        gte: new Date(fromDate),
-      },
-    };
+  if (fromDate || toDate) {
+    whereClause.created_at = {};
+    if (fromDate) {
+      whereClause.created_at.gte = new Date(fromDate);
+    }
+    if (toDate) {
+      whereClause.created_at.lte = new Date(toDate);
+    }
   }
 
-  if (toDate) {
-    whereClause = {
-      ...whereClause,
-      created_at: {
-        lte: new Date(toDate),
-      },
-    };
-  }
 
   if (searchKey) {
     whereClause = {
