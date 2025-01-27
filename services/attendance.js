@@ -35,6 +35,7 @@ async function createAttendance(teacher_id, master_role_id, attendance) {
     if (attendanceDates && attendanceDates.length > 0) {
       for (let j = 0; j < attendanceDates.length; j++) {
         const attendanceDate = attendanceDates[j];
+        console.log("attendanceDate============", attendanceDate)
         let startDate = moment(attendanceDate, "DD/MM/YYYY")
           .startOf("day")
           .format();
@@ -42,12 +43,16 @@ async function createAttendance(teacher_id, master_role_id, attendance) {
           .endOf("day")
           .format();
 
+        console.log("startDate=========", startDate)
+        console.log("endDate=========", endDate)
         // check with date and student_id if data exist then ignore it.
         const studentDate = await getAttendanceDateForStudent(
           student_id,
           startDate,
           endDate
         );
+        console.log("studentDate============", studentDate)
+
 
         if (studentDate && studentDate.length <= 0) {
           const formateDate = moment(attendanceDate, "DD/MM/YYYY").format();
@@ -372,6 +377,7 @@ async function getAttendanceDataByAnyMonth(
   let dataByMonth;
   const params = [formatDate];
 
+  console.log("params============", params)
   let query = [
     `
       SELECT 
@@ -421,6 +427,7 @@ async function getAttendanceDataByAnyMonth(
   params.push(Number(limit), Number(offset));
   query.push(`LIMIT $${params.length - 1} OFFSET $${params.length}`);
 
+  console.log("query=============", query)
   dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
   return dataByMonth;

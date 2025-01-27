@@ -265,6 +265,8 @@ module.exports = function () {
     lowerDateLimit = moment.utc(`${req.query.lowerDateLimit}`).toISOString();
     upperDateLimit = moment.utc(`${req.query.upperDateLimit}`).toISOString();
 
+    console.log("lowerDateLimit========", lowerDateLimit)
+    console.log("upperDateLimit========", upperDateLimit)
     try {
       const totalAttendanceCount = await getAttendanceCountByAnyMonth(
         formatDate,
@@ -338,6 +340,7 @@ module.exports = function () {
         return;
       }
 
+      
       const attendanceData = await createAttendance(
         teacher.teacher_id,
         teacher.master_role_id,
