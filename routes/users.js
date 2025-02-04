@@ -847,5 +847,74 @@ You can log in using the below link:
     }
   );
 
+  // Forgot password
+  router.put("/students/approve", async (req, res) => {
+    const { id } = req.body;
+    try {
+      
+      const studentData = await findStudentById(
+        parseInt(id)
+      );
+      if (studentData) {
+        const updatedStudent = await updateStudentData(
+          { student_id: id },
+          {
+            status: USER_STATUS.APPROVE,
+            updated_at: new Date().toISOString()
+          }
+        );
+
+        if (!updatedStudent) {
+          res.status(500).json({
+            message: `User not approved.`,
+          });
+          return;
+        }
+
+        res.status(200).json({
+          message: `Student approved successfully.`,
+        });
+
+        const to = studentData.email;
+        const subject = "You are approved.";
+
+        const html = `
+          <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+              <p>Hello ${studentData.first_name} ${studentData.last_name},</p>
+              
+              <p>You have been approved successfully.</p>
+
+              <p>Please click on the following link, or paste it into your browser to complete the process:</p>
+
+              <p>You can log in using the link below and assign your respective teacher:</p>
+
+              <p><a href="https://software.jhpparivar.in" style="color: #007bff; text-decoration: none;">Login Here</a></p>
+
+              <p>Best regards,</p>
+              <p>JHP Team</p>
+            </body>
+          </html>
+        `;
+
+        const isMailSent = await sendEmail(to, subject, html);
+        if (!isMailSent) {
+          console.log("There is some issue to send an email.")
+          return;
+        }
+      } else {
+        res.status(422).json({
+          message: `Student not found.`,
+        });
+        return;
+      }
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: `Error while approved student: ${error}` });
+      return;
+    }
+  });
+
   return router;
 };
