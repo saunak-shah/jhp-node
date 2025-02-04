@@ -124,18 +124,13 @@ module.exports = function () {
         status
       );
 
-      if (users && users.length > 0) {
-        res.status(200).json({
-          message: "Users found",
-          data: {
-            users,
-            offset,
-            totalCount: totalUserCount,
-          },
-        });
-      } else {
-        res.status(204).json({ message: "User not found", data: null });
-      }
+      res.status(200).json({
+        data: {
+          users,
+          offset,
+          totalCount: totalUserCount,
+        },
+      });
     } catch (error) {
       console.error("Error while getting users:", error);
       res.status(500).send(`Internal Server Error: ${error}`);
