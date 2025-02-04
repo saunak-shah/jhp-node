@@ -80,6 +80,7 @@ model student {
   course               course[]
   student_apply_course student_apply_course[]
   attendance           attendance[]
+  status               Int     @default(2)
 
   @@index([organization_id])
   @@index([first_name, last_name])

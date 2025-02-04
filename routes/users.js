@@ -25,6 +25,8 @@ const { signJwt } = require("../helpers/jwt");
 const { userMiddleware } = require("../middlewares/middleware");
 const { getOrganization } = require("../services/organization");
 require("dotenv").config();
+const { USER_STATUS } = require("../helpers/constant");
+
 
 // Email validation regex
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -67,6 +69,7 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
+      const status = req.query?.status === "Pending" ? 1 : 2;
       let {
         limit,
         offset,
@@ -101,7 +104,8 @@ module.exports = function () {
         teacherId,
         gender,
         fromDate,
-        toDate
+        toDate,
+        status
       );
 
       const users = await getAllStudents(
@@ -116,7 +120,8 @@ module.exports = function () {
         teacherId,
         gender,
         fromDate,
-        toDate
+        toDate,
+        status
       );
 
       if (users && users.length > 0) {
@@ -284,6 +289,7 @@ module.exports = function () {
         username,
         organization_id,
         register_no: register_no.toLocaleUpperCase(),
+        status: USER_STATUS.PENDING
       });
 
       if (student) {
@@ -355,6 +361,12 @@ You can log in using the below link:
     try {
       const student = await findStudentByUsername(username.toLowerCase());
       if (student) {
+        if(parseInt(student.status) === USER_STATUS.PENDING){
+          res.status(400).json({
+            message: `Your account is pending approval. Please wait for admin approval.`,
+          });
+          return;
+        }
         const isValidPassword = bcrypt.isValidPassword(
           student.password,
           password

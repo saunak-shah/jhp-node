@@ -1,3 +1,4 @@
+const { USER_STATUS } = require("../helpers/constant");
 const { prisma } = require("../prisma/client");
 
 const studentOutputData = {
@@ -18,6 +19,7 @@ const studentOutputData = {
   assigned_to: true,
   teacher: true,
   register_no: true,
+  status: true,
 };
 
 async function createStudentData(data) {
@@ -154,7 +156,8 @@ async function getTotalStudentsCount(
   teacherId = undefined,
   gender,
   fromDate,
-  toDate
+  toDate,
+  status
 ) {
   const studentCount = await prisma.student.count({
     where: buildWhereClause(
@@ -163,7 +166,8 @@ async function getTotalStudentsCount(
       teacherId,
       gender,
       fromDate,
-      toDate
+      toDate,
+      status
     ),
   });
 
@@ -180,7 +184,8 @@ async function getAllStudents(
   teacherId = undefined,
   gender,
   fromDate,
-  toDate
+  toDate,
+  status = USER_STATUS.APPROVE
 ) {
   const student = await prisma.student.findMany({
     where: buildWhereClause(
@@ -189,7 +194,8 @@ async function getAllStudents(
       teacherId,
       gender,
       fromDate,
-      toDate
+      toDate,
+      status
     ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
@@ -210,7 +216,8 @@ function buildWhereClause(
   teacher_id = undefined,
   gender,
   fromDate,
-  toDate
+  toDate,
+  status
 ) {
   let whereClause = {};
 
@@ -221,18 +228,31 @@ function buildWhereClause(
       },
     };
   } */
-  if (teacher_id) {
+  if(parseInt(teacher_id) === 0){
     whereClause = {
-      assigned_to: Array.isArray(teacher_id)
-        ? { in: teacher_id.map((id) => parseInt(id)) }
-        : parseInt(teacher_id),
+      assigned_to: null,
     };
+  } else{
+    if (teacher_id) {
+      whereClause = {
+        assigned_to: Array.isArray(teacher_id)
+          ? { in: teacher_id.map((id) => parseInt(id)) }
+          : parseInt(teacher_id),
+      };
+    }
   }
 
   if (gender) {
     whereClause = {
       ...whereClause,
       gender,
+    };
+  }
+
+  if (status) {
+    whereClause = {
+      ...whereClause,
+      status,
     };
   }
 
@@ -331,7 +351,8 @@ async function findStudentsAssignedToTeacherIdCount(
   teacher_id,
   gender,
   fromDate,
-  toDate
+  toDate,
+  status = USER_STATUS.APPROVE
 ) {
   const students = await prisma.student.count({
     where: buildWhereClause(
@@ -340,7 +361,8 @@ async function findStudentsAssignedToTeacherIdCount(
       teacher_id,
       gender,
       fromDate,
-      toDate
+      toDate,
+      status
     ),
   });
 
@@ -360,7 +382,8 @@ async function findStudentsAssignedToTeacherId(
   offset = 0,
   gender,
   fromDate,
-  toDate
+  toDate,
+  status = USER_STATUS.APPROVE
 ) {
   const students = await prisma.student.findMany({
     where: buildWhereClause(
@@ -369,7 +392,8 @@ async function findStudentsAssignedToTeacherId(
       teacher_id,
       gender,
       fromDate,
-      toDate
+      toDate,
+      status
     ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
