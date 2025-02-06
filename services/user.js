@@ -341,18 +341,14 @@ function buildWhereClause(
 }
 
 function buildOrderClause(sortBy, sortOrder) {
-  let orderClause = {
-    birth_date: "asc",
-  };
-
   if (!sortOrder) {
     sortOrder = "asc";
   }
 
+  let orderClause = [{ student_id: "asc" }]; // Always include student_id for stability
+
   if (sortBy) {
-    orderClause = {
-      [sortBy]: sortOrder,
-    };
+    orderClause.unshift({ [sortBy]: sortOrder }); // Add primary sorting column
   }
 
   return orderClause;
