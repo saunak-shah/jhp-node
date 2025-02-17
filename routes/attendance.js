@@ -190,6 +190,7 @@ module.exports = function () {
     }
   });
 
+  // This api shows the six months attendance count to student.
   router.get("/attendance-summary", userMiddleware, async (req, res) => {
     const { student } = req.body;
     const { lowerDateLimit, upperDateLimit } = req.query;
@@ -249,6 +250,7 @@ module.exports = function () {
     }
   });
 
+  // This api shows attendance count of student in admin report
   router.post("/attendance_report", userMiddleware, async (req, res) => {
     const { teacher, date } = req.body;
     let {
@@ -402,6 +404,41 @@ module.exports = function () {
     } catch (error) {
       res.status(500).json({
         message: `Error while deleting attendance: ${error}`,
+      });
+    }
+  });
+
+  // This api shows the attendance dates to student
+  router.get("/attendance-dates", userMiddleware, async (req, res) => {
+    const { student } = req.body;
+    const { lowerDateLimit, upperDateLimit } = req.query;
+
+    try {
+      let studentIds = [student.student_id];
+      console.log("studentIds==========", studentIds)
+      const attendanceData = await getAllStudentsAttendanceData(
+        teacher,
+        lowerDateLimit,
+        upperDateLimit,
+        studentIds
+      );
+      console.log("lowerDateLimit==========", lowerDateLimit)
+      console.log("upperDateLimit==========", upperDateLimit)
+
+      if (!attendanceData) {
+        res.status(422).json({
+          message: `No attendance found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `attendance found`,
+        data: attendanceData,
+      });
+    } catch (error) {
+      console.error("Error getting attendance:", error);
+      res.status(500).json({
+        message: `Error while fetching attendance - ${error}`,
       });
     }
   });
