@@ -411,19 +411,23 @@ module.exports = function () {
   // This api shows the attendance dates to student
   router.get("/attendance-dates", userMiddleware, async (req, res) => {
     const { student } = req.body;
-    const { lowerDateLimit, upperDateLimit } = req.query;
+    let { lowerDateLimit, upperDateLimit } = req.query;
 
     try {
       let studentIds = [student.student_id];
-      console.log("studentIds==========", studentIds)
+      lowerDateLimit = moment(lowerDateLimit, "YYYY/MM/DD")
+          .startOf("day")
+          .format();
+      upperDateLimit = moment(upperDateLimit, "YYYY/MM/DD")
+          .endOf("day")
+          .format();
+
       const attendanceData = await getAllStudentsAttendanceData(
-        teacher,
+        student,
         lowerDateLimit,
         upperDateLimit,
         studentIds
       );
-      console.log("lowerDateLimit==========", lowerDateLimit)
-      console.log("upperDateLimit==========", upperDateLimit)
 
       if (!attendanceData) {
         res.status(422).json({
