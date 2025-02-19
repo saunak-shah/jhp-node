@@ -381,6 +381,7 @@ async function getAttendanceDataByAnyMonth(
   let query = [
     `
       SELECT 
+        s.student_id, 
         CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
         COUNT(*)::integer as attendance_count
       FROM
@@ -417,7 +418,7 @@ async function getAttendanceDataByAnyMonth(
     );
   }
 
-  query.push(`GROUP BY a.student_id, s.first_name, s.last_name, s.father_name`);
+  query.push(`GROUP BY s.student_id, s.first_name, s.last_name, s.father_name`);
 
   if (sortBy && sortOrder) {
     query.push(`ORDER BY ${sortBy} ${sortOrder}`);

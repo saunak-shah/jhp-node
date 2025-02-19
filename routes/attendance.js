@@ -414,7 +414,8 @@ module.exports = function () {
     let { lowerDateLimit, upperDateLimit } = req.query;
 
     try {
-      let studentIds = [student.student_id];
+      let studentIds = (student && Object.keys(student).length > 0) ? [student?.student_id] : [parseInt(req.query?.selectedStudent)];
+      
       lowerDateLimit = moment(lowerDateLimit, "YYYY/MM/DD")
           .startOf("day")
           .format();
