@@ -262,7 +262,7 @@ module.exports = function () {
       lowerDateLimit,
       upperDateLimit,
     } = req.query;
-    let formatDate = moment(date).format("YYYY-MM-DD");
+    let formatDate = moment(req.query.lowerDateLimit).format("YYYY-MM-DD");
 
     lowerDateLimit = moment.utc(`${req.query.lowerDateLimit}`).toISOString();
     upperDateLimit = moment.utc(`${req.query.upperDateLimit}`).toISOString();
