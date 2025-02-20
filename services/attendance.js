@@ -336,7 +336,7 @@ async function getAttendanceCountByAnyMonth(
 
   // if (lowerDateLimit) {
     params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
-    query.push(`AND a.date >= $${params.length}::date`);
+    query.push(` a.date >= $${params.length}::date`);
   // }
 
   // if (upperDateLimit) {
