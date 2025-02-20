@@ -331,18 +331,18 @@ async function getAttendanceCountByAnyMonth(
         attendance as a
       LEFT JOIN student s on s.student_id = a.student_id
       WHERE 
-        date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)`,
+        `,
   ];
 
-  if (lowerDateLimit) {
+  // if (lowerDateLimit) {
     params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
     query.push(`AND a.date >= $${params.length}::date`);
-  }
+  // }
 
-  if (upperDateLimit) {
+  // if (upperDateLimit) {
     params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
     query.push(`AND a.date <= $${params.length}::date`);
-  }
+  // }
 
   if (teacher && teacher.master_role_id === 2) {
     params.push(teacher.teacher_id);
@@ -356,7 +356,7 @@ async function getAttendanceCountByAnyMonth(
     );
   }
 
-  query.push(`GROUP BY a.student_id, s.first_name, s.last_name, s.father_name`);
+  query.push(`GROUP BY s.student_id, s.first_name, s.last_name, s.father_name`);
 
   dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
@@ -388,9 +388,10 @@ async function getAttendanceDataByAnyMonth(
         attendance as a
       LEFT JOIN student s on s.student_id = a.student_id
       WHERE 
-        //date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)
+        
         `,
   ];
+  // date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)`,
 
   // if (lowerDateLimit) {
     params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
