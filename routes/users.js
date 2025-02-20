@@ -18,6 +18,7 @@ const {
   findStudentsAssignedToTeacherData,
   findStudentsByGenderGroup,
   findStudentsByAgeGroup,
+  findStudentByUserInfo,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -220,6 +221,17 @@ module.exports = function () {
           .json({ message: "Username already present.", data: false });
         return;
       }
+      // user exists with same firstname, lastname, fathername, mobile no
+      const isUserExists = await findStudentByUserInfo(
+        {first_name, last_name, father_name, phone_number }
+      );
+      if (isUserExists) {
+        res
+          .status(422)
+          .json({ message: "User already present.", data: false });
+        return;
+      }
+
 
       if (password.length <= 4) {
         res.status(422).json({

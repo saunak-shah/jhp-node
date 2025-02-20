@@ -48,6 +48,25 @@ async function findStudentByUsername(username) {
   return;
 }
 
+async function findStudentByUserInfo(userObj) {
+  const student = await prisma.student.findFirst({
+    where: {
+      AND: [
+        { first_name: { equals: userObj.first_name, mode: "insensitive" } },
+        { last_name: { equals: userObj.last_name, mode: "insensitive" } },
+        { father_name: { equals: userObj.father_name, mode: "insensitive" } },
+        { phone_number: userObj.phone_number },
+      ],
+    },
+    select: studentOutputData,
+  });
+
+  if (student) {
+    return student;
+  }
+  return;
+}
+
 async function findStudentById(id) {
   const student = await prisma.student.findUnique({
     where: {
@@ -535,6 +554,7 @@ async function findStudentsByGenderGroup(organization_id) {
 
 module.exports = {
   findStudentByUsername,
+  findStudentByUserInfo,
   findStudentByEmail,
   findStudentById,
   findStudentByResetPasswordToken,
