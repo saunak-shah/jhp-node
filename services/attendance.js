@@ -351,12 +351,12 @@ async function getAttendanceCountByAnyMonth(
   if (teacher) {
     if (teacher.master_role_id === 2) {
       params.push(teacher.teacher_id);
-      query.push(`AND "teacher_id"::text = $${params.length}`);
+      query.push(`AND "teacher_id" = $${params.length}`);
     }
 
     if (teacher.master_role_id === 1 && teacherId) {
       params.push(teacherId);
-      query.push(`AND "teacher_id"::text = $${params.length}`);
+      query.push(`AND "teacher_id" = $${params.length}`);
     }
   }
 
@@ -431,12 +431,12 @@ async function getAttendanceDataByAnyMonth(
   if (teacher) {
     if (teacher.master_role_id === 2) {
       params.push(teacher.teacher_id);
-      query.push(`AND "teacher_id"::text = $${params.length}`);
+      query.push(`AND "teacher_id" = $${params.length}`);
     }
 
     if (teacher.master_role_id === 1 && teacherId) {
       params.push(teacherId);
-      query.push(`AND "teacher_id"::text = $${params.length}`);
+      query.push(`AND "teacher_id" = $${params.length}`);
     }
   }
 
