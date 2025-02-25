@@ -261,6 +261,8 @@ module.exports = function () {
       sortOrder,
       lowerDateLimit,
       upperDateLimit,
+      teacherId,
+      gender,
     } = req.query;
     let formatDate = moment(req.query.lowerDateLimit).format("YYYY-MM-DD");
 
@@ -275,7 +277,9 @@ module.exports = function () {
         teacher,
         searchKey,
         lowerDateLimit,
-        upperDateLimit
+        upperDateLimit,
+        teacherId,
+        gender
       );
 
       const attendance = await getAttendanceDataByAnyMonth(
@@ -287,7 +291,9 @@ module.exports = function () {
         limit,
         offset,
         lowerDateLimit,
-        upperDateLimit
+        upperDateLimit,
+        teacherId,
+        gender
       );
 
       if (!attendance) {

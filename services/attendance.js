@@ -319,13 +319,17 @@ async function getAttendanceCountByAnyMonth(
   teacher,
   searchKey,
   lowerDateLimit,
-  upperDateLimit
+  upperDateLimit,
+  teacherId,
+  gender
 ) {
   let dataByMonth;
   const params = [formatDate];
   const query = [
     `SELECT 
-        CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
+        s.gender as gender,
+        s.assigned_to as teacher_id,
+        CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name, ' ', s.gender) as full_name,
         COUNT(*)::integer AS attendance_count
       FROM
         attendance as a
@@ -344,9 +348,21 @@ async function getAttendanceCountByAnyMonth(
     query.push(`AND a.date <= $${params.length}::date`);
   // }
 
-  if (teacher && teacher.master_role_id === 2) {
-    params.push(teacher.teacher_id);
-    query.push(`AND teacher_id = $${params.length}`);
+  if (teacher) {
+    if (teacher.master_role_id === 2) {
+      params.push(teacher.teacher_id);
+      query.push(`AND "teacher_id"::text = $${params.length}`);
+    }
+
+    if (teacher.master_role_id === 1) {
+      params.push(teacherId ?? teacher.teacher_id);
+      query.push(`AND "teacher_id"::text = $${params.length}`);
+    }
+  }
+
+  if (gender) {
+    params.push(gender === "Male" ? "M" : "F");
+    query.push(`AND "gender"::text = $${params.length}`);
   }
 
   if (searchKey) {
@@ -356,7 +372,9 @@ async function getAttendanceCountByAnyMonth(
     );
   }
 
-  query.push(`GROUP BY s.student_id, s.first_name, s.last_name, s.father_name`);
+  query.push(
+    `GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to`
+  );
 
   dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
@@ -372,16 +390,18 @@ async function getAttendanceDataByAnyMonth(
   limit,
   offset,
   lowerDateLimit,
-  upperDateLimit
+  upperDateLimit,
+  teacherId,
+  gender
 ) {
   let dataByMonth;
   const params = [formatDate];
 
-  console.log("params============", params)
   let query = [
     `
       SELECT 
-        s.student_id, 
+        s.gender as gender,
+        s.assigned_to as teacher_id,
         CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
         COUNT(*)::integer as attendance_count
       FROM
@@ -407,9 +427,21 @@ async function getAttendanceDataByAnyMonth(
     );
   // }
 
-  if (teacher && teacher.master_role_id === 2) {
-    params.push(teacher.teacher_id);
-    query.push(`AND teacher_id = $${params.length}`);
+  if (teacher) {
+    if (teacher.master_role_id === 2) {
+      params.push(teacher.teacher_id);
+      query.push(`AND "teacher_id"::text = $${params.length}`);
+    }
+
+    if (teacher.master_role_id === 1) {
+      params.push(teacherId ?? teacher.teacher_id);
+      query.push(`AND "teacher_id"::text = $${params.length}`);
+    }
+  }
+
+  if (gender) {
+    params.push(gender === "Male" ? "M" : "F");
+    query.push(`AND "gender"::text = $${params.length}`);
   }
 
   if (searchKey) {
@@ -419,7 +451,9 @@ async function getAttendanceDataByAnyMonth(
     );
   }
 
-  query.push(`GROUP BY s.student_id, s.first_name, s.last_name, s.father_name`);
+  query.push(
+    `GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to`
+  );
 
   if (sortBy && sortOrder) {
     query.push(`ORDER BY ${sortBy} ${sortOrder}`);
