@@ -22,6 +22,7 @@ const { findGroupById } = require("../services/groupService");
 const moment = require("moment");
 
 const { findStudentById, getAllStudents } = require("../services/user");
+const { USER_STATUS } = require("../helpers/constant");
 
 const router = express.Router();
 
@@ -133,7 +134,11 @@ module.exports = function () {
         totalCount = await getTotalStudentsCount(
           organization_id,
           searchKey,
-          teacherId
+          teacherId,
+          gender = undefined,
+          fromDate = undefined,
+          toDate = undefined,
+          status = USER_STATUS.APPROVE
         );
 
         users = await getAllStudents(
