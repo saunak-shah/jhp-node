@@ -179,7 +179,7 @@ module.exports = function () {
   router.post("/students/signup", async (req, res) => {
     try {
       // Extract necessary data from request body
-      const {
+      let {
         first_name,
         last_name,
         father_name,
@@ -211,6 +211,9 @@ module.exports = function () {
           .json({ message: "Fill all the fields properly", data: null });
         return;
       }
+
+      // trim username
+      username = username.trim();
 
       const isUsernamePresent = await findStudentByUsername(
         username.toLowerCase()
@@ -366,6 +369,8 @@ You can log in using the below link:
       return;
     }
     try {
+      // trim username
+      username = username.trim();
       const student = await findStudentByUsername(username.toLowerCase());
       if (student) {
         if(parseInt(student.status) === USER_STATUS.PENDING){
