@@ -361,7 +361,7 @@ You can log in using the below link:
 
   // Login route
   router.post("/students/login", async (req, res) => {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
     if (!username || !password) {
       res.status(422).json({
         message: `Fill all the fields properly`,
