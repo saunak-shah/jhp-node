@@ -269,6 +269,8 @@ module.exports = function () {
       teacherId,
       gender,
     } = req.query;
+
+    teacherId = teacherId ? Number(teacherId) : null;
     let formatDate = moment(req.query.lowerDateLimit).format("YYYY-MM-DD");
 
     lowerDateLimit = moment.utc(`${req.query.lowerDateLimit}`).toISOString();
