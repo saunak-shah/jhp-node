@@ -425,7 +425,7 @@ You can log in using the below link:
     const updateData = (({ password, student_id, username, ...o }) => o)(data);
     try {
       const updatedStudent = await updateStudentData(
-        { username: teacher.master_role_id == 1 ? data.username.toLowerCase() : student.username.toLowerCase()  },
+        { username: teacher?.master_role_id == 1 ? data.username.toLowerCase() : student.username.toLowerCase()  },
         updateData
       );
 
