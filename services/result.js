@@ -5,23 +5,27 @@ const resultOutputData = {
   created_at: true,
   updated_at: true,
   reg_id: true,
-  score: true,
-  course_passing_score: true,
-  course_score: true,
+  marks_obtained: true,
+  passing_marks: true,
+  total_marks: true,
   creator_id: true,
-  student_apply_course: {
+  student_apply_exam: {
     select: {
       student_id: true,
-      course_id: true,
       reg_id: true,
-      course: {
+      schedule: {
+        total_marks: true,
+        passing_marks: true,
         select: {
-          course_name: true,
-          category: true,
-          course_score: true,
-          course_passing_score: true,
+          exam: {
+            select: {
+              exam_name: true,
+              exam_description: true,
+            },
+          },
         },
       },
+
       student: {
         select: {
           first_name: true,
@@ -38,7 +42,7 @@ const resultOutputData = {
 };
 
 async function createResult(data) {
-  const result = await prisma.result.upsert({
+  const result = await prisma.exam_result.upsert({
     where: {
       reg_id: data.reg_id,
     },
@@ -53,17 +57,17 @@ async function createResult(data) {
   return;
 }
 
-async function getCourseScore(registration_id) {
-  const result = await prisma.student_apply_course.findUnique({
+async function getExamScore(registration_id) {
+  const result = await prisma.student_apply_exam.findUnique({
     where: {
-      student_apply_course_id: parseInt(registration_id),
+      application_id: parseInt(registration_id),
     },
     select: {
       reg_id: true,
-      course: {
+      exam_schedule: {
         select: {
-          course_score: true,
-          course_passing_score: true,
+          total_marks: true,
+          passing_marks: true,
         },
       },
     },
@@ -71,15 +75,15 @@ async function getCourseScore(registration_id) {
 
   if (result) {
     return {
-      course_score: result.course.course_score,
-      course_passing_score: result.course.course_passing_score,
+      total_marks: result.exam_schedule.total_marks,
+      passing_marks: result.exam_schedule.passing_marks,
       reg_id: result.reg_id,
     };
   }
 }
 
 async function findResultByResultId(resultId) {
-  const result = await prisma.result.findUnique({
+  const result = await prisma.exam_result.findUnique({
     where: {
       result_id: parseInt(resultId),
     },
@@ -93,7 +97,7 @@ async function findResultByResultId(resultId) {
 }
 
 async function findResultByRegistrationId(registration_id) {
-  const result = await prisma.result.findUnique({
+  const result = await prisma.exam_result.findUnique({
     where: {
       reg_id: registration_id,
     },
@@ -107,7 +111,7 @@ async function findResultByRegistrationId(registration_id) {
 }
 
 async function getAllResults(limit, offset) {
-  const results = await prisma.user_apply_course.findMany({
+  const results = await prisma.exam_result.findMany({
     select: resultOutputData,
     orderBy: {
       created_at: "asc",
@@ -123,7 +127,7 @@ async function getAllResults(limit, offset) {
 }
 
 async function getAllResultsCount() {
-  const resultsCount = await prisma.user_apply_course.count();
+  const resultsCount = await prisma.exam_result.count();
   return resultsCount;
 }
 
@@ -135,7 +139,7 @@ async function getAllResultsByUserId(
   limit,
   offset
 ) {
-  const results = await prisma.result.findMany({
+  const results = await prisma.exam_result.findMany({
     where: buildWhereClause(userId, undefined, searchKey),
     select: resultOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
@@ -150,9 +154,9 @@ async function getAllResultsByUserId(
 }
 
 async function getAllResultsByUserIdCount(userId) {
-  const resultsCount = await prisma.result.count({
+  const resultsCount = await prisma.exam_result.count({
     where: {
-      student_apply_course: {
+      student_apply_exam: {
         student_id: parseInt(userId),
       },
     },
@@ -161,7 +165,7 @@ async function getAllResultsByUserIdCount(userId) {
   return resultsCount;
 }
 
-async function getAllResultsByCourseId(
+async function getAllResultsByExamId(
   searchKey,
   sortBy,
   courseId,
@@ -169,10 +173,8 @@ async function getAllResultsByCourseId(
   limit,
   offset
 ) {
-  const results = await prisma.result.findMany({
-    where: {
-      student_apply_course: buildWhereClause(undefined, courseId, searchKey),
-    },
+  const results = await prisma.exam_result.findMany({
+    where: buildWhereClause(undefined, courseId, searchKey),
     select: resultOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -185,7 +187,7 @@ async function getAllResultsByCourseId(
   return;
 }
 
-async function getAllResultsByCourseIdToDownload(
+async function getAllResultsByExamIdToDownload(
   searchKey,
   sortBy,
   courseId,
@@ -193,17 +195,20 @@ async function getAllResultsByCourseIdToDownload(
   limit,
   offset
 ) {
-  const results = await prisma.result.findMany({
-    where: {
-      student_apply_course: buildWhereClause(undefined, courseId, searchKey),
-    },
+  const results = await prisma.exam_result.findMany({
+    where: buildWhereClause(undefined, courseId, searchKey),
     select: {
       result_id: true,
-      student_apply_course: {
+      student_apply_exam: {
         select: {
-          course: {
+          exam_schedule: {
             select: {
-              course_name: true,
+              exam: {
+                select: {
+                  exam_name: true,
+                  exam_description: true,
+                },
+              },
             },
           },
           student: {
@@ -214,12 +219,12 @@ async function getAllResultsByCourseIdToDownload(
           },
         },
       },
-      score: true,
-      course_passing_score: true,
-      course_score: true,
+      marks_obtained: true,
+      passing_marks: true,
+      total_marks: true,
       created_at: true,
       updated_at: true,
-      student_apply_course_id: true,
+      reg_id: true,
     },
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -232,15 +237,17 @@ async function getAllResultsByCourseIdToDownload(
     for (let i = 0; i < results.length; i++) {
       data.push({
         result_id: results[i].result_id,
-        student_apply_course_id: results[i].student_apply_course_id,
+        reg_id: results[i].reg_id,
         student_name:
-          results[i].student_apply_course.student.first_name +
+          results[i].student_apply_exam.student.first_name +
           " " +
-          results[i].student_apply_course.student.last_name,
-        course_name: results[i].student_apply_course.course.course_name,
-        score: results[i].score,
-        course_score: results[i].course_score,
-        course_passing_score: results[i].course_passing_score,
+          results[i].student_apply_exam.student.last_name,
+        exam_name: results[i].student_apply_exam.exam_schedule.exam.exam_name,
+        exam_description:
+          results[i].student_apply_exam.exam_schedule.exam.exam_description,
+        marks_obtained: results[i].marks_obtained,
+        total_marks: results[i].total_marks,
+        passing_marks: results[i].passing_marks,
       });
     }
     return results;
@@ -248,16 +255,22 @@ async function getAllResultsByCourseIdToDownload(
   return;
 }
 
-function buildWhereClause(studentId, courseId, searchKey) {
+function buildWhereClause(studentId, examId, searchKey) {
   let whereClause;
 
-  if (courseId) {
+  if (examId) {
     whereClause = {
-      course_id: parseInt(courseId),
+      registration: {
+        schedule: {
+          exam_id: examId,
+        },
+      },
     };
   } else if (studentId) {
     whereClause = {
-      student_id: parseInt(studentId),
+      registration: {
+        student_id: parseInt(studentId),
+      },
     };
   }
 
@@ -266,81 +279,99 @@ function buildWhereClause(studentId, courseId, searchKey) {
       ...whereClause,
       OR: [
         {
-          student: {
+          registration: {
             select: {
-              first_name: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  first_name: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              last_name: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  last_name: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              father_name: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  father_name: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              phone_number: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  phone_number: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              email: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  email: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              register_no: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  register_no: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
         },
         {
-          student: {
+          registration: {
             select: {
-              username: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
-            },
-          },
-        },
-        {
-          student: {
-            select: {
-              address: {
-                contains: searchKey,
-                mode: "insensitive",
+              student: {
+                select: {
+                  username: {
+                    contains: searchKey,
+                    mode: "insensitive",
+                  },
+                },
               },
             },
           },
@@ -370,11 +401,13 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
-async function getAllResultsByCourseIdCount(courseId) {
-  const resultsCount = await prisma.result.count({
+async function getAllResultsByExamIdCount(examId) {
+  const resultsCount = await prisma.exam_result.count({
     where: {
-      student_apply_course: {
-        course_id: parseInt(courseId),
+      registration: {
+        schedule: {
+          exam_id: parseInt(examId),
+        },
       },
     },
   });
@@ -413,12 +446,12 @@ module.exports = {
   findResultByRegistrationId,
   getAllResults,
   getAllResultsCount,
-  getAllResultsByCourseId,
-  getAllResultsByCourseIdCount,
-  getAllResultsByCourseIdToDownload,
+  getAllResultsByExamId,
+  getAllResultsByExamIdCount,
+  getAllResultsByExamIdToDownload,
   getAllResultsByUserId,
   getAllResultsByUserIdCount,
   updateResult,
   findResultByResultId,
-  getCourseScore,
+  getExamScore,
 };
