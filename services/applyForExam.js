@@ -49,10 +49,10 @@ const appliedExamOutputData = {
       register_no: true,
     },
   },
-  result: {
+  exam_result: {
     select: {
       reg_id: true,
-      score: true,
+      marks_obtained: true,
     },
   },
 };
@@ -241,7 +241,7 @@ async function getAllApplicationsByUserIdCount(userId, searchKey) {
   return coursesCount;
 }
 
-async function getAllApplicationsByExamId(
+async function getAllApplicationsByScheduleId(
   searchKey,
   sortBy,
   examId,
@@ -267,7 +267,7 @@ async function getAllApplicationsByExamId(
   }
 }
 
-async function getAllApplicationsByExamIdToDownload(
+async function getAllApplicationsByScheduleIdToDownload(
   searchKey,
   sortBy,
   examId,
@@ -328,7 +328,7 @@ async function getAllApplicationsByExamIdToDownload(
   return;
 }
 
-async function getAllApplicationsByExamIdCount(examId, searchKey) {
+async function getAllApplicationsByScheduleIdCount(examId, searchKey) {
   const examsCount = await prisma.student_apply_exam.count({
     where: buildWhereClause(searchKey, examId, undefined),
   });
@@ -386,11 +386,11 @@ module.exports = {
   findApplicationByRegistrationId,
   getAllApplications,
   getAllApplicationsCount,
-  getAllApplicationsByExamId,
-  getAllApplicationsByExamIdCount,
+  getAllApplicationsByScheduleId,
+  getAllApplicationsByScheduleIdCount,
   getAllApplicationsByUserId,
   getAllApplicationsByUserIdCount,
-  getAllApplicationsByExamIdToDownload,
+  getAllApplicationsByScheduleIdToDownload,
   updateApplication,
   deleteApplication,
   getAllApplicationsByUserIdAndExamId,

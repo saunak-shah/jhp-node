@@ -120,6 +120,7 @@ model teacher {
   result          result[]
   exam_result     exam_result[]
   exam_schedule   exam_schedule[]
+  exam            exam[]
 
   @@index([organization_id])
   @@index([teacher_first_name, teacher_last_name])
@@ -226,17 +227,18 @@ model attendance {
 }
 
 model exam {
-  exam_id          Int          @id @default(autoincrement())
-  created_at       DateTime     @default(now()) @map("created_at")
-  updated_at       DateTime     @default(now()) @map("updated_at")
+  exam_id          Int             @id @default(autoincrement())
+  created_at       DateTime        @default(now()) @map("created_at")
+  updated_at       DateTime        @default(now()) @map("updated_at")
   exam_name        String
   exam_description String
   is_active        Boolean
   exam_course_url  String
   organization_id  Int
-  organization     organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-
-  exam_schedule exam_schedule[]
+  organization     organization    @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
+  created_by       Int
+  teacher          teacher         @relation(fields: [created_by], references: [teacher_id], onDelete: Cascade)
+  exam_schedule    exam_schedule[]
 }
 
 model exam_schedule {

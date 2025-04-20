@@ -11,6 +11,24 @@ const examOutputData = {
   organization_id: true,
 };
 
+const scheduleExamOutputData = {
+  schedule_id: true,
+
+  exam_id: true,
+  exam_date: true,
+  start_time: true,
+  end_time: true,
+  registration_starting_date: true,
+  registration_closing_date: true,
+  seats_available: true,
+  exam_location: true,
+  total_marks: true,
+  passing_marks: true,
+  scheduled_by: true,
+  teacher: true,
+  is_retake: true,
+};
+
 async function createExam(data) {
   const exam = await prisma.exam.create({
     data,
@@ -87,7 +105,7 @@ function buildWhereClause(organization_id, searchKey) {
 
 function buildOrderClause(sortBy, sortOrder) {
   let orderClause = {
-    course_date: "desc",
+    updated_at: "desc",
   };
 
   if (!sortOrder) {
@@ -111,27 +129,23 @@ async function getAllExamsCount(organization_id, searchKey) {
   return examsCount;
 }
 
-async function getAllPendingExams(limit, offset) {
+async function getAllPendingExams(
+  searchKey,
+  sortBy,
+  organizationId,
+  sortOrder,
+  limit,
+  offset = 0
+) {
   const exams = await prisma.exam_schedule.findMany({
     where: {
       exam_date: {
-        gt: Date.now(),
+        gt: new Date(Date.now()).toISOString(),
       },
+      ...buildWhereClause(organizationId, searchKey),
     },
-    select: {
-      exam: {
-        select: {
-          exam_id: true,
-          exam_name: true,
-          exam_description: true,
-          exam_course_url: true,
-          organization_id: true,
-        },
-      },
-    },
-    orderBy: {
-      exam_date: "asc",
-    },
+    select: scheduleExamOutputData,
+    orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
@@ -142,12 +156,14 @@ async function getAllPendingExams(limit, offset) {
   return;
 }
 
-async function getAllPendingExamsCount() {
+async function getAllPendingExamsCount(organization_id, searchKey) {
+  
   const examsCount = await prisma.exam_schedule.count({
     where: {
       exam_date: {
-        gt: Date.now(),
+        gt: new Date(Date.now()).toISOString(),
       },
+      ...buildWhereClause(organization_id, searchKey),
     },
   });
 
@@ -197,8 +213,8 @@ async function scheduleExam(data) {
   return;
 }
 
-async function findExamScheduleByExamId(examId) {
-  const scheduledExam = await prisma.exam_schedule.findUnique({
+async function findExamsScheduleByExamId(examId) {
+  const scheduledExam = await prisma.exam_schedule.findMany({
     where: {
       exam_id: examId,
     },
@@ -221,12 +237,7 @@ async function findExamScheduleById(schedule_id) {
     where: {
       schedule_id,
     },
-    select: {
-      exam_id: true,
-      exam_date: true,
-      start_time: true,
-      end_time: true,
-    },
+    select: scheduleExamOutputData,
   });
 
   if (scheduledExam) {
@@ -239,12 +250,7 @@ async function updateExamSchedule(filter, data) {
   const scheduledExam = await prisma.exam_schedule.update({
     where: filter,
     data,
-    select: {
-      exam_id: true,
-      exam_date: true,
-      start_time: true,
-      end_time: true,
-    },
+    select: scheduleExamOutputData,
   });
 
   if (scheduledExam) {
@@ -256,6 +262,7 @@ async function updateExamSchedule(filter, data) {
 async function deleteExamSchedule(filter) {
   const scheduledExam = await prisma.exam_schedule.delete({
     where: filter,
+    select: scheduleExamOutputData,
   });
 
   if (scheduledExam) {
@@ -274,8 +281,8 @@ module.exports = {
   getAllPendingExams,
   getAllPendingExamsCount,
   scheduleExam,
-  findExamScheduleByExamId,
+  findExamsScheduleByExamId,
   updateExamSchedule,
   deleteExamSchedule,
-  findExamScheduleById
+  findExamScheduleById,
 };
