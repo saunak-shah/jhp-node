@@ -1,7 +1,23 @@
 const express = require("express");
 const { userMiddleware } = require("../middlewares/middleware");
 const { findCourseByCourseId } = require("../services/course");
-const { getAllApplicationsCount, getAllApplications, getAllApplicationsByUserIdAndExamId, findApplicationByRegistrationId, getAllApplicationsByUserIdCount, getAllApplicationsByUserId, getAllApplicationsByExamIdCount, getAllApplicationsByExamId, getAllApplicationsByExamIdToDownload, applyForExam, deleteApplication, getAllApplicationsByScheduleId, getAllApplicationsByScheduleIdCount, getAllApplicationsByScheduleIdToDownload } = require("../services/applyForExam");
+const {
+  getAllApplicationsCount,
+  getAllApplications,
+  getAllApplicationsByUserIdAndExamId,
+  findApplicationByRegistrationId,
+  getAllApplicationsByUserIdCount,
+  getAllApplicationsByUserId,
+  getAllApplicationsByExamIdCount,
+  getAllApplicationsByExamId,
+  getAllApplicationsByExamIdToDownload,
+  applyForExam,
+  deleteApplication,
+  getAllApplicationsByScheduleId,
+  getAllApplicationsByScheduleIdCount,
+  getAllApplicationsByScheduleIdToDownload,
+  updateApplication,
+} = require("../services/applyForExam");
 const { getOrganization } = require("../services/organization");
 const { findExamScheduleById } = require("../services/exam");
 const router = express.Router();
@@ -66,7 +82,6 @@ module.exports = function () {
   router.get("/exam_registrations/:id", userMiddleware, async (req, res) => {
     try {
       const registration = await findApplicationByRegistrationId(req.params.id);
-      console.log("🚀 ~ router.get ~ registration:", registration)
       if (registration) {
         res.status(200).json({
           message: `Fetched registration`,
@@ -92,7 +107,10 @@ module.exports = function () {
       try {
         const { id } = req.params;
         const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-        const registrationCount = await getAllApplicationsByUserIdCount(id, searchKey);
+        const registrationCount = await getAllApplicationsByUserIdCount(
+          id,
+          searchKey
+        );
         const registrations = await getAllApplicationsByUserId(
           searchKey,
           sortBy,
@@ -125,7 +143,10 @@ module.exports = function () {
       const { id } = req.params;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const registrationCount = await getAllApplicationsByScheduleIdCount(id, searchKey);
+      const registrationCount = await getAllApplicationsByScheduleIdCount(
+        id,
+        searchKey
+      );
       const registrations = await getAllApplicationsByScheduleId(
         searchKey,
         sortBy,
@@ -152,36 +173,43 @@ module.exports = function () {
   });
 
   // Get application by examId
-  router.get("/download/exams/registrations/:id", userMiddleware, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+  router.get(
+    "/download/exams/registrations/:id",
+    userMiddleware,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const registrationCount = await getAllApplicationsByScheduleIdCount(id, searchKey);
-      const registrations = await getAllApplicationsByScheduleIdToDownload(
-        searchKey,
-        sortBy,
-        id,
-        sortOrder,
-        limit,
-        offset
-      );
-      if (registrations) {
-        res.status(200).json({
-          message: `Fetched registrations`,
-          data: { registrations, offset, totalCount: registrationCount },
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch registrations`,
+        const registrationCount = await getAllApplicationsByScheduleIdCount(
+          id,
+          searchKey
+        );
+        const registrations = await getAllApplicationsByScheduleIdToDownload(
+          searchKey,
+          sortBy,
+          id,
+          sortOrder,
+          limit,
+          offset
+        );
+        if (registrations) {
+          res.status(200).json({
+            message: `Fetched registrations`,
+            data: { registrations, offset, totalCount: registrationCount },
+          });
+        } else {
+          res.status(422).json({
+            message: `Unable to fetch registrations`,
+          });
+        }
+      } catch (error) {
+        res.status(500).json({
+          message: `Internal Server Error while getting applications: ${error}`,
         });
       }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting applications: ${error}`,
-      });
     }
-  });
+  );
 
   // Apply for exam
   router.post("/exam_schedule/apply/:id", userMiddleware, async (req, res) => {
@@ -245,13 +273,48 @@ module.exports = function () {
     }
   });
 
+  // Update Application status
+  router.put("/registration_status/:id", userMiddleware, async (req, res) => {
+    const { student } = req.body;
+    const id = parseInt(req.params.id);
+    try {
+      const { status } = req.body;
+      const registration = await findApplicationByRegistrationId(id);
+      if (registration) {
+        if (registration?.user_id != student?.id) {
+          res.status(403).json({
+            message: `Unauthorized to update application.`,
+          });
+          return;
+        }
+        const updatedApplication = await updateApplication({ id }, { status });
+        if (!updatedApplication) {
+          res.status(500).json({
+            message: `Unable to update exam registration.`,
+          });
+          return;
+        }
+        res.status(200).json({
+          message: `Application status updated successfully`,
+          data: updatedApplication,
+        });
+      } else {
+        res.status(500).json({
+          message: `Unable to find application`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Error while updating result: ${error}`,
+      });
+    }
+  });
+
   // Delete exam registration
   router.delete("/exam_registrations/:id", userMiddleware, async (req, res) => {
     const { student } = req.body;
-    console.log("🚀 ~ router.delete ~ student:", student)
     try {
       const registration = await findApplicationByRegistrationId(req.params.id);
-      console.log("🚀 ~ router.delete ~ registration:", registration)
       if (registration) {
         if (registration.student_id != student.student_id) {
           res.status(403).json({
@@ -262,7 +325,7 @@ module.exports = function () {
         const deletedApplication = await deleteApplication({
           reg_id: req.params.id,
         });
-        console.log("🚀 ~ router.delete ~ deletedApplication:", deletedApplication)
+
         if (!deletedApplication) {
           res.status(500).json({
             message: `Unable to delete application.`,

@@ -6,6 +6,7 @@ const appliedExamOutputData = {
   updated_at: true,
   reg_id: true,
   schedule_id: true,
+  status: true,
   schedule: {
     select: {
       schedule_id: true,

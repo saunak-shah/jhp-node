@@ -98,7 +98,6 @@ module.exports = function () {
     try {
       // Extract necessary data from request body
       const id = parseInt(req.params.id);
-      console.log("🚀 ~ router.post ~ id:", id)
       const {
         teacher,
         exam_date,
@@ -113,7 +112,6 @@ module.exports = function () {
         is_retake,
       } = req.body;
 
-      console.log("🚀 ~ router.post ~ id:", req.body)
 
       // select the exam which you want to give
       // after select the exam need to show information about exam like
@@ -121,7 +119,6 @@ module.exports = function () {
       // check if already apply or not for requested exam
 
       const exam = await findExamByExamId(id);
-      console.log("🚀 ~ router.post ~ exam:", exam)
       if (
         !exam ||
         registration_starting_date < new Date(Date.now()).toISOString() ||
