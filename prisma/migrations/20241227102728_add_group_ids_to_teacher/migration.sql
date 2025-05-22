@@ -1,14 +1,14 @@
 -- DropIndex
-DROP INDEX "teacher_teacher_email_key";
+DROP INDEX IF EXISTS "teacher_teacher_email_key";
 
 -- DropIndex
-DROP INDEX "teacher_teacher_phone_number_key";
+DROP INDEX IF EXISTS "teacher_teacher_phone_number_key";
 
 -- AlterTable
-ALTER TABLE "teacher" ADD COLUMN     "group_ids" INTEGER[] DEFAULT ARRAY[]::INTEGER[];
+ALTER TABLE "teacher" ADD COLUMN  IF NOT EXISTS  "group_ids" INTEGER[] DEFAULT ARRAY[]::INTEGER[];
 
 -- CreateTable
-CREATE TABLE "groups" (
+CREATE TABLE IF NOT EXISTS"groups" (
     "group_id" SERIAL NOT NULL,
     "group_name" TEXT NOT NULL,
     "teacher_ids" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
