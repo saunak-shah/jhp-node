@@ -7,6 +7,7 @@ const appliedExamOutputData = {
   reg_id: true,
   course_id: true,
   student_id: true,
+  status: true,
   student: {
     select: {
       student_id: true,
@@ -25,23 +26,15 @@ const appliedExamOutputData = {
       course_id: true,
       course_name: true,
       file_url: true,
-      course_date: true,
-      course_duration_in_hours: true,
       course_description: true,
-      course_score: true,
-      course_location: true,
-      course_passing_score: true,
-      course_max_attempts: true,
-      is_active: true,
-      registration_starting_date: true,
-      registration_closing_date: true,
-      result_date: true,
     },
   },
   result: {
     select: {
       reg_id: true,
-      score: true
+      score: true,
+      course_score: true,
+      course_passing_score: true
     }
   }
 };
@@ -79,7 +72,7 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
 
   if (courseId) {
     whereClause = {
-      course_id: parseInt(courseId),
+      schedule_id: parseInt(courseId),
     };
   }
 
@@ -104,14 +97,6 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
         {
           course: {
             course_description: {
-              contains: searchKey,
-              mode: "insensitive",
-            },
-          },
-        },
-        {
-          course: {
-            course_location: {
               contains: searchKey,
               mode: "insensitive",
             },
@@ -287,8 +272,23 @@ async function getAllApplicationsByCourseIdToDownload(
     where: buildWhereClause(searchKey, examId, undefined),
     select: {
       student_apply_course_id: true,
+      reg_id: true,
       created_at: true,
       updated_at: true,
+      exam_schedule:{
+        select:{
+          exam_name: true,
+          start_time: true,
+          end_time: true,
+          total_marks: true,
+          passing_score: true,
+        }
+      },
+      result: {
+        select: {
+          score: true
+        }
+      },      
       student: {
         select: {
           first_name: true,
@@ -308,20 +308,23 @@ async function getAllApplicationsByCourseIdToDownload(
     take: parseInt(limit),
     skip: parseInt(offset),
   });
-
   const data = [];
   for (let i = 0; i < applications.length; i++) {
     const application = applications[i];
     data.push({
-      registration_id: application.student_apply_course_id,
-      created_at: application.created_at,
-      updated_at: application.updated_at,
+      registration_id: application.reg_id,
       student_name:
         application.student.first_name + application.student.last_name,
       course: application.course.course_name,
+      exam_name: application.exam_schedule.exam_name,
       phone_number: application.student.phone_number,
       email: application.student.email,
-      gender: application.student.gender,
+      created_at: application.created_at,
+      start_time: application.exam_schedule.start_time,
+      end_time: application.exam_schedule.end_time,
+      total_marks: application.exam_schedule.total_marks,
+      passing_score: application.exam_schedule.passing_score,
+      score: application.result[0]?.score,
     });
   }
 
@@ -339,11 +342,12 @@ async function getAllApplicationsByCourseIdCount(examId, searchKey) {
   return coursesCount;
 }
 
-async function getAllApplicationsByUserIdAndCourseId(userId, courseId) {
+async function getAllApplicationsByUserIdAndCourseId(userId, courseId, scheduleId) {
   const courses = await prisma.student_apply_course.findMany({
     where: {
       student_id: userId,
       course_id: courseId,
+      schedule_id: scheduleId,
     },
     select: appliedExamOutputData,
     orderBy: {

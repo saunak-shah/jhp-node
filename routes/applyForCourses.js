@@ -14,6 +14,7 @@ const {
   getAllApplicationsByCourseIdToDownload,
 } = require("../services/applyForCourse");
 const { findCourseByCourseId } = require("../services/course");
+const { findExamByScheduleId } = require("../services/examScheduleService");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -132,7 +133,7 @@ module.exports = function () {
   // Get application by examId
   router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params.id;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
       const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
@@ -197,11 +198,11 @@ module.exports = function () {
   router.post("/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { course_id, student } = req.body;
+      const { course_id, schedule_id, student } = req.body;
 
-      if (!course_id) {
+      if (!course_id || !schedule_id) {
         res.status(422).json({
-          message: `Course Id not valid.`,
+          message: `Invalid data.`,
         });
         return;
       }
@@ -211,25 +212,26 @@ module.exports = function () {
       // generate unique exam id
       // check if already apply or not for requested exam
 
-      const course = await findCourseByCourseId(course_id);
+      const course = await findExamByScheduleId(schedule_id);
       if (
         !course ||
-        course.registration_starting_date >
-          new Date(Date.now()).toISOString() ||
-        course.registration_closing_date < new Date(Date.now()).toISOString()
+        course.registration_starting_date >=
+          new Date(Date.now()).toISOString() &&
+        course.registration_closing_date <= new Date(Date.now()).toISOString()
       ) {
-        res.status(422).json({
-          message: `Course registration cannot be done`,
+        return res.status(422).json({
+          message: `Exam registration can not be done`,
         });
       }
 
       const isRegistered = await getAllApplicationsByUserIdAndCourseId(
         student.student_id,
-        course_id
+        course_id,
+        schedule_id
       );
       if (isRegistered && isRegistered.length > 0) {
         res.status(422).json({
-          message: `Already registered`,
+          message: `You have already registered for this exam.`,
         });
         return;
       }
@@ -239,7 +241,9 @@ module.exports = function () {
       const registration = await applyForCourse({
         student_id: student.student_id,
         course_id,
-        reg_id: registrationId
+        reg_id: registrationId,
+        schedule_id,
+        status: null
       });
 
       if (registration) {

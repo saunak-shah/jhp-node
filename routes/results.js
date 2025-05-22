@@ -214,8 +214,8 @@ module.exports = function () {
         reg_id: courseScores.reg_id,
         score: parseInt(score),
         creator_id: parseInt(teacher.teacher_id),
-        course_score: parseInt(courseScores.course_score),
-        course_passing_score: parseInt(courseScores.course_passing_score),
+        course_score: parseInt(courseScores.total_marks),
+        course_passing_score: parseInt(courseScores.passing_score),
       });
 
       if (result) {

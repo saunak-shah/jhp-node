@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "student" ADD COLUMN     "status" INTEGER NOT NULL DEFAULT 2;
+ALTER TABLE "student" ADD COLUMN     "status" INTEGER NOT NULL DEFAULT 1;
