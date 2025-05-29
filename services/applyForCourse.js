@@ -7,7 +7,6 @@ const appliedExamOutputData = {
   reg_id: true,
   course_id: true,
   student_id: true,
-  status: true,
   student: {
     select: {
       student_id: true,
@@ -29,6 +28,12 @@ const appliedExamOutputData = {
       course_description: true,
     },
   },
+  exam_schedule: {
+    select: {
+      total_marks: true,
+      passing_score: true,
+    },
+  },
   result: {
     select: {
       reg_id: true,
@@ -41,14 +46,18 @@ const appliedExamOutputData = {
 
 async function applyForCourse(data) {
   const application = await prisma.student_apply_course.create({
-    data,
-    select: appliedExamOutputData,
+    data, 
+    select: {
+      student_apply_course_id: true,
+      created_at: true,
+      updated_at: true,
+      reg_id: true,
+      course_id: true,
+      student_id: true,
+    }
   });
 
-  if (application) {
-    return application;
-  }
-  return;
+  return application || null;
 }
 
 async function findApplicationByRegistrationId(registrationId) {

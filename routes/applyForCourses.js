@@ -229,22 +229,31 @@ module.exports = function () {
         course_id,
         schedule_id
       );
-      if (isRegistered && isRegistered.length > 0) {
+      // if pass then dont go ahead
+      const score = isRegistered[0]?.result[0]?.score;
+      const passingScore = isRegistered[0]?.result[0]?.course_passing_score;
+      if (isRegistered && isRegistered.length > 0 && score >= passingScore) {
         res.status(422).json({
           message: `You have already registered for this exam.`,
         });
         return;
       }
-
       const registrationId = "JHP" + Date.now()
 
-      const registration = await applyForCourse({
-        student_id: student.student_id,
-        course_id,
+      const data = {
         reg_id: registrationId,
-        schedule_id,
-        status: null
-      });
+        student: {
+          connect: { student_id: student.student_id }
+        },
+        course: {
+          connect: { course_id: course_id }
+        },
+        exam_schedule: {
+          connect: { schedule_id: schedule_id }
+        }
+      }
+
+      const registration = await applyForCourse(data);
 
       if (registration) {
         res.status(200).json({

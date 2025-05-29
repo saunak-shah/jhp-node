@@ -73,7 +73,7 @@ module.exports = function () {
     res.end(pdfBuffer); 
   });
   
-  // Get all courses
+  // Get all exams od courses for admin
   router.get("/exam/schedule/:id", userMiddleware, async (req, res) => {
     try {
       const courseId = req.params.id;

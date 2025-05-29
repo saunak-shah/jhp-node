@@ -24,10 +24,6 @@ enum Role {
   Support @map("3")
 }
 
-enum examStatus {
-  Pass   @map("M")
-  Fail @map("F")
-}
 enum ExamScheduleStatus {
   SCHEDULED
   COMPLETED
@@ -87,7 +83,6 @@ model student {
   teacher                         teacher? @relation(fields: [assigned_to], references: [teacher_id], onDelete: SetNull)
 
   organization         organization           @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-  course               course[]
   student_apply_course student_apply_course[]
   attendance           attendance[]
   status               Int     @default(2)
@@ -155,9 +150,6 @@ model course {
 
   student_apply_course student_apply_course[]
   exam_schedule exam_schedule[]
-  student              student?               @relation(fields: [studentStudent_id], references: [student_id])
-  studentStudent_id    Int?
-
 }
 
 enum category {
@@ -172,7 +164,6 @@ model student_apply_course {
   course_id               Int
   student_id              Int
   schedule_id             Int
-  status                  examStatus
   created_at              DateTime @default(now()) @map("created_at")
   updated_at              DateTime @default(now()) @map("updated_at")
 
