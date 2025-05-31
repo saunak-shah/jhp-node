@@ -374,7 +374,7 @@ You can log in using the below link:
       const student = await findStudentByUsername(username.toLowerCase());
       if (student) {
         if(parseInt(student.status) === USER_STATUS.PENDING){
-          res.status(400).json({
+          res.status(403).json({
             message: `Your account is pending approval. Please wait for admin approval.`,
           });
           return;

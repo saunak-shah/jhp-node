@@ -1,3 +1,4 @@
+const { USER_STATUS } = require("../helpers/constant");
 const { verifyJwt } = require("../helpers/jwt");
 const { findTeacherByUsername, isAdmin } = require("../services/teacher");
 const { findStudentByUsername } = require("../services/user");
@@ -11,6 +12,12 @@ async function userMiddleware(req, res, next) {
       try {
         if(tokenData.username){
           student = await findStudentByUsername(tokenData.username.toLowerCase());
+          if (student && student.status === USER_STATUS.PENDING) {
+            res.status(403).json({
+              message: `Your account is pending approval. Please wait for admin approval.`,
+            });
+            return;
+          }
         } else {
           teacher = await findTeacherByUsername(tokenData.teacher_username.toLowerCase());
         }
