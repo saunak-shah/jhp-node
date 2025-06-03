@@ -47,7 +47,11 @@ module.exports = function () {
           : teacher?.organization_id;
       const totalUserCount = await getTotalStudentsCount(
         organization_id,
-        searchKey
+        searchKey,
+        gender = undefined,
+        fromDate = undefined,
+        toDate = undefined,
+        status = USER_STATUS.APPROVE
       );
 
       res.status(200).json({
