@@ -70,7 +70,7 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const status = req.query?.status === "Pending" ? 1 : 2;
+      const status = req.query?.status === "Pending" ? USER_STATUS.PENDING : USER_STATUS.APPROVE;
       let {
         limit,
         offset,

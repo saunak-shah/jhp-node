@@ -317,25 +317,19 @@ function buildWhereClause(
           },
         },
         {
+          father_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
           email: {
             contains: searchKey,
             mode: "insensitive",
           },
         },
-        // {
-        //   address: {
-        //     contains: searchKey,
-        //     mode: "insensitive",
-        //   },
-        // },
         {
           phone_number: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          father_name: {
             contains: searchKey,
             mode: "insensitive",
           },
