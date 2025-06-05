@@ -557,6 +557,8 @@ You can log in using the below link:
           </html>`;
 
         const isMailSent = await sendEmail(to, subject, html);
+        console.log("isMailSent=========", isMailSent)
+
         if (isMailSent) {
           res.status(200).json({
             message: `Password reset link sent on email.`,

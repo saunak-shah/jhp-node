@@ -519,7 +519,7 @@ async function findStudentsByAgeGroup(organization_id) {
         END AS age_range,
       COUNT(*) AS student_count
     FROM student
-    WHERE organization_id = $1
+    WHERE organization_id = $1 AND status = ${USER_STATUS.APPROVE}
     GROUP BY age_range
     ORDER BY age_range
 `,
