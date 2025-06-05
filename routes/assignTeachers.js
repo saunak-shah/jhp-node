@@ -28,7 +28,9 @@ module.exports = function () {
         ? student?.organization_id
         : teacher?.organization_id;
 
-      const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate } = req.query;
+      const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate, status } = req.query;
+      console.log("gender========", gender)
+      console.log("status========", status)
       try {
         const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate);
         const students = await findStudentsAssignedToTeacherId(
@@ -39,7 +41,8 @@ module.exports = function () {
           sortOrder,
           limit,
           offset,
-          gender, fromDate, toDate
+          gender, fromDate, toDate,
+          status
         );
         if (!students) {
           res.status(422).json({
