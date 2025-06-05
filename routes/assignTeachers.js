@@ -11,6 +11,7 @@ const {
   findStudentsAssignedToTeacherIdCount,
 } = require("../services/user");
 const { findTeacherById } = require("../services/teacher");
+const { USER_STATUS } = require("../helpers/constant");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
