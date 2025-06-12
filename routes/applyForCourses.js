@@ -16,6 +16,7 @@ const {
 const { findCourseByCourseId } = require("../services/course");
 const { findExamByScheduleId } = require("../services/examScheduleService");
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
@@ -238,7 +239,7 @@ module.exports = function () {
         });
         return;
       }
-      const registrationId = "JHP" + Date.now()
+      const registrationId = uuidv4();
 
       const data = {
         reg_id: registrationId,
