@@ -239,8 +239,7 @@ module.exports = function () {
         });
         return;
       }
-      const registrationId = uuidv4();
-
+      const registrationId = uuidv4().replace(/-/g, '').slice(0, 10);
       const data = {
         reg_id: registrationId,
         student: {
