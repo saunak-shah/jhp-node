@@ -4,6 +4,7 @@ const ejs = require("ejs");
 const qr = require("qr-image");
 const fs = require("fs");
 const path = require("path");
+const moment = require("moment-timezone");
 
 const {
   createExam,
@@ -32,9 +33,13 @@ module.exports = function () {
         : teacher.organization_id;
 
     const examId = parseInt(req.params.id);
+
     const examScheduleData = await findExamByScheduleIdForReceipt(examId);
     
-    const examData = examScheduleData.exam_schedule;
+    let examData = examScheduleData.exam_schedule;
+    examData.start_time = moment(examData.start_time).tz("Asia/Kolkata").format("lll")
+    examData.end_time = moment(examData.end_time).tz("Asia/Kolkata").format("lll")
+    
     const studentData = {
       reg_id: examScheduleData.reg_id,
       student: examScheduleData.student,
