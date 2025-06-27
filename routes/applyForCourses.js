@@ -131,10 +131,10 @@ module.exports = function () {
     }
   );
 
-  // Get application by examId
+  // Admin - Get application by exam schedule id
   router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const { id } = req.params.id;
+      const id = parseInt(parseInt(req.params.id));
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
       const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
@@ -208,37 +208,41 @@ module.exports = function () {
         return;
       }
 
-      // select the exam which you want to give
-      // after select the exam need to show information about exam like
-      // generate unique exam id
-      // check if already apply or not for requested exam
-
+      // Get course schedule info
       const course = await findExamByScheduleId(schedule_id);
+      const now = new Date();
+
       if (
         !course ||
-        course.registration_starting_date >=
-          new Date(Date.now()).toISOString() &&
-        course.registration_closing_date <= new Date(Date.now()).toISOString()
+        new Date(course.registration_starting_date) > now ||
+        new Date(course.registration_closing_date) < now
       ) {
-        return res.status(422).json({
-          message: `Exam registration can not be done`,
-        });
+        return res.status(422).json({ message: `Exam registration cannot be done` });
       }
 
-      const isRegistered = await getAllApplicationsByUserIdAndCourseId(
+      const existingApplications = await getAllApplicationsByUserIdAndCourseId(
         student.student_id,
         course_id,
         schedule_id
       );
-      // if pass then dont go ahead
-      const score = isRegistered[0]?.result[0]?.score;
-      const passingScore = isRegistered[0]?.result[0]?.course_passing_score;
-      if (isRegistered && isRegistered.length > 0 && score >= passingScore) {
-        res.status(422).json({
-          message: `You have already registered for this exam.`,
-        });
-        return;
-      }
+      console.log("existingApplications=======", existingApplications)
+      
+      if (existingApplications.length > 0) {
+        const score = existingApplications[0]?.result[0]?.score;
+        const passingScore = existingApplications[0]?.result[0]?.course_passing_score;
+        if (score !== undefined && passingScore !== undefined) {
+          if (score >= passingScore) {
+            return res.status(422).json({
+              message: `You have already passed this exam and cannot reapply.`,
+            });
+          }
+          // If score < passingScore → allow reapply
+        } else {
+          return res.status(422).json({
+            message: `You have already applied for this exam.`,
+          });
+        }
+      }  
       const registrationId = uuidv4().replace(/-/g, '').slice(0, 10);
       const data = {
         reg_id: registrationId,
@@ -254,6 +258,7 @@ module.exports = function () {
       }
 
       const registration = await applyForCourse(data);
+      console.log("registration========", registration)
 
       if (registration) {
         res.status(200).json({
