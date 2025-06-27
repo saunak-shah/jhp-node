@@ -32,7 +32,15 @@ const examOutputData = {
       file_url: true,
       course_description: true
     },
-  }
+  },
+  student_apply_course: {
+    select: {
+      schedule_id: true,
+      student_id: true,
+      course_id: true,
+      reg_id: true,
+    },
+  },
 };
 
 async function createExam(data) {
