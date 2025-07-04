@@ -3,6 +3,7 @@ const { userMiddleware } = require("../middlewares/middleware");
 const {
   getAllApplications,
   findApplicationByRegistrationId,
+  findApplicationByApplicantId,
   applyForCourse,
   getAllApplicationsByUserIdAndCourseId,
   deleteApplication,
@@ -320,11 +321,11 @@ module.exports = function () {
   // });
 
   // Delete exam
-  router.delete("/registration/:id", userMiddleware, async (req, res) => {
+  router.delete("/exam/registration/:id", userMiddleware, async (req, res) => {
     const { student } = req.body;
-    const id = parseInt(req.params.id);
+    const studentApplyId = parseInt(req.params.id);
     try {
-      const registration = await findApplicationByRegistrationId(id);
+      const registration = await findApplicationByApplicantId(studentApplyId);
       if (registration) {
         if (registration.student_id != student.student_id) {
           res.status(403).json({
@@ -333,7 +334,7 @@ module.exports = function () {
           return;
         }
         const deletedApplication = await deleteApplication({
-          student_apply_course_id: id,
+          student_apply_course_id: studentApplyId,
         });
         if (!deletedApplication) {
           res.status(500).json({

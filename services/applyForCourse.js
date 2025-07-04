@@ -76,6 +76,22 @@ async function findApplicationByRegistrationId(registrationId) {
   return;
 }
 
+async function findApplicationByApplicantId(studentApplyId) {
+  const application = await prisma.student_apply_course.findUnique({
+    where: {
+      student_apply_course: {
+        student_apply_course_id: studentApplyId,
+      },
+    },
+    select: appliedExamOutputData,
+  });
+
+  if (application) {
+    return application;
+  }
+  return;
+}
+
 function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
   let whereClause;
 
@@ -360,7 +376,7 @@ async function getAllApplicationsByUserIdAndCourseId(userId, courseId, scheduleI
     },
     select: appliedExamOutputData,
     orderBy: {
-      created_at: "asc",
+      created_at: "desc",
     },
   });
 
@@ -398,6 +414,7 @@ async function deleteApplication(filter) {
 module.exports = {
   applyForCourse,
   findApplicationByRegistrationId,
+  findApplicationByApplicantId,
   getAllApplications,
   getAllApplicationsCount,
   getAllApplicationsByCourseId,
