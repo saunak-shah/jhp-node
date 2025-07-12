@@ -83,19 +83,26 @@ module.exports = function () {
     try {
       const courseId = req.params.id;
       const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder, is_exam_active } =
+        req.query;
+
+      const isExamActive = is_exam_active === "true";
 
       const organizationId = student
         ? student.organization_id
         : teacher.organization_id;
 
       // const result = await findResultByRegistrationId(id);
-      const courseCount = await getAllExamScheduleCount(organizationId, courseId, searchKey);
+      const filterObj = {
+        organization_id: organizationId,
+        course_id: courseId,
+        is_exam_active: isExamActive
+      }
+      const courseCount = await getAllExamScheduleCount(filterObj, searchKey);
       const courses = await getAllExamSchedule(
         searchKey,
         sortBy,
-        organizationId,
-        courseId,
+        filterObj,
         sortOrder,
         !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
         offset
@@ -141,7 +148,7 @@ module.exports = function () {
         end_time,
         total_marks,
         passing_score,
-        exam_name
+        exam_name,
       } = req.body;
 
       if (
@@ -171,7 +178,8 @@ module.exports = function () {
         end_time: req.body.end_time,
         total_marks: req.body.total_marks,
         passing_score: req.body.passing_score,
-        exam_name: req.body.exam_name
+        exam_name: req.body.exam_name,
+        is_exam_active: req.body.is_exam_active
       };
       const course = await findExamByScheduleId(schedule_id);
       if (course) {
@@ -220,8 +228,8 @@ module.exports = function () {
         total_marks,
         passing_score,
         exam_name,
+        is_exam_active
       } = req.body;
-
       if (
         !teacher ||
         !course_id,
@@ -249,7 +257,8 @@ module.exports = function () {
         end_time,
         total_marks,
         passing_score,
-        exam_name
+        exam_name,
+        is_exam_active
       });
 
       if (examData) {
@@ -314,10 +323,14 @@ module.exports = function () {
         ? student.organization_id
         : teacher.organization_id;
 
+      const filterObj = {
+        organization_id: organizationId,
+        is_exam_active: true
+      }
       const courses = await getAllExamScheduleForStudent(
         searchKey,
         sortBy,
-        organizationId,
+        filterObj,
         sortOrder,
         !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
         offset

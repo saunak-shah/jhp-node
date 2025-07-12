@@ -219,6 +219,7 @@ model exam_schedule {
   total_marks Int
   passing_score Int
   status        ExamScheduleStatus @default(SCHEDULED)
+  is_exam_active  Boolean    @default(true)
   created_at    DateTime @default(now()) @map("created_at")
   updated_at    DateTime @default(now()) @map("updated_at")
 

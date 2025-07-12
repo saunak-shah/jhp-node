@@ -11,6 +11,7 @@ const courseOutputData = {
   total_marks: true,
   passing_score: true,
   created_at: true,
+  is_exam_active: true
 };
 
 const examOutputData = {
@@ -25,6 +26,7 @@ const examOutputData = {
   total_marks: true,
   passing_score: true,
   created_at: true,
+  is_exam_active: true,
   course: {
     select: {
       course_id: true,
@@ -125,14 +127,13 @@ async function findExamByScheduleIdForReceipt(scheduleId) {
 async function getAllExamSchedule(
   searchKey,
   sortBy,
-  organization_id,
-  courseId,
+  filterObj,
   sortOrder = "asc",
   limit = 100,
   offset = 0
 ) {
   const courses = await prisma.exam_schedule.findMany({
-    where: buildWhereClause(organization_id, courseId, searchKey),
+    where: buildWhereClause(filterObj, searchKey),
     select: examOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
@@ -145,11 +146,12 @@ async function getAllExamSchedule(
   return;
 }
 
-function buildWhereClause(organization_id, courseId, searchKey) {
+function buildWhereClause(filterObj, searchKey) {
   let whereClause;
-  if (courseId) {
+  if (filterObj.course_id) {
     whereClause = {
-      course_id: parseInt(courseId),
+      course_id: parseInt(filterObj.course_id),
+      is_exam_active: filterObj.is_exam_active
     };
   }
 
@@ -222,9 +224,9 @@ async function deleteScheduledExam(filter) {
   return;
 }
 
-async function getAllExamScheduleCount(organization_id, courseId, searchKey) {
+async function getAllExamScheduleCount(filterObj, searchKey) {
   const coursesCount = await prisma.exam_schedule.count({
-    where: buildWhereClause(organization_id, courseId, searchKey),
+    where: buildWhereClause(filterObj, searchKey),
   });
 
   return coursesCount;
@@ -234,17 +236,17 @@ async function getAllExamScheduleCount(organization_id, courseId, searchKey) {
 async function getAllExamScheduleForStudent(
   searchKey,
   sortBy,
-  organization_id,
+  filterObj,
   sortOrder = "asc",
   limit = 100,
   offset = 0
 ) {
   const courses = await prisma.exam_schedule.findMany({
     where: {
-      ...buildWhereClause(organization_id, undefined, searchKey),
+      ...buildWhereClause(filterObj, searchKey),
       start_time: {
         gte: new Date(), // This ensures CURRENT_DATE <= start_time
-      },  
+      }, 
     },
     select: examOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
