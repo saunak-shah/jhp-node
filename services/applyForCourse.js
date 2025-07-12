@@ -337,7 +337,7 @@ async function getAllApplicationsByCourseIdToDownload(
     data.push({
       registration_id: application.reg_id,
       student_name:
-        application.student.first_name + application.student.last_name,
+        application.student.first_name + " " + application.student.last_name,
       course: application.course.course_name,
       exam_name: application.exam_schedule.exam_name,
       phone_number: application.student.phone_number,
