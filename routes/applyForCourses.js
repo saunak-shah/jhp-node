@@ -213,13 +213,19 @@ module.exports = function () {
       const course = await findExamByScheduleId(schedule_id);
       const now = new Date();
 
-      if (
-        !course ||
-        new Date(course.registration_starting_date) > now ||
-        new Date(course.registration_closing_date) < now
-      ) {
-        return res.status(422).json({ message: `Exam registration cannot be done` });
+      let errorMessage = "";
+      if (!course) {
+        errorMessage = "Course not found.";
+      } else if (new Date(course.registration_starting_date) > now) {
+        errorMessage = "Registration has not started yet.";
+      } else if (new Date(course.registration_closing_date) < now) {
+        errorMessage = "Registration is closed.";
       }
+
+      if (errorMessage) {
+        return res.status(422).json({ message: errorMessage });
+      }
+
 
       const existingApplications = await getAllApplicationsByUserIdAndCourseId(
         student.student_id,
