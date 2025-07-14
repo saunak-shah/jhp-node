@@ -169,10 +169,16 @@ module.exports = function () {
         });
         return;
       }
+      // get date of country from timezone
+      const mIST = moment.tz(req.body.registration_closing_date, "Asia/Kolkata");
+      const regClosingDate = moment(mIST, "YYYY/MM/DD")
+      .endOf("day")
+      .format();
+      console.log("regClosingDate", regClosingDate)
 
       const data = {
         registration_starting_date: req.body.registration_starting_date,
-        registration_closing_date: req.body.registration_closing_date,
+        registration_closing_date: regClosingDate,
         location: req.body.location,
         start_time: req.body.start_time,
         end_time: req.body.end_time,
