@@ -32,10 +32,9 @@ module.exports = function () {
       const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate } = req.query;
       
       const status = req.query?.status === "Pending" ? USER_STATUS.PENDING : USER_STATUS.APPROVE;
-      console.log("gender========", gender)
       console.log("status========", status)
       try {
-        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate);
+        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate, status);
         const students = await findStudentsAssignedToTeacherId(
           organization_id,
           searchKey,
