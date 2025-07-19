@@ -1,4 +1,5 @@
 const express = require("express");
+const AWS = require('aws-sdk');
 const {
   createCourse,
   getAllCourses,
@@ -10,6 +11,17 @@ const {
 const { userMiddleware } = require("../middlewares/middleware");
 const { createApplication } = require("../services/applyForCourse");
 const router = express.Router();
+
+const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+require("dotenv").config();
+
+const s3 = new AWS.S3({
+  region: 'ap-south-1',
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  signatureVersion: 'v4',
+});
+
 
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
@@ -132,34 +144,16 @@ module.exports = function () {
         teacher,
         course_name,
         file_url,
-        course_date,
-        course_duration_in_hours,
         course_description,
-        course_score,
-        course_location,
-        course_passing_score,
-        course_max_attempts,
         is_active,
-        category,
-        registration_starting_date,
-        registration_closing_date,
       } = req.body;
 
       if (
         !teacher ||
         !course_name ||
         !file_url ||
-        !course_date ||
-        !course_duration_in_hours ||
         !course_description ||
-        !course_score ||
-        !course_location ||
-        !course_passing_score ||
-        !course_max_attempts ||
-        !is_active ||
-        !category ||
-        !registration_starting_date ||
-        !registration_closing_date
+        !is_active
       ) {
         res.status(422).json({
           message: `Fill all the fields`,
@@ -167,27 +161,11 @@ module.exports = function () {
         return;
       }
 
-      if (course_date < new Date(Date.now()).toISOString()) {
-        res.status(422).json({
-          message: `Course Date should be greater than today's date.`,
-        });
-        return;
-      }
-
       const courseData = await createCourse({
         course_name,
         file_url,
-        course_date,
-        course_duration_in_hours,
         course_description,
-        course_score,
-        course_location,
-        course_passing_score,
-        course_max_attempts,
         is_active,
-        registration_starting_date,
-        registration_closing_date,
-        category,
         created_by: teacher.teacher_id,
         organization_id: teacher.organization_id,
       });
@@ -211,6 +189,30 @@ module.exports = function () {
     }
   });
 
+  router.get("/generate-presigned-url", async (req, res) => {
+    try {
+      const { fileName, fileType } = req.query;
+      console.log("filename", fileName)
+      console.log("fileType", fileType)
+      const sanitizedFileName = fileName.replace(/\s+/g, '_');
+      const key = `uploads/${Date.now()}-${sanitizedFileName}`;
+      const params = {
+        Bucket: "attachment.jhpparivar.in",
+        Key: key,
+        Expires: 300, // 5 minutes
+        ContentType: fileType,
+      };
+  
+      const uploadURL = await s3.getSignedUrlPromise("putObject", params);
+      // console.log("connect============", uploadURL);
+      const url = decodeURIComponent(uploadURL);
+      // console.log("url==================", url)
+      res.status(200).json({ uploadURL: url, key: params.Key });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to generate URL", error });
+    }
+  });
+
   // only Admin
   // Update Course
   router.post("/courses/:id", userMiddleware, async (req, res) => {
@@ -226,15 +228,7 @@ module.exports = function () {
       const data = {
         course_name: req.body.course_name,
         file_url: req.body.file_url,
-        course_date: req.body.course_date,
-        course_duration_in_hours: req.body.course_duration_in_hours,
         course_description: req.body.course_description,
-        course_score: req.body.course_score,
-        course_location: req.body.course_location,
-        course_passing_score: req.body.course_passing_score,
-        course_max_attempts: req.body.course_max_attempts,
-        registration_starting_date: req.body.registration_starting_date,
-        registration_closing_date: req.body.registration_closing_date,
       };
       const course = await findCourseByCourseId(id);
       /* if (course?.created_by != student?.student_id) {

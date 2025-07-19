@@ -6,19 +6,9 @@ const courseOutputData = {
   updated_at: true,
   course_name: true,
   file_url: true,
-  course_date: true,
-  course_duration_in_hours: true,
   course_description: true,
-  course_score: true,
-  course_location: true,
-  course_passing_score: true,
-  course_max_attempts: true,
   is_active: true,
-  registration_starting_date: true,
-  registration_closing_date: true,
-  result_date: true,
   created_by: true,
-  category: true,
   organization_id: true,
 };
 
@@ -85,12 +75,6 @@ function buildWhereClause(organization_id, searchKey) {
         },
         {
           course_description: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          course_location: {
             contains: searchKey,
             mode: "insensitive",
           },

@@ -11,6 +11,7 @@ const {
   findStudentsAssignedToTeacherIdCount,
 } = require("../services/user");
 const { findTeacherById } = require("../services/teacher");
+const { USER_STATUS } = require("../helpers/constant");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -29,8 +30,11 @@ module.exports = function () {
         : teacher?.organization_id;
 
       const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate } = req.query;
+      
+      const status = req.query?.status === "Pending" ? USER_STATUS.PENDING : USER_STATUS.APPROVE;
+      console.log("status========", status)
       try {
-        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate);
+        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate, status);
         const students = await findStudentsAssignedToTeacherId(
           organization_id,
           searchKey,
@@ -39,7 +43,8 @@ module.exports = function () {
           sortOrder,
           limit,
           offset,
-          gender, fromDate, toDate
+          gender, fromDate, toDate,
+          status
         );
         if (!students) {
           res.status(422).json({

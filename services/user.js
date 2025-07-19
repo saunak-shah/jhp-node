@@ -317,25 +317,19 @@ function buildWhereClause(
           },
         },
         {
+          father_name: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
           email: {
             contains: searchKey,
             mode: "insensitive",
           },
         },
-        // {
-        //   address: {
-        //     contains: searchKey,
-        //     mode: "insensitive",
-        //   },
-        // },
         {
           phone_number: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
-          father_name: {
             contains: searchKey,
             mode: "insensitive",
           },
@@ -439,7 +433,7 @@ async function findStudentsAssignedToTeacherData(organization_id) {
   const students = await prisma.$queryRaw`
     SELECT COUNT(s.student_id) AS student_count, t.teacher_first_name as teachers from student s
       JOIN teacher t ON s.assigned_to = t.teacher_id
-      WHERE s.organization_id = ${organization_id}
+      WHERE s.organization_id = ${organization_id} AND s.status = ${USER_STATUS.APPROVE}
       GROUP BY teacher_first_name ORDER BY student_count DESC`;
   if (students) {
     return students;
@@ -525,7 +519,7 @@ async function findStudentsByAgeGroup(organization_id) {
         END AS age_range,
       COUNT(*) AS student_count
     FROM student
-    WHERE organization_id = $1
+    WHERE organization_id = $1 AND status = ${USER_STATUS.APPROVE}
     GROUP BY age_range
     ORDER BY age_range
 `,
@@ -542,7 +536,7 @@ async function findStudentsByGenderGroup(organization_id) {
       gender,
       COUNT(*) AS student_count
     FROM student
-    WHERE organization_id = $1
+    WHERE organization_id = $1 AND status = ${USER_STATUS.APPROVE}
     GROUP BY gender
     ORDER BY gender
 `,

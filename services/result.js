@@ -17,9 +17,6 @@ const resultOutputData = {
       course: {
         select: {
           course_name: true,
-          category: true,
-          course_score: true,
-          course_passing_score: true,
         },
       },
       student: {
@@ -60,10 +57,10 @@ async function getCourseScore(registration_id) {
     },
     select: {
       reg_id: true,
-      course: {
+      exam_schedule: {
         select: {
-          course_score: true,
-          course_passing_score: true,
+          total_marks: true,
+          passing_score: true,
         },
       },
     },
@@ -71,8 +68,8 @@ async function getCourseScore(registration_id) {
 
   if (result) {
     return {
-      course_score: result.course.course_score,
-      course_passing_score: result.course.course_passing_score,
+      total_marks: result.exam_schedule.total_marks,
+      passing_score: result.exam_schedule.passing_score,
       reg_id: result.reg_id,
     };
   }

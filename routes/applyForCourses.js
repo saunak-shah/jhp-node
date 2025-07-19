@@ -3,6 +3,7 @@ const { userMiddleware } = require("../middlewares/middleware");
 const {
   getAllApplications,
   findApplicationByRegistrationId,
+  findApplicationByApplicantId,
   applyForCourse,
   getAllApplicationsByUserIdAndCourseId,
   deleteApplication,
@@ -14,7 +15,9 @@ const {
   getAllApplicationsByCourseIdToDownload,
 } = require("../services/applyForCourse");
 const { findCourseByCourseId } = require("../services/course");
+const { findExamByScheduleId } = require("../services/examScheduleService");
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
@@ -129,10 +132,10 @@ module.exports = function () {
     }
   );
 
-  // Get application by examId
+  // Admin - Get application by exam schedule id
   router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = parseInt(parseInt(req.params.id));
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
       const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
@@ -197,50 +200,72 @@ module.exports = function () {
   router.post("/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { course_id, student } = req.body;
+      const { course_id, schedule_id, student } = req.body;
 
-      if (!course_id) {
+      if (!course_id || !schedule_id) {
         res.status(422).json({
-          message: `Course Id not valid.`,
+          message: `Invalid data.`,
         });
         return;
       }
 
-      // select the exam which you want to give
-      // after select the exam need to show information about exam like
-      // generate unique exam id
-      // check if already apply or not for requested exam
+      // Get course schedule info
+      const course = await findExamByScheduleId(schedule_id);
+      const now = new Date();
 
-      const course = await findCourseByCourseId(course_id);
-      if (
-        !course ||
-        course.registration_starting_date >
-          new Date(Date.now()).toISOString() ||
-        course.registration_closing_date < new Date(Date.now()).toISOString()
-      ) {
-        res.status(422).json({
-          message: `Course registration cannot be done`,
-        });
+      let errorMessage = "";
+      if (!course) {
+        errorMessage = "Course not found.";
+      } else if (new Date(course.registration_starting_date) > now) {
+        errorMessage = "Registration has not started yet.";
+      } else if (new Date(course.registration_closing_date) < now) {
+        errorMessage = "Registration is closed.";
       }
 
-      const isRegistered = await getAllApplicationsByUserIdAndCourseId(
+      if (errorMessage) {
+        return res.status(422).json({ message: errorMessage });
+      }
+
+
+      const existingApplications = await getAllApplicationsByUserIdAndCourseId(
         student.student_id,
-        course_id
+        course_id,
+        schedule_id
       );
-      if (isRegistered && isRegistered.length > 0) {
-        res.status(422).json({
-          message: `Already registered`,
-        });
-        return;
+      console.log("existingApplications=======", existingApplications)
+      
+      if (existingApplications.length > 0) {
+        const score = existingApplications[0]?.result[0]?.score;
+        const passingScore = existingApplications[0]?.result[0]?.course_passing_score;
+        if (score !== undefined && passingScore !== undefined) {
+          if (score >= passingScore) {
+            return res.status(422).json({
+              message: `You have already passed this exam and cannot reapply.`,
+            });
+          }
+          // If score < passingScore → allow reapply
+        } else {
+          return res.status(422).json({
+            message: `You have already applied for this exam.`,
+          });
+        }
+      }  
+      const registrationId = uuidv4().replace(/-/g, '').slice(0, 10);
+      const data = {
+        reg_id: registrationId,
+        student: {
+          connect: { student_id: student.student_id }
+        },
+        course: {
+          connect: { course_id: course_id }
+        },
+        exam_schedule: {
+          connect: { schedule_id: schedule_id }
+        }
       }
 
-      const registrationId = "JHP" + Date.now()
-
-      const registration = await applyForCourse({
-        student_id: student.student_id,
-        course_id,
-        reg_id: registrationId
-      });
+      const registration = await applyForCourse(data);
+      console.log("registration========", registration)
 
       if (registration) {
         res.status(200).json({
@@ -302,11 +327,11 @@ module.exports = function () {
   // });
 
   // Delete exam
-  router.delete("/registration/:id", userMiddleware, async (req, res) => {
+  router.delete("/exam/registration/:id", userMiddleware, async (req, res) => {
     const { student } = req.body;
-    const id = parseInt(req.params.id);
+    const studentApplyId = parseInt(req.params.id);
     try {
-      const registration = await findApplicationByRegistrationId(id);
+      const registration = await findApplicationByApplicantId(studentApplyId);
       if (registration) {
         if (registration.student_id != student.student_id) {
           res.status(403).json({
@@ -315,7 +340,7 @@ module.exports = function () {
           return;
         }
         const deletedApplication = await deleteApplication({
-          student_apply_course_id: id,
+          student_apply_course_id: studentApplyId,
         });
         if (!deletedApplication) {
           res.status(500).json({

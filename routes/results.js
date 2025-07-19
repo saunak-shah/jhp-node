@@ -39,6 +39,61 @@ module.exports = function () {
     }
   });
 
+  // student exam result check
+  router.post("/student/exam/result", userMiddleware, async (req, res) => {
+    const { student } = req.body;
+    const studentId = student?.student_id;
+    try {
+      // Extract necessary data from request body
+      const {
+        reg_id,
+      } = req.body;
+
+      if (
+        !student ||
+        !reg_id
+      ) {
+        res.status(422).json({
+          message: `Fill all the fields`,
+        });
+        return;
+      }
+
+      const result = await findResultByRegistrationId(reg_id);
+      if(!result){
+        res.status(422).json({
+          message: `Invalid registration number..`,
+        });
+        return;
+      }
+
+      // apply student and request student should same log
+      if((result.student_apply_course?.student_id) !== parseInt(studentId)){
+        res.status(422).json({
+          message: `Invalid information provided.`,
+        });
+        return;
+      }
+
+      if (!result) {
+        res.status(422).json({
+          message: `No Result found`,
+        });
+        return;
+      }
+      res.status(200).json({
+        message: `Result found`,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: `Error while creating course : ${error}`,
+      });
+      return;
+    }
+  });
+
+
   router.get("/application/result/:id", userMiddleware, async (req, res) => {
     const id = req.params.id;
     try {
@@ -214,8 +269,8 @@ module.exports = function () {
         reg_id: courseScores.reg_id,
         score: parseInt(score),
         creator_id: parseInt(teacher.teacher_id),
-        course_score: parseInt(courseScores.course_score),
-        course_passing_score: parseInt(courseScores.course_passing_score),
+        course_score: parseInt(courseScores.total_marks),
+        course_passing_score: parseInt(courseScores.passing_score),
       });
 
       if (result) {

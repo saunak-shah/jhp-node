@@ -24,6 +24,12 @@ enum Role {
   Support @map("3")
 }
 
+enum ExamScheduleStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
 model organization {
   organization_id Int      @id @default(autoincrement())
   name            String
@@ -116,7 +122,6 @@ model teacher {
   organization    organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
   attendance      attendance[]
   student         student[]
-  course          course[]
   result          result[]
   program         program[]
 
@@ -136,35 +141,21 @@ model groups {
 }
 
 model course {
-  course_id                  Int          @id @default(autoincrement())
-  created_at                 DateTime     @default(now()) @map("created_at")
-  updated_at                 DateTime     @default(now()) @map("updated_at")
-  course_name                String
-  file_url                   String
-  course_date                DateTime
-  course_duration_in_hours   Int
-  course_description         String
-  course_score               Float
-  course_location            String
-  course_passing_score       Float
-  course_max_attempts        Int
-  is_active                  Boolean
-  registration_starting_date DateTime
-  registration_closing_date  DateTime
-  result_date                DateTime?
-  created_by                 Int
-  teacher                    teacher      @relation(fields: [created_by], references: [teacher_id], onDelete: Cascade)
-  organization_id            Int
-  organization               organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-  category                   category
+  course_id          Int          @id @default(autoincrement())
+  created_at         DateTime     @default(now()) @map("created_at")
+  updated_at         DateTime     @default(now()) @map("updated_at")
+  course_name        String
+  file_url           String
+  course_description String
+  is_active          Boolean
+  created_by         Int
+  organization_id    Int
+  organization       organization @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
 
   student_apply_course student_apply_course[]
+  exam_schedule        exam_schedule[]
   student              student?               @relation(fields: [studentStudent_id], references: [student_id])
   studentStudent_id    Int?
-
-  @@index([category])
-  @@index([course_name, course_date])
-  @@index([course_name, course_date, category])
 }
 
 enum category {
@@ -176,35 +167,33 @@ enum category {
 
 model student_apply_course {
   student_apply_course_id Int      @id @default(autoincrement())
-  created_at              DateTime @default(now()) @map("created_at")
-  updated_at              DateTime @default(now()) @map("updated_at")
   reg_id                  String   @unique
   course_id               Int
-  course                  course   @relation(fields: [course_id], references: [course_id], onDelete: Cascade)
   student_id              Int
-  student                 student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  schedule_id             Int
+  created_at              DateTime @default(now()) @map("created_at")
+  updated_at              DateTime @default(now()) @map("updated_at")
 
-  result result[]
-
-  @@index([student_id, course_id])
-  @@index([student_id])
-  @@index([course_id])
+  result        result[]
+  course        course        @relation(fields: [course_id], references: [course_id], onDelete: Cascade)
+  student       student       @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  exam_schedule exam_schedule @relation(fields: [schedule_id], references: [schedule_id], onDelete: Cascade)
 }
 
 model result {
-  result_id            Int                  @id @default(autoincrement())
-  created_at           DateTime             @default(now()) @map("created_at")
-  updated_at           DateTime             @default(now()) @map("updated_at")
+  result_id            Int      @id @default(autoincrement())
+  created_at           DateTime @default(now()) @map("created_at")
+  updated_at           DateTime @default(now()) @map("updated_at")
   score                Float
   course_passing_score Float
   course_score         Float
-  reg_id               String               @unique
-  student_apply_course student_apply_course @relation(fields: [reg_id], references: [reg_id], onDelete: Cascade)
-  creator_id           Int
-  teacher              teacher              @relation(fields: [creator_id], references: [teacher_id], onDelete: Cascade)
 
-  @@index([result_id])
-  @@index([creator_id])
+  reg_id String @unique
+
+  student_apply_course student_apply_course @relation(fields: [reg_id], references: [reg_id], onDelete: Cascade)
+
+  creator_id Int
+  teacher    teacher @relation(fields: [creator_id], references: [teacher_id], onDelete: Cascade)
 }
 
 model attendance {
@@ -260,3 +249,27 @@ model student_apply_program {
   @@index([student_id])
   @@index([program_id])
 }
+
+model exam_schedule {
+  schedule_id                Int                @id @default(autoincrement())
+  course_id                  Int
+  course                     course             @relation(fields: [course_id], references: [course_id], onDelete: Cascade)
+  exam_name                  String             @default("Exam Name Pending")
+  registration_starting_date DateTime
+  registration_closing_date  DateTime
+  location                   String
+  start_time                 DateTime
+  end_time                   DateTime
+  total_marks                Int
+  passing_score              Int
+  status                     ExamScheduleStatus @default(SCHEDULED)
+  is_exam_active             Boolean            @default(true)
+  created_at                 DateTime           @default(now()) @map("created_at")
+  updated_at                 DateTime           @default(now()) @map("updated_at")
+
+  student_apply_course student_apply_course[]
+
+  @@index([course_id])
+}
+
+// age limit add for exam

@@ -70,7 +70,7 @@ module.exports = function () {
   router.get("/students", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const status = req.query?.status === "Pending" ? 1 : 2;
+      const status = req.query?.status === "Pending" ? USER_STATUS.PENDING : USER_STATUS.APPROVE;
       let {
         limit,
         offset,
@@ -374,7 +374,7 @@ You can log in using the below link:
       const student = await findStudentByUsername(username.toLowerCase());
       if (student) {
         if(parseInt(student.status) === USER_STATUS.PENDING){
-          res.status(400).json({
+          res.status(403).json({
             message: `Your account is pending approval. Please wait for admin approval.`,
           });
           return;
@@ -419,13 +419,26 @@ You can log in using the below link:
     }
   });
 
-  // Update profile route
+  // Update profile route from student portal
   router.post("/students/update_profile", userMiddleware, async (req, res) => {
-    const { student, data, teacher } = req.body;
+    const { student, data, student_id, teacher } = req.body;
+    let targetStudentId;
+    // If request is from student (student portal)
+    if (student && !student_id) {
+      targetStudentId = student.student_id;
+    }
+    // If request is from admin (admin portal)
+    if (teacher && data.student_id) {
+      targetStudentId = data.student_id;
+    }
     const updateData = (({ password, student_id, username, ...o }) => o)(data);
+    if (!targetStudentId) {
+      return res.status(400).json({ message: "Student ID is required" });
+    }
     try {
+      updateData.updated_at = new Date().toISOString();
       const updatedStudent = await updateStudentData(
-        { username: teacher?.master_role_id == 1 ? data.username.toLowerCase() : student.username.toLowerCase()  },
+        { student_id: targetStudentId },
         updateData
       );
 
@@ -557,6 +570,8 @@ You can log in using the below link:
           </html>`;
 
         const isMailSent = await sendEmail(to, subject, html);
+        console.log("isMailSent=========", isMailSent)
+
         if (isMailSent) {
           res.status(200).json({
             message: `Password reset link sent on email.`,
