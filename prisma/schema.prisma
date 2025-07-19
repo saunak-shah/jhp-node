@@ -37,6 +37,7 @@ model organization {
   student     student[]
   teacher     teacher[]
   course      course[]
+  program     program[]
 
   @@index([name])
 }
@@ -76,11 +77,12 @@ model student {
   assigned_to                     Int?
   teacher                         teacher? @relation(fields: [assigned_to], references: [teacher_id], onDelete: SetNull)
 
-  organization         organization           @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-  course               course[]
-  student_apply_course student_apply_course[]
-  attendance           attendance[]
-  status               Int     @default(2)
+  organization          organization            @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
+  course                course[]
+  student_apply_course  student_apply_course[]
+  attendance            attendance[]
+  status                Int                     @default(2)
+  student_apply_program student_apply_program[]
 
   @@index([organization_id])
   @@index([first_name, last_name])
@@ -116,6 +118,7 @@ model teacher {
   student         student[]
   course          course[]
   result          result[]
+  program         program[]
 
   @@index([organization_id])
   @@index([teacher_first_name, teacher_last_name])
@@ -195,7 +198,7 @@ model result {
   score                Float
   course_passing_score Float
   course_score         Float
-  reg_id               String                  @unique
+  reg_id               String               @unique
   student_apply_course student_apply_course @relation(fields: [reg_id], references: [reg_id], onDelete: Cascade)
   creator_id           Int
   teacher              teacher              @relation(fields: [creator_id], references: [teacher_id], onDelete: Cascade)
@@ -219,4 +222,41 @@ model attendance {
   @@index([date])
   @@index([date, student_id])
   @@index([date, teacher_id, student_id])
+}
+
+model program {
+  program_id                 Int                     @id @default(autoincrement())
+  created_at                 DateTime                @default(now()) @map("created_at")
+  updated_at                 DateTime                @default(now()) @map("updated_at")
+  program_name               String
+  file_url                   String
+  program_starting_date      DateTime
+  program_ending_date        DateTime
+  program_description        String
+  program_location           String
+  is_active                  Boolean
+  registration_starting_date DateTime
+  registration_closing_date  DateTime
+  created_by                 Int
+  teacher                    teacher                 @relation(fields: [created_by], references: [teacher_id], onDelete: Cascade)
+  organization_id            Int
+  organization               organization            @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
+  student_apply_program      student_apply_program[]
+
+  @@index([program_name, program_starting_date])
+}
+
+model student_apply_program {
+  student_apply_program_id Int      @id @default(autoincrement())
+  created_at               DateTime @default(now()) @map("created_at")
+  updated_at               DateTime @default(now()) @map("updated_at")
+  reg_id                   String   @unique
+  program_id               Int
+  program                  program  @relation(fields: [program_id], references: [program_id], onDelete: Cascade)
+  student_id               Int
+  student                  student  @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+
+  @@index([student_id, program_id])
+  @@index([student_id])
+  @@index([program_id])
 }
