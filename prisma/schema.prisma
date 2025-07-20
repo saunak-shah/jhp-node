@@ -84,7 +84,6 @@ model student {
   teacher                         teacher? @relation(fields: [assigned_to], references: [teacher_id], onDelete: SetNull)
 
   organization          organization            @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-  course                course[]
   student_apply_course  student_apply_course[]
   attendance            attendance[]
   status                Int                     @default(2)
@@ -154,8 +153,6 @@ model course {
 
   student_apply_course student_apply_course[]
   exam_schedule        exam_schedule[]
-  student              student?               @relation(fields: [studentStudent_id], references: [student_id])
-  studentStudent_id    Int?
 }
 
 enum category {
