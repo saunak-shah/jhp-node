@@ -242,7 +242,7 @@ module.exports = function () {
 
       const registration = await applyForProgram({
         student_id: student.student_id,
-        program_id: programSchedule.program_id,
+        schedule_id: programSchedule.schedule_id,
         reg_id: registrationId
       });
 

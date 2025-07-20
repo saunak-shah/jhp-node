@@ -6,6 +6,7 @@ const appliedProgramOutputData = {
   updated_at: true,
   reg_id: true,
   student_id: true,
+  schedule_id: true,
   student: {
     select: {
       student_id: true,
@@ -19,20 +20,27 @@ const appliedProgramOutputData = {
       register_no: true,
     },
   },
-  program: {
+  program_schedule: {
     select: {
+      schedule_id: true,
       program_id: true,
-      program_name: true,
-      file_url: true,
       program_starting_date: true,
       program_ending_date: true,
-      program_description: true,
-      program_location: true,
-      is_active: true,
       registration_starting_date: true,
       registration_closing_date: true,
+      program_location: true,
+      is_program_active: true,
+      created_at: true,
+      program: {
+        select: {
+          program_id: true,
+          program_name: true,
+          file_url: true,
+          program_description: true,
+        },
+      },
     },
-  },
+  }
 };
 
 async function applyForProgram(data) {
@@ -70,7 +78,7 @@ function buildWhereClause(
 
   if (programId) {
     whereClause = {
-      program: {
+      program_schedule: {
         program_id: parseInt(programId),
       }
     };
@@ -87,20 +95,24 @@ function buildWhereClause(
       ...whereClause,
       OR: [
         {
-          program: {
-            program_name: {
-              contains: searchKey,
-              mode: "insensitive",
+          program_schedule: {
+            program: {
+              program_name: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
             },
-          },
+          }
         },
         {
-          program: {
-            program_description: {
-              contains: searchKey,
-              mode: "insensitive",
+          program_schedule: {
+            program: {
+              program_description: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
             },
-          },
+          }
         },
         {
           program_schedule: {
@@ -111,12 +123,14 @@ function buildWhereClause(
           },
         },
         {
-          program: {
-            file_url: {
-              contains: searchKey,
-              mode: "insensitive",
+          program_schedule: {
+            program: {
+              file_url: {
+                contains: searchKey,
+                mode: "insensitive",
+              },
             },
-          },
+          }
         },
         {
           student: {

@@ -235,8 +235,8 @@ model student_apply_program {
   student_id               Int
   schedule_id              Int
 
-  created_at DateTime @default(now()) @map("created_at")
-  updated_at DateTime @default(now()) @map("updated_at")
+  created_at               DateTime @default(now()) @map("created_at")
+  updated_at               DateTime @default(now()) @map("updated_at")
 
   student          student          @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
   program_schedule program_schedule @relation(fields: [schedule_id], references: [schedule_id], onDelete: Cascade)

@@ -164,9 +164,7 @@ function buildWhereClause(filterObj, searchKey) {
 
 function buildOrderClause(sortBy, sortOrder) {
   let orderClause = {
-    program: {
-      program_starting_date: "desc",
-    },
+    program_starting_date: "desc",
   };
 
   if (!sortOrder) {

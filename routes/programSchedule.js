@@ -16,9 +16,11 @@ const {
   getAllProgramScheduleForStudent,
   findProgramScheduleByScheduleIdForReceipt,
   getAllProgramScheduleForStudentCount,
+  createProgramSchedule,
 } = require("../services/programSchedule");
 const { userMiddleware } = require("../middlewares/middleware");
 const { ExamScheduleStatus } = require("@prisma/client");
+const { findProgramByProgramId } = require("../services/program");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -170,6 +172,29 @@ module.exports = function () {
         });
         return;
       }
+
+      // check program starting date is less than todays date and program ending date is greater than todays date
+      if (
+        new Date(registration_closing_date) <
+          new Date(registration_starting_date) ||
+        new Date(registration_starting_date) < new Date() ||
+        new Date(program_starting_date) < new Date() ||
+        new Date(program_ending_date) < new Date() ||
+        new Date(program_ending_date) < new Date(program_starting_date)
+      ) {
+        res.status(422).json({
+          message: `Invalid date`,
+        });
+        return;
+      }
+
+      const program = await findProgramByProgramId(program_id);
+      if (!program) {
+        res.status(422).json({
+          message: `Program not found`,
+        });
+        return;
+      }
       // get date of country from timezone
       const mIST = moment.tz(
         req.body.registration_closing_date,
@@ -187,21 +212,12 @@ module.exports = function () {
         program_location: req.body.program_location,
         is_program_active: req.body.is_program_active,
       };
-      const program = await findProgramByScheduleId(schedule_id);
-      if (program) {
-        const updatedProgram = await updateProgramScheduled(
-          { schedule_id },
-          data
-        );
-        if (!updatedProgram) {
-          res.status(500).json({
-            message: `Unable to update program.`,
-          });
-          return;
-        }
+
+      const scheduledProgram = await createProgramSchedule(data);
+      if (scheduledProgram) {
         res.status(200).json({
-          message: `Program updated successfully`,
-          data: updatedProgram,
+          message: `Program scheduled successfully`,
+          data: scheduledProgram,
         });
       } else {
         res.status(422).json({
@@ -250,6 +266,19 @@ module.exports = function () {
         ) {
           res.status(422).json({
             message: `Fill all the fields`,
+          });
+          return;
+        }
+        if (
+          new Date(registration_closing_date) <
+            new Date(registration_starting_date) ||
+          new Date(registration_starting_date) < new Date() ||
+          new Date(program_starting_date) < new Date() ||
+          new Date(program_ending_date) < new Date() ||
+          new Date(program_ending_date) < new Date(program_starting_date)
+        ) {
+          res.status(422).json({
+            message: `Invalid date`,
           });
           return;
         }
