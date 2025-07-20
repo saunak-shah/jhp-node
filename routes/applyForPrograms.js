@@ -14,6 +14,7 @@ const {
   getAllApplicationsByProgramIdToDownload,
 } = require("../services/applyForProgram");
 const { findProgramByProgramId } = require("../services/program");
+const { findProgramScheduleByScheduleId } = require("../services/programSchedule");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -193,30 +194,33 @@ module.exports = function () {
     }
   });
 
-  // Apply for exam
+  // Apply for program
   router.post("/programs/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { program_id, student } = req.body;
+      const { schedule_id, student } = req.body;
 
-      if (!program_id) {
+      if (!schedule_id) {
         res.status(422).json({
-          message: `Program Id not valid.`,
+          message: `Schedule Id not valid.`,
         });
         return;
       }
 
-      // select the exam which you want to give
-      // after select the exam need to show information about exam like
-      // generate unique exam id
-      // check if already apply or not for requested exam
+      const programSchedule = await findProgramScheduleByScheduleId(schedule_id);
+      if (!programSchedule) {
+        res.status(422).json({
+          message: `Program Schedule Id not valid.`,
+        });
+        return;
+      }
 
-      const program = await findProgramByProgramId(program_id);
+      const program = await findProgramByProgramId(programSchedule.program_id);
       if (
         !program ||
-        program.registration_starting_date >
+        programSchedule.registration_starting_date >
           new Date(Date.now()).toISOString() ||
-        program.registration_closing_date < new Date(Date.now()).toISOString()
+          programSchedule.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
         res.status(422).json({
           message: `Program registration cannot be done`,
@@ -225,7 +229,7 @@ module.exports = function () {
 
       const isRegistered = await getAllApplicationsByUserIdAndProgramId(
         student.student_id,
-        program_id
+        programSchedule.program_id
       );
       if (isRegistered && isRegistered.length > 0) {
         res.status(422).json({
@@ -238,7 +242,7 @@ module.exports = function () {
 
       const registration = await applyForProgram({
         student_id: student.student_id,
-        program_id,
+        program_id: programSchedule.program_id,
         reg_id: registrationId
       });
 

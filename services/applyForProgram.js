@@ -5,7 +5,6 @@ const appliedProgramOutputData = {
   created_at: true,
   updated_at: true,
   reg_id: true,
-  program_id: true,
   student_id: true,
   student: {
     select: {
@@ -71,7 +70,9 @@ function buildWhereClause(
 
   if (programId) {
     whereClause = {
-      program_id: parseInt(programId),
+      program: {
+        program_id: parseInt(programId),
+      }
     };
   }
 
@@ -102,7 +103,7 @@ function buildWhereClause(
           },
         },
         {
-          program: {
+          program_schedule: {
             program_location: {
               contains: searchKey,
               mode: "insensitive",
@@ -243,14 +244,14 @@ async function getAllApplicationsByUserIdCount(userId, searchKey) {
 async function getAllApplicationsByProgramId(
   searchKey,
   sortBy,
-  examId,
+  programId,
   sortOrder = "asc",
   limit = 100,
   offset = 0
 ) {
   try {
     const applications = await prisma.student_apply_program.findMany({
-      where: buildWhereClause(searchKey, examId, undefined),
+      where: buildWhereClause(searchKey, programId, undefined),
       select: appliedProgramOutputData,
       orderBy: buildOrderClause(sortBy, sortOrder),
       take: parseInt(limit),
@@ -269,13 +270,13 @@ async function getAllApplicationsByProgramId(
 async function getAllApplicationsByProgramIdToDownload(
   searchKey,
   sortBy,
-  examId,
+  programId,
   sortOrder = "asc",
   limit = 100,
   offset = 0
 ) {
   const applications = await prisma.student_apply_program.findMany({
-    where: buildWhereClause(searchKey, examId, undefined),
+    where: buildWhereClause(searchKey, programId, undefined),
     select: {
       student_apply_program_id: true,
       created_at: true,
@@ -322,9 +323,9 @@ async function getAllApplicationsByProgramIdToDownload(
   return;
 }
 
-async function getAllApplicationsByProgramIdCount(examId, searchKey) {
+async function getAllApplicationsByProgramIdCount(programId, searchKey) {
   const programsCount = await prisma.student_apply_program.count({
-    where: buildWhereClause(searchKey, examId, undefined),
+    where: buildWhereClause(searchKey, programId, undefined),
   });
 
   return programsCount;
@@ -334,7 +335,9 @@ async function getAllApplicationsByUserIdAndProgramId(userId, programId) {
   const programs = await prisma.student_apply_program.findMany({
     where: {
       student_id: userId,
-      program_id: programId,
+      program_schedule: {
+        program_id: programId,
+      }
     },
     select: appliedProgramOutputData,
     orderBy: {

@@ -6,13 +6,7 @@ const programOutputData = {
   updated_at: true,
   program_name: true,
   file_url: true,
-  program_starting_date: true,
-  program_ending_date: true,
   program_description: true,
-  program_location: true,
-  is_active: true,
-  registration_starting_date: true,
-  registration_closing_date: true,
   created_by: true,
   organization_id: true,
 };
@@ -85,12 +79,6 @@ function buildWhereClause(organization_id, searchKey) {
           },
         },
         {
-          program_location: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
-        },
-        {
           file_url: {
             contains: searchKey,
             mode: "insensitive",
@@ -105,7 +93,7 @@ function buildWhereClause(organization_id, searchKey) {
 
 function buildOrderClause(sortBy, sortOrder) {
   let orderClause = {
-    program_starting_date: "desc",
+    created_at: "desc",
   };
 
   if (!sortOrder) {
@@ -124,78 +112,6 @@ function buildOrderClause(sortBy, sortOrder) {
 async function getAllProgramsCount(organization_id, searchKey) {
   const programsCount = await prisma.program.count({
     where: buildWhereClause(organization_id, searchKey),
-  });
-
-  return programsCount;
-}
-
-async function getAllPendingPrograms(limit, offset) {
-  const programs = await prisma.program.findMany({
-    where: {
-      program_starting_date: {
-        gt: Date.now(),
-      },
-    },
-    select: programOutputData,
-    orderBy: {
-      program_starting_date: "asc",
-    },
-    take: parseInt(limit),
-    skip: parseInt(offset),
-  });
-
-  if (programs) {
-    return programs;
-  }
-  return;
-}
-
-async function getAllPendingProgramsCount() {
-  const programsCount = await prisma.program.count({
-    where: {
-      program_starting_date: {
-        gt: Date.now(),
-      },
-    },
-  });
-
-  return programsCount;
-}
-
-async function getAllOngoingPrograms(limit, offset) {
-  const programs = await prisma.program.findMany({
-    where: {
-      program_starting_date: {
-        lt: Date.now(),
-      },
-      program_ending_date: {
-        gt: Date.now(),
-      },
-    },
-    select: programOutputData,
-    orderBy: {
-      program_starting_date: "asc",
-    },
-    take: parseInt(limit),
-    skip: parseInt(offset),
-  });
-
-  if (programs) {
-    return programs;
-  }
-  return;
-}
-
-async function getAllOngoingProgramsCount() {
-  const programsCount = await prisma.program.count({
-    where: {
-      program_starting_date: {
-        lt: Date.now(),
-      },
-      program_ending_date: {
-        gt: Date.now(),
-      },
-    },
   });
 
   return programsCount;
@@ -233,8 +149,4 @@ module.exports = {
   getAllProgramsCount,
   updateProgram,
   deleteProgram,
-  getAllPendingPrograms,
-  getAllPendingProgramsCount,
-  getAllOngoingPrograms,
-  getAllOngoingProgramsCount,
 };

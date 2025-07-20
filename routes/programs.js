@@ -85,26 +85,14 @@ module.exports = function () {
         teacher,
         program_name,
         file_url,
-        program_starting_date,
-        program_ending_date,
         program_description,
-        program_location,
-        is_active,
-        registration_starting_date,
-        registration_closing_date,
       } = req.body;
 
       if (
         !teacher ||
         !program_name ||
         !file_url ||
-        !program_starting_date ||
-        !program_ending_date ||
-        !program_description ||
-        !program_location ||
-        !is_active ||
-        !registration_starting_date ||
-        !registration_closing_date
+        !program_description
       ) {
         res.status(422).json({
           message: `Fill all the fields`,
@@ -115,13 +103,7 @@ module.exports = function () {
       const programData = await createProgram({
         program_name,
         file_url,
-        program_starting_date,
-        program_ending_date,
         program_description,
-        program_location,
-        is_active,
-        registration_starting_date,
-        registration_closing_date,
         created_by: teacher.teacher_id,
         organization_id: teacher.organization_id,
       });
@@ -161,12 +143,7 @@ module.exports = function () {
       const data = {
         program_name: req.body.program_name,
         file_url: req.body.file_url,
-        program_starting_date: req.body.program_starting_date,
-        program_ending_date: req.body.program_ending_date,
         program_description: req.body.program_description,
-        program_location: req.body.program_location,
-        registration_starting_date: req.body.registration_starting_date,
-        registration_closing_date: req.body.registration_closing_date,
       };
       const program = await findProgramByProgramId(id);
       /* if (program?.created_by != student?.student_id) {

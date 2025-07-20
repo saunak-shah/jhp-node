@@ -15,7 +15,7 @@ const {
   getAllApplicationsByCourseIdToDownload,
 } = require("../services/applyForCourse");
 const { findCourseByCourseId } = require("../services/course");
-const { findExamByScheduleId } = require("../services/examScheduleService");
+const { findExamByScheduleId } = require("../services/examSchedule");
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 
