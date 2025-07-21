@@ -282,6 +282,7 @@ async function getAllApplicationsByProgramIdToDownload(
       student_apply_program_id: true,
       created_at: true,
       updated_at: true,
+      reg_id: true,
       student: {
         select: {
           first_name: true,
@@ -306,7 +307,8 @@ async function getAllApplicationsByProgramIdToDownload(
   for (let i = 0; i < applications.length; i++) {
     const application = applications[i];
     data.push({
-      registration_id: application.student_apply_program_id,
+      id: application.student_apply_program_id,
+      registration_id: application.reg_id,
       created_at: application.created_at,
       updated_at: application.updated_at,
       student_name:
