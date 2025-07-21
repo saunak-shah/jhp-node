@@ -106,10 +106,12 @@ function buildWhereClause(
           },
         },
         {
-          program_location: {
-            contains: searchKey,
-            mode: "insensitive",
-          },
+          program: {
+            program_location: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
+          }
         },
         {
           program: {
