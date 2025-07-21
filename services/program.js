@@ -7,6 +7,12 @@ const programOutputData = {
   program_name: true,
   file_url: true,
   program_description: true,
+  registration_starting_date: true,
+  registration_closing_date: true,
+  program_location: true,
+  program_starting_date: true,
+  program_ending_date: true,
+  is_program_active: true,
   created_by: true,
   organization_id: true,
 };

@@ -21,13 +21,18 @@ module.exports = function () {
       const organizationId = student
         ? student.organization_id
         : teacher.organization_id;
-      const programsCount = await getAllProgramsCount(organizationId, searchKey);
+      const programsCount = await getAllProgramsCount(
+        organizationId,
+        searchKey
+      );
       const programs = await getAllPrograms(
         searchKey,
         sortBy,
         organizationId,
         sortOrder,
-        !limit || limit == "null" || limit == "undefined" ? programsCount: limit,
+        !limit || limit == "null" || limit == "undefined"
+          ? programsCount
+          : limit,
         offset
       );
       if (programs) {
@@ -86,16 +91,58 @@ module.exports = function () {
         program_name,
         file_url,
         program_description,
+        registration_starting_date,
+        registration_closing_date,
+        program_location,
+        program_starting_date,
+        program_ending_date,
+        is_program_active,
       } = req.body;
 
       if (
-        !teacher ||
-        !program_name ||
-        !file_url ||
-        !program_description
+        !teacher || 
+        !program_name || 
+        !file_url || 
+        !program_description ||
+        !registration_starting_date ||
+        !registration_closing_date ||
+        !program_location ||
+        !program_starting_date ||
+        !program_ending_date ||
+        !is_program_active
       ) {
         res.status(422).json({
           message: `Fill all the fields`,
+        });
+        return;
+      }
+
+      // check regsitration starting date and registration ending date is greater than todays date and ending greate than starting
+      const currentDate = new Date();
+      const registrationStartingDate = new Date(registration_starting_date);
+      const registrationClosingDate = new Date(registration_closing_date);
+      const programStartingDate = new Date(program_starting_date);
+      const programEndingDate = new Date(program_ending_date);
+      if (
+        registrationStartingDate < currentDate ||
+        registrationClosingDate < currentDate ||
+        programStartingDate < currentDate ||
+        programEndingDate < currentDate
+      ) {
+        res.status(422).json({
+          message: `Registration starting date, registration closing date, program starting date, program ending date must be greater than today's date`,
+        });
+        return;
+      }
+      if (registrationStartingDate > registrationClosingDate) {
+        res.status(422).json({
+          message: `Registration starting date must be less than registration closing date`,
+        });
+        return;
+      }
+      if (programStartingDate > programEndingDate) {
+        res.status(422).json({
+          message: `Program starting date must be less than program ending date`,
         });
         return;
       }
@@ -104,6 +151,12 @@ module.exports = function () {
         program_name,
         file_url,
         program_description,
+        registration_starting_date,
+        registration_closing_date,
+        program_location,
+        program_starting_date,
+        program_ending_date,
+        is_program_active,
         created_by: teacher.teacher_id,
         organization_id: teacher.organization_id,
       });
@@ -139,11 +192,48 @@ module.exports = function () {
       return;
     }
 
+    const {
+      teacher,
+      program_name,
+      file_url,
+      program_description,
+      registration_starting_date,
+      registration_closing_date,
+      program_location,
+      program_starting_date,
+      program_ending_date,
+      is_program_active,
+    } = req.body;
+
+    if (
+      !teacher || 
+      !program_name || 
+      !file_url || 
+      !program_description ||
+      !registration_starting_date ||
+      !registration_closing_date ||
+      !program_location ||
+      !program_starting_date ||
+      !program_ending_date ||
+      !is_program_active
+    ) {
+      res.status(422).json({
+        message: `Fill all the fields`,
+      });
+      return;
+    }
+
     try {
       const data = {
-        program_name: req.body.program_name,
-        file_url: req.body.file_url,
-        program_description: req.body.program_description,
+        program_name,
+        file_url,
+        program_description,
+        registration_starting_date,
+        registration_closing_date,
+        program_location,
+        program_starting_date,
+        program_ending_date,
+        is_program_active,
       };
       const program = await findProgramByProgramId(id);
       /* if (program?.created_by != student?.student_id) {
@@ -181,7 +271,7 @@ module.exports = function () {
   router.delete("/programs/:id", userMiddleware, async (req, res) => {
     const { admin } = req.body;
     const id = parseInt(req.params.id);
-    console.log("admin", admin)
+    console.log("admin", admin);
 
     if (!admin) {
       res.status(403).json({

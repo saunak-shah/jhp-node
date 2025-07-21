@@ -211,17 +211,23 @@ model attendance {
 }
 
 model program {
-  program_id          Int                @id @default(autoincrement())
-  created_at          DateTime           @default(now()) @map("created_at")
-  updated_at          DateTime           @default(now()) @map("updated_at")
-  program_name        String
-  file_url            String
-  program_description String
-  created_by          Int
-  teacher             teacher            @relation(fields: [created_by], references: [teacher_id], onDelete: Cascade)
-  organization_id     Int
-  organization        organization       @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
-  program_schedule    program_schedule[]
+  program_id                 Int                     @id @default(autoincrement())
+  created_at                 DateTime                @default(now()) @map("created_at")
+  updated_at                 DateTime                @default(now()) @map("updated_at")
+  program_name               String
+  file_url                   String
+  program_description        String
+  program_starting_date      DateTime
+  program_ending_date        DateTime
+  registration_starting_date DateTime
+  registration_closing_date  DateTime
+  is_program_active          Boolean                 @default(true)
+  program_location           String
+  created_by                 Int
+  teacher                    teacher                 @relation(fields: [created_by], references: [teacher_id], onDelete: Cascade)
+  organization_id            Int
+  organization               organization            @relation(fields: [organization_id], references: [organization_id], onDelete: Cascade)
+  student_apply_program      student_apply_program[]
 
   @@index([program_name])
 }
@@ -230,13 +236,13 @@ model student_apply_program {
   student_apply_program_id Int    @id @default(autoincrement())
   reg_id                   String @unique
   student_id               Int
-  schedule_id              Int
+  program_id               Int
 
-  created_at               DateTime @default(now()) @map("created_at")
-  updated_at               DateTime @default(now()) @map("updated_at")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @default(now()) @map("updated_at")
 
-  student          student          @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
-  program_schedule program_schedule @relation(fields: [schedule_id], references: [schedule_id], onDelete: Cascade)
+  student student @relation(fields: [student_id], references: [student_id], onDelete: Cascade)
+  program program @relation(fields: [program_id], references: [program_id], onDelete: Cascade)
 
   @@index([student_id])
 }
@@ -261,23 +267,6 @@ model exam_schedule {
   student_apply_course student_apply_course[]
 
   @@index([course_id])
-}
-
-model program_schedule {
-  schedule_id                Int                     @id @default(autoincrement())
-  program_id                 Int
-  program                    program                 @relation(fields: [program_id], references: [program_id], onDelete: Cascade)
-  program_starting_date      DateTime
-  program_ending_date        DateTime
-  registration_starting_date DateTime
-  registration_closing_date  DateTime
-  is_program_active          Boolean                 @default(true)
-  program_location           String
-  created_at                 DateTime                @default(now()) @map("created_at")
-  updated_at                 DateTime                @default(now()) @map("updated_at")
-  student_apply_program      student_apply_program[]
-
-  @@index([program_id])
 }
 
 // age limit add for exam

@@ -14,7 +14,6 @@ const {
   getAllApplicationsByProgramIdToDownload,
 } = require("../services/applyForProgram");
 const { findProgramByProgramId } = require("../services/program");
-const { findProgramScheduleByScheduleId } = require("../services/programSchedule");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -198,29 +197,21 @@ module.exports = function () {
   router.post("/programs/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { schedule_id, student } = req.body;
+      const { program_id, student } = req.body;
 
-      if (!schedule_id) {
+      if (!program_id) {
         res.status(422).json({
-          message: `Schedule Id not valid.`,
+          message: `Program Id not valid.`,
         });
         return;
       }
 
-      const programSchedule = await findProgramScheduleByScheduleId(schedule_id);
-      if (!programSchedule) {
-        res.status(422).json({
-          message: `Program Schedule Id not valid.`,
-        });
-        return;
-      }
-
-      const program = await findProgramByProgramId(programSchedule.program_id);
+      const program = await findProgramByProgramId(program_id);
       if (
         !program ||
-        programSchedule.registration_starting_date >
+        program.registration_starting_date >
           new Date(Date.now()).toISOString() ||
-          programSchedule.registration_closing_date < new Date(Date.now()).toISOString()
+          program.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
         res.status(422).json({
           message: `Program registration cannot be done`,
@@ -229,7 +220,7 @@ module.exports = function () {
 
       const isRegistered = await getAllApplicationsByUserIdAndProgramId(
         student.student_id,
-        programSchedule.program_id
+        program.program_id
       );
       if (isRegistered && isRegistered.length > 0) {
         res.status(422).json({
@@ -242,7 +233,7 @@ module.exports = function () {
 
       const registration = await applyForProgram({
         student_id: student.student_id,
-        schedule_id: programSchedule.schedule_id,
+        program_id: program.program_id,
         reg_id: registrationId
       });
 

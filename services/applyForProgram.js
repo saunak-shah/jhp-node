@@ -6,7 +6,7 @@ const appliedProgramOutputData = {
   updated_at: true,
   reg_id: true,
   student_id: true,
-  schedule_id: true,
+  program_id: true,
   student: {
     select: {
       student_id: true,
@@ -20,10 +20,8 @@ const appliedProgramOutputData = {
       register_no: true,
     },
   },
-  program_schedule: {
+  program: {
     select: {
-      schedule_id: true,
-      program_id: true,
       program_starting_date: true,
       program_ending_date: true,
       registration_starting_date: true,
@@ -31,16 +29,15 @@ const appliedProgramOutputData = {
       program_location: true,
       is_program_active: true,
       created_at: true,
-      program: {
-        select: {
-          program_id: true,
-          program_name: true,
-          file_url: true,
-          program_description: true,
-        },
-      },
+      updated_at: true,
+      program_id: true,
+      program_name: true,
+      file_url: true,
+      program_description: true,
+      created_by: true,
+      organization_id: true,
     },
-  }
+  },
 };
 
 async function applyForProgram(data) {
@@ -78,9 +75,7 @@ function buildWhereClause(
 
   if (programId) {
     whereClause = {
-      program_schedule: {
-        program_id: parseInt(programId),
-      }
+      program_id: parseInt(programId),
     };
   }
 
@@ -95,42 +90,34 @@ function buildWhereClause(
       ...whereClause,
       OR: [
         {
-          program_schedule: {
-            program: {
-              program_name: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
-            },
-          }
-        },
-        {
-          program_schedule: {
-            program: {
-              program_description: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
-            },
-          }
-        },
-        {
-          program_schedule: {
-            program_location: {
+          program: {
+            program_name: {
               contains: searchKey,
               mode: "insensitive",
             },
           },
         },
         {
-          program_schedule: {
-            program: {
-              file_url: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+          program: {
+            program_description: {
+              contains: searchKey,
+              mode: "insensitive",
             },
-          }
+          },
+        },
+        {
+          program_location: {
+            contains: searchKey,
+            mode: "insensitive",
+          },
+        },
+        {
+          program: {
+            file_url: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
+          },
         },
         {
           student: {
@@ -349,9 +336,7 @@ async function getAllApplicationsByUserIdAndProgramId(userId, programId) {
   const programs = await prisma.student_apply_program.findMany({
     where: {
       student_id: userId,
-      program_schedule: {
-        program_id: programId,
-      }
+      program_id: programId,
     },
     select: appliedProgramOutputData,
     orderBy: {
