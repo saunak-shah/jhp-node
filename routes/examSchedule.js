@@ -16,7 +16,7 @@ const {
   deleteScheduledExam,
   getAllExamScheduleForStudent,
   findExamByScheduleIdForReceipt,
-} = require("../services/examScheduleService");
+} = require("../services/examSchedule");
 const { userMiddleware } = require("../middlewares/middleware");
 const router = express.Router();
 
