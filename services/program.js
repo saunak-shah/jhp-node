@@ -78,8 +78,11 @@ async function getAllPrograms(
 }
 
 function buildWhereClause(organization_id, searchKey, is_program_active) {
+  console.log("🚀 ~ buildWhereClause ~ is_program_active:", is_program_active)
+  console.log("🚀 ~ buildWhereClause ~ organization_id:", organization_id)
+  console.log("🚀 ~ buildWhereClause ~ searchKey:", searchKey)
   let whereClause = {
-    is_program_active,
+    is_program_active: is_program_active === "true",
   };
 
   if (searchKey) {

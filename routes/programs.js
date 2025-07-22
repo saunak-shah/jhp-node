@@ -197,6 +197,14 @@ module.exports = function () {
       return;
     }
 
+    const program = await findProgramByProgramId(id);
+    if (!program) {
+      res.status(404).json({
+        message: `Program not found`,
+      });
+      return;
+    }
+
     const {
       teacher,
       program_name,
@@ -210,17 +218,18 @@ module.exports = function () {
       is_program_active,
     } = req.body;
 
+    const new_file_url = file_url || program.file_url;
+
     if (
       !teacher || 
       !program_name || 
-      !file_url || 
+      // !file_url || 
       !program_description ||
       !registration_starting_date ||
       !registration_closing_date ||
       !program_location ||
       !program_starting_date ||
-      !program_ending_date ||
-      !is_program_active
+      !program_ending_date
     ) {
       res.status(422).json({
         message: `Fill all the fields`,
@@ -231,7 +240,7 @@ module.exports = function () {
     try {
       const data = {
         program_name,
-        file_url,
+        file_url: new_file_url,
         program_description,
         registration_starting_date,
         registration_closing_date,
@@ -246,9 +255,9 @@ module.exports = function () {
           message: `Unable to update program while creator and updator is not same`,
         });
         return;
-      } */
-      if (program) {
-        const updatedProgram = await updateProgram({ program_id: id }, data);
+        } */
+       if (program) {
+         const updatedProgram = await updateProgram({ program_id: id }, data);
         if (!updatedProgram) {
           res.status(500).json({
             message: `Unable to update program.`,
