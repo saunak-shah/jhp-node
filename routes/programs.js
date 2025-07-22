@@ -16,24 +16,29 @@ module.exports = function () {
   router.get("/programs", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder, is_program_active, fetch_for_student } = req.query;
 
       const organizationId = student
         ? student.organization_id
         : teacher.organization_id;
       const programsCount = await getAllProgramsCount(
         organizationId,
-        searchKey
+        searchKey,
+        is_program_active,
+        fetch_for_student
       );
       const programs = await getAllPrograms(
         searchKey,
         sortBy,
         organizationId,
+        student?.student_id,
         sortOrder,
         !limit || limit == "null" || limit == "undefined"
           ? programsCount
           : limit,
-        offset
+        offset,
+        is_program_active,
+        fetch_for_student
       );
       if (programs) {
         res.status(200).json({

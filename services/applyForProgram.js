@@ -66,6 +66,21 @@ async function findApplicationByRegistrationId(registrationId) {
   return;
 }
 
+async function findApplicationByProgramIdAndUserId(program_id, user_id) {
+  const application = await prisma.student_apply_program.findFirst({
+    where: {
+      program_id: parseInt(program_id),
+      student_id: parseInt(user_id),
+    },
+    select: appliedProgramOutputData,
+  });
+
+  if (application) {
+    return application;
+  }
+  return;
+}
+
 function buildWhereClause(
   searchKey,
   programId = undefined,
@@ -392,4 +407,5 @@ module.exports = {
   updateApplication,
   deleteApplication,
   getAllApplicationsByUserIdAndProgramId,
+  findApplicationByProgramIdAndUserId
 };

@@ -1,4 +1,5 @@
 const { prisma } = require("../prisma/client");
+const { findApplicationByProgramIdAndUserId } = require("./applyForProgram");
 
 const programOutputData = {
   program_id: true,
@@ -47,29 +48,43 @@ async function getAllPrograms(
   searchKey,
   sortBy,
   organization_id,
+  userId,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  is_program_active = true,
+  fetch_for_student = false
 ) {
   const programs = await prisma.program.findMany({
-    where: buildWhereClause(organization_id, searchKey),
+    where: buildWhereClause(organization_id, searchKey, is_program_active),
     select: programOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
-
+  if (fetch_for_student && userId) {
+    await Promise.all(programs.map(async (program) => {
+      const isApplied = await findApplicationByProgramIdAndUserId(
+        program.program_id,
+        userId
+      );
+      program.status = isApplied ? "Applied" : "Not Applied";
+    }));
+  }
   if (programs) {
     return programs;
   }
   return;
 }
 
-function buildWhereClause(organization_id, searchKey) {
-  let whereClause;
+function buildWhereClause(organization_id, searchKey, is_program_active) {
+  let whereClause = {
+    is_program_active,
+  };
 
   if (searchKey) {
     whereClause = {
+      ...whereClause,
       organization_id,
       OR: [
         {
@@ -115,9 +130,9 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
-async function getAllProgramsCount(organization_id, searchKey) {
+async function getAllProgramsCount(organization_id, searchKey, is_program_active) {
   const programsCount = await prisma.program.count({
-    where: buildWhereClause(organization_id, searchKey),
+    where: buildWhereClause(organization_id, searchKey, is_program_active),
   });
 
   return programsCount;
