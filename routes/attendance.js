@@ -338,6 +338,80 @@ module.exports = function () {
     }
   });
 
+  router.post("/custom/attendance_report", userMiddleware, async (req, res) => {
+    const {
+      cutoffStartDate,
+      cutoffEndDate,
+      cutoffAttendanceCount,
+      attendanceStartDate,
+      attendanceEndDate,
+    } = req.body;
+  
+    try {
+      console.log("cutoffStartDate==========", cutoffStartDate)
+      console.log("cutoffEndDate==========", cutoffEndDate)
+      console.log("cutoffAttendanceCount==========", cutoffAttendanceCount)
+      console.log("attendanceStartDate==========", attendanceStartDate)
+      console.log("attendanceEndDate==========", attendanceEndDate)
+
+      const students = await prisma.$queryRawUnsafe(`
+        SELECT 
+          a.student_id,
+          CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
+          s.register_no,
+          s.gender,
+          s.assigned_to AS teacher_id,
+          COUNT(*)::integer AS cutoff_attendance_count
+        FROM attendance a
+        LEFT JOIN student s ON s.student_id = a.student_id
+        WHERE a.date BETWEEN $1 AND $2
+        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to
+        HAVING COUNT(*) >= $3
+      `, cutoffStartDate, cutoffEndDate, cutoffAttendanceCount);
+  
+      console.log("students===========", students)
+      if (!students.length) {
+        return res.status(200).json({ message: "No students met cut-off", data: [] });
+      }
+  
+      // Fetch attendance count between attendanceStartDate and attendanceEndDate for qualified students
+      const studentIds = students.map((s) => s.student_id);
+      console.log("studentIds============", studentIds);
+      const studentIdMap = new Map(students.map(s => [s.student_id, s]));
+      console.log("studentIdMap============", studentIdMap);
+  
+      const attendanceCounts = await prisma.$queryRawUnsafe(`
+        SELECT 
+          a.student_id,
+          COUNT(*)::integer AS attendance_count
+        FROM attendance a
+        WHERE a.date BETWEEN $1 AND $2
+        AND a.student_id = ANY($3)
+        GROUP BY a.student_id
+      `, attendanceStartDate, attendanceEndDate, studentIds);
+  
+      console.log("attendanceCounts=========", attendanceCounts)
+      const finalResult = attendanceCounts.map((attn) => {
+        const student = studentIdMap.get(attn.student_id);
+        return {
+          student_id: attn.student_id,
+          full_name: student.full_name,
+          gender: student.gender,
+          register_no: student.register_no,
+          cutoff_attendance_count: student.cutoff_attendance_count,
+          attendance_count: attn.attendance_count,
+        };
+      });
+  
+      return res.status(200).json({ message: "Custom attendance found", data: finalResult });
+  
+    } catch (err) {
+      console.error("Error in /attendance_report/custom:", err);
+      return res.status(500).json({ message: "Internal server error", error: err.message });
+    }
+  });
+  
+
   // Create attendance
   router.post("/attendance", userMiddleware, async (req, res) => {
     const { teacher, attendance, removals } = req.body;
