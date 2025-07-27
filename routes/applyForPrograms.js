@@ -48,31 +48,6 @@ module.exports = function () {
   });
 
   // Get application by applicationId
-  router.get("/programs/registrations/check", userMiddleware, async (req, res) => {
-    try {
-      const { programId, studentId } = req.query;
-      const registration = await getAllApplicationsByUserIdAndProgramId(
-        parseInt(studentId),
-        parseInt(programId)
-      );
-      if (registration) {
-        res.status(200).json({
-          message: `Fetched registration`,
-          data: registration,
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch registration`,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting registration: ${error}`,
-      });
-    }
-  });
-
-  // Get application by applicationId
   router.get("/programs/registrations/:id", userMiddleware, async (req, res) => {
     try {
       const id = req.params.id;
