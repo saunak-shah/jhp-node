@@ -1,5 +1,6 @@
 const express = require("express");
 const { userMiddleware } = require("../middlewares/middleware");
+const { prisma } = require("../prisma/client");
 
 const {
   getStudentAttendance,
@@ -337,6 +338,91 @@ module.exports = function () {
       });
     }
   });
+
+  router.post("/custom/attendance_report", userMiddleware, async (req, res) => {
+    console.log("req.query=======", req.query)
+    console.log("req.body=======", req.body)
+    console.log("req.params=======", req.params)
+    const {
+      cutoffStartDate,
+      cutoffEndDate,
+      cutoffAttendanceCount,
+      attendanceStartDate,
+      attendanceEndDate,
+    } = req.query;
+  
+    try {
+      console.log("cutoffStartDate==========", cutoffStartDate)
+      console.log("cutoffEndDate==========", cutoffEndDate)
+      console.log("cutoffAttendanceCount==========", cutoffAttendanceCount)
+      console.log("attendanceStartDate==========", attendanceStartDate)
+      console.log("attendanceEndDate==========", attendanceEndDate)
+
+      const students = await prisma.$queryRawUnsafe(`
+        SELECT 
+          a.student_id,
+          CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
+          s.register_no,
+          s.gender,
+          s.assigned_to AS teacher_id,
+          COUNT(*)::integer AS cutoff_attendance_count,
+          (COUNT(*) - $3::int)::integer AS excess_attendance_count
+        FROM attendance a
+        LEFT JOIN student s ON s.student_id = a.student_id
+        WHERE a.date::date BETWEEN $1::date AND $2::date
+        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to, s.register_no
+        HAVING COUNT(*) >= $3::int
+      `, cutoffStartDate, cutoffEndDate, cutoffAttendanceCount);
+  
+      console.log("students===========", students)
+      /* if (!students.length) {
+        return res.status(200).json({ message: "No students met cut-off", data: [] });
+      } */
+  
+      // Fetch attendance count between attendanceStartDate and attendanceEndDate for qualified students
+      const studentIds = students.map((s) => s.student_id);
+      console.log("studentIds============", studentIds);
+      const studentIdMap = new Map(students.map(s => [s.student_id, s]));
+      console.log("studentIdMap============", studentIdMap);
+  
+      const attendanceCounts = await prisma.$queryRawUnsafe(`
+        SELECT 
+          a.student_id,
+          CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
+          s.register_no,
+          s.gender,
+          COUNT(*)::integer AS attendance_count
+        FROM attendance a
+        LEFT JOIN student s ON s.student_id = a.student_id
+        WHERE a.date::date BETWEEN $1::date AND $2::date
+        --AND a.student_id = ANY($3)
+        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.register_no, s.gender
+      `, attendanceStartDate, attendanceEndDate, studentIds);
+  
+      console.log("attendanceCounts=========", attendanceCounts)
+      const finalResult = attendanceCounts.map((attn) => {
+        const student = studentIdMap.get(attn.student_id);
+        return {
+          // student_id: attn.student_id,
+          full_name: attn.full_name || '',
+          gender: attn.gender || '',
+          register_no: attn.register_no || '',
+          cutoff_attendance_count: student?.cutoff_attendance_count || 0,
+          excess_attendance_count: student?.excess_attendance_count || 0,
+          attendance_count: attn.attendance_count || 0,
+          final_attendance: attn.attendance_count + (student?.excess_attendance_count || 0),
+        };
+      });
+  
+      return res.status(200).json({ message: "Custom attendance found", data: { attendance: finalResult },
+      });
+  
+    } catch (err) {
+      console.error("Error in /custom/attendance_report/:", err);
+      return res.status(500).json({ message: "Internal server error", error: err.message });
+    }
+  });
+  
 
   // Create attendance
   router.post("/attendance", userMiddleware, async (req, res) => {
