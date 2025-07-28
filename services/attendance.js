@@ -30,7 +30,9 @@ async function createAttendance(teacher_id, master_role_id, attendance) {
   const attendances = [];
   for (let i = 0; i < attendance.length; i++) {
     const student_id = attendance[i].student_id;
-    const attendanceDates = attendance[i].checked_dates;
+    let attendanceDates = attendance[i].checked_dates;
+    attendanceDates = attendanceDates.filter(date => date !== null);
+    console.log("attendanceDates after========", attendanceDates)
 
     if (attendanceDates && attendanceDates.length > 0) {
       for (let j = 0; j < attendanceDates.length; j++) {
@@ -101,7 +103,6 @@ async function deleteAttendance(teacher_id, attendance) {
       const attendanceData = await prisma.attendance.deleteMany({
         where: {
           student_id,
-          teacher_id,
           date: formateDate,
         },
       });
