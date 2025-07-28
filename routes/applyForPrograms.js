@@ -3,26 +3,23 @@ const { userMiddleware } = require("../middlewares/middleware");
 const {
   getAllApplications,
   findApplicationByRegistrationId,
-  findApplicationByApplicantId,
-  applyForCourse,
-  getAllApplicationsByUserIdAndCourseId,
+  applyForProgram,
+  getAllApplicationsByUserIdAndProgramId,
   deleteApplication,
   getAllApplicationsByUserId,
-  getAllApplicationsByCourseId,
+  getAllApplicationsByProgramId,
   getAllApplicationsCount,
   getAllApplicationsByUserIdCount,
-  getAllApplicationsByCourseIdCount,
-  getAllApplicationsByCourseIdToDownload,
-} = require("../services/applyForCourse");
-const { findCourseByCourseId } = require("../services/course");
-const { findExamByScheduleId } = require("../services/examSchedule");
+  getAllApplicationsByProgramIdCount,
+  getAllApplicationsByProgramIdToDownload,
+} = require("../services/applyForProgram");
+const { findProgramByProgramId } = require("../services/program");
 const router = express.Router();
-const { v4: uuidv4 } = require('uuid');
 
 // Export a function that accepts the database pool as a parameter
 module.exports = function () {
   // Get all applications
-  router.get("/registrations", userMiddleware, async (req, res) => {
+  router.get("/programs/registrations", userMiddleware, async (req, res) => {
     try {
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
       const totalRegistrationCount = await getAllApplicationsCount(searchKey);
@@ -51,34 +48,9 @@ module.exports = function () {
   });
 
   // Get application by applicationId
-  router.get("/registrations/check", userMiddleware, async (req, res) => {
+  router.get("/programs/registrations/:id", userMiddleware, async (req, res) => {
     try {
-      const { courseId, studentId } = req.query;
-      const registration = await getAllApplicationsByUserIdAndCourseId(
-        parseInt(studentId),
-        parseInt(courseId)
-      );
-      if (registration) {
-        res.status(200).json({
-          message: `Fetched registration`,
-          data: registration,
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch registration`,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting registration: ${error}`,
-      });
-    }
-  });
-
-  // Get application by applicationId
-  router.get("/registrations/:id", userMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(parseInt(req.params.id));
+      const id = req.params.id;
       const registration = await findApplicationByRegistrationId(id);
       if (registration) {
         res.status(200).json({
@@ -99,7 +71,7 @@ module.exports = function () {
 
   // Get application by userId
   router.get(
-    "/students/registrations/:id",
+    "/programs/registrations/students/:id",
     userMiddleware,
     async (req, res) => {
       try {
@@ -132,46 +104,14 @@ module.exports = function () {
     }
   );
 
-  // Admin - Get application by exam schedule id
-  router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
-    try {
-      const id = parseInt(parseInt(req.params.id));
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-
-      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
-      const registrations = await getAllApplicationsByCourseId(
-        searchKey,
-        sortBy,
-        id,
-        sortOrder,
-        limit,
-        offset
-      );
-      if (registrations) {
-        res.status(200).json({
-          message: `Fetched registrations`,
-          data: { registrations, offset, totalCount: registrationCount },
-        });
-      } else {
-        res.status(422).json({
-          message: `Unable to fetch registrations`,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        message: `Internal Server Error while getting applications: ${error}`,
-      });
-    }
-  });
-
-  // Get application by examId
-  router.get("/download/courses/registrations/:id", userMiddleware, async (req, res) => {
+  // Get application by programId
+  router.get("/registrations/programs/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
-      const registrations = await getAllApplicationsByCourseIdToDownload(
+      const registrationCount = await getAllApplicationsByProgramIdCount(id, searchKey);
+      const registrations = await getAllApplicationsByProgramId(
         searchKey,
         sortBy,
         id,
@@ -196,76 +136,81 @@ module.exports = function () {
     }
   });
 
-  // Apply for exam
-  router.post("/register/", userMiddleware, async (req, res) => {
+  // Get application by programId
+  router.get("/download/programs/registrations/:id", userMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
+      const registrationCount = await getAllApplicationsByProgramIdCount(id, searchKey);
+      const registrations = await getAllApplicationsByProgramIdToDownload(
+        searchKey,
+        sortBy,
+        id,
+        sortOrder,
+        limit,
+        offset
+      );
+      if (registrations) {
+        res.status(200).json({
+          message: `Fetched registrations`,
+          data: { registrations, offset, totalCount: registrationCount },
+        });
+      } else {
+        res.status(422).json({
+          message: `Unable to fetch registrations`,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error while getting applications: ${error}`,
+      });
+    }
+  });
+
+  // Apply for program
+  router.post("/programs/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { course_id, schedule_id, student } = req.body;
+      const { program_id, student } = req.body;
 
-      if (!course_id || !schedule_id) {
+      if (!program_id) {
         res.status(422).json({
-          message: `Invalid data.`,
+          message: `Program Id not valid.`,
         });
         return;
       }
 
-      // Get course schedule info
-      const course = await findExamByScheduleId(schedule_id);
-      const now = new Date();
-
-      let errorMessage = "";
-      if (!course) {
-        errorMessage = "Course not found.";
-      } else if (new Date(course.registration_starting_date) > now) {
-        errorMessage = "Registration has not started yet.";
-      } else if (new Date(course.registration_closing_date) < now) {
-        errorMessage = "Registration is closed.";
+      const program = await findProgramByProgramId(program_id);
+      if (
+        !program ||
+        program.registration_starting_date >
+          new Date(Date.now()).toISOString() ||
+          program.registration_closing_date < new Date(Date.now()).toISOString()
+      ) {
+        res.status(422).json({
+          message: `Program registration cannot be done`,
+        });
       }
 
-      if (errorMessage) {
-        return res.status(422).json({ message: errorMessage });
-      }
-
-
-      const existingApplications = await getAllApplicationsByUserIdAndCourseId(
+      const isRegistered = await getAllApplicationsByUserIdAndProgramId(
         student.student_id,
-        course_id,
-        schedule_id
+        program.program_id
       );
-      console.log("existingApplications=======", existingApplications)
-      
-      if (existingApplications.length > 0) {
-        const score = existingApplications[0]?.result[0]?.score;
-        const passingScore = existingApplications[0]?.result[0]?.course_passing_score;
-        if (score !== undefined && passingScore !== undefined) {
-          if (score >= passingScore) {
-            return res.status(422).json({
-              message: `You have already passed this exam and cannot reapply.`,
-            });
-          }
-          // If score < passingScore → allow reapply
-        } else {
-          return res.status(422).json({
-            message: `You have already applied for this exam.`,
-          });
-        }
-      }  
-      const registrationId = uuidv4().replace(/-/g, '').slice(0, 10);
-      const data = {
-        reg_id: registrationId,
-        student: {
-          connect: { student_id: student.student_id }
-        },
-        course: {
-          connect: { course_id: course_id }
-        },
-        exam_schedule: {
-          connect: { schedule_id: schedule_id }
-        }
+      if (isRegistered && isRegistered.length > 0) {
+        res.status(422).json({
+          message: `Already registered`,
+        });
+        return;
       }
 
-      const registration = await applyForCourse(data);
-      console.log("registration========", registration)
+      const registrationId = "JHP" + Date.now()
+
+      const registration = await applyForProgram({
+        student_id: student.student_id,
+        program_id: program.program_id,
+        reg_id: registrationId
+      });
 
       if (registration) {
         res.status(200).json({
@@ -327,11 +272,11 @@ module.exports = function () {
   // });
 
   // Delete exam
-  router.delete("/exam/registration/:id", userMiddleware, async (req, res) => {
+  router.delete("/programs/registration/:id", userMiddleware, async (req, res) => {
     const { student } = req.body;
-    const studentApplyId = parseInt(req.params.id);
+    const id = req.params.id;
     try {
-      const registration = await findApplicationByApplicantId(studentApplyId);
+      const registration = await findApplicationByRegistrationId(id);
       if (registration) {
         if (registration.student_id != student.student_id) {
           res.status(403).json({
@@ -340,7 +285,7 @@ module.exports = function () {
           return;
         }
         const deletedApplication = await deleteApplication({
-          student_apply_course_id: studentApplyId,
+          student_apply_program_id: registration.student_apply_program_id,
         });
         if (!deletedApplication) {
           res.status(500).json({
@@ -353,7 +298,7 @@ module.exports = function () {
           data: deletedApplication,
         });
       } else {
-        res.status(204).json({
+        res.status(400).json({
           message: `Application not found`,
         });
       }
