@@ -172,7 +172,21 @@ module.exports = function () {
   router.post("/programs/register/", userMiddleware, async (req, res) => {
     try {
       // Extract necessary data from request body
-      const { program_id, student } = req.body;
+      const { program_id, student, teacher, student_id } = req.body;
+      if (!student && !teacher) {
+        res.status(403).json({
+          message: `Unauthorized to register for program.`,
+        });
+        return;
+      }
+      if(teacher && !student_id) {
+        res.status(403).json({
+          message: `Teacher registration requires student_id.`,
+        });
+        return;
+      }
+
+      const studentId = student ? student.student_id : student_id;
 
       if (!program_id) {
         res.status(422).json({
@@ -194,8 +208,8 @@ module.exports = function () {
       }
 
       const isRegistered = await getAllApplicationsByUserIdAndProgramId(
-        student.student_id,
-        program.program_id
+        studentId,
+        program_id
       );
       if (isRegistered && isRegistered.length > 0) {
         res.status(422).json({
@@ -207,8 +221,8 @@ module.exports = function () {
       const registrationId = "JHP" + Date.now()
 
       const registration = await applyForProgram({
-        student_id: student.student_id,
-        program_id: program.program_id,
+        student_id: studentId,
+        program_id,
         reg_id: registrationId
       });
 
