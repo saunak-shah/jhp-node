@@ -365,7 +365,7 @@ module.exports = function () {
           s.register_no,
           s.gender,
           s.assigned_to AS teacher_id,
-          COUNT(*)::integer AS cutoff_attendance_count
+          COUNT(*)::integer AS cutoff_attendance_count,
           (COUNT(*) - $3::int)::integer AS excess_attendance_count
         FROM attendance a
         LEFT JOIN student s ON s.student_id = a.student_id
@@ -375,9 +375,9 @@ module.exports = function () {
       `, cutoffStartDate, cutoffEndDate, cutoffAttendanceCount);
   
       console.log("students===========", students)
-      if (!students.length) {
+      /* if (!students.length) {
         return res.status(200).json({ message: "No students met cut-off", data: [] });
-      }
+      } */
   
       // Fetch attendance count between attendanceStartDate and attendanceEndDate for qualified students
       const studentIds = students.map((s) => s.student_id);
@@ -388,25 +388,29 @@ module.exports = function () {
       const attendanceCounts = await prisma.$queryRawUnsafe(`
         SELECT 
           a.student_id,
+          CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
+          s.register_no,
+          s.gender,
           COUNT(*)::integer AS attendance_count
         FROM attendance a
+        LEFT JOIN student s ON s.student_id = a.student_id
         WHERE a.date::date BETWEEN $1::date AND $2::date
-        AND a.student_id = ANY($3)
-        GROUP BY a.student_id
+        --AND a.student_id = ANY($3)
+        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.register_no, s.gender
       `, attendanceStartDate, attendanceEndDate, studentIds);
   
       console.log("attendanceCounts=========", attendanceCounts)
       const finalResult = attendanceCounts.map((attn) => {
         const student = studentIdMap.get(attn.student_id);
         return {
-          student_id: attn.student_id,
-          full_name: student.full_name,
-          gender: student.gender,
-          register_no: student.register_no,
-          cutoff_attendance_count: student.cutoff_attendance_count,
-          excess_attendance_count: student.excess_attendance_count,
-          attendance_count: attn.attendance_count,
-          final_attendance: attn.attendance_count + student.excess_attendance_count,
+          // student_id: attn.student_id,
+          full_name: attn.full_name || '',
+          gender: attn.gender || '',
+          register_no: attn.register_no || '',
+          cutoff_attendance_count: student?.cutoff_attendance_count || 0,
+          excess_attendance_count: student?.excess_attendance_count || 0,
+          attendance_count: attn.attendance_count || 0,
+          final_attendance: attn.attendance_count + (student?.excess_attendance_count || 0),
         };
       });
   
