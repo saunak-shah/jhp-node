@@ -340,10 +340,7 @@ module.exports = function () {
   });
 
   router.post("/custom/attendance_report", userMiddleware, async (req, res) => {
-    console.log("req.query=======", req.query)
-    console.log("req.body=======", req.body)
-    console.log("req.params=======", req.params)
-    const {
+    let {
       cutoffStartDate,
       cutoffEndDate,
       cutoffAttendanceCount,
@@ -352,13 +349,12 @@ module.exports = function () {
     } = req.query;
   
     try {
-      console.log("cutoffStartDate==========", cutoffStartDate)
-      console.log("cutoffEndDate==========", cutoffEndDate)
-      console.log("cutoffAttendanceCount==========", cutoffAttendanceCount)
-      console.log("attendanceStartDate==========", attendanceStartDate)
-      console.log("attendanceEndDate==========", attendanceEndDate)
-
-      const students = await prisma.$queryRawUnsafe(`
+      let students = [];
+      if(!cutoffAttendanceCount){
+        cutoffAttendanceCount = 0;
+      }
+      if(cutoffStartDate && cutoffEndDate && cutoffAttendanceCount){
+        students = await prisma.$queryRawUnsafe(`
         SELECT 
           a.student_id,
           CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
@@ -373,17 +369,15 @@ module.exports = function () {
         GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to, s.register_no
         HAVING COUNT(*) >= $3::int
       `, cutoffStartDate, cutoffEndDate, cutoffAttendanceCount);
+      }
   
-      console.log("students===========", students)
       /* if (!students.length) {
         return res.status(200).json({ message: "No students met cut-off", data: [] });
       } */
   
       // Fetch attendance count between attendanceStartDate and attendanceEndDate for qualified students
       const studentIds = students.map((s) => s.student_id);
-      console.log("studentIds============", studentIds);
       const studentIdMap = new Map(students.map(s => [s.student_id, s]));
-      console.log("studentIdMap============", studentIdMap);
   
       const attendanceCounts = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -395,9 +389,8 @@ module.exports = function () {
         FROM attendance a
         LEFT JOIN student s ON s.student_id = a.student_id
         WHERE a.date::date BETWEEN $1::date AND $2::date
-        --AND a.student_id = ANY($3)
         GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.register_no, s.gender
-      `, attendanceStartDate, attendanceEndDate, studentIds);
+      `, attendanceStartDate, attendanceEndDate);
   
       console.log("attendanceCounts=========", attendanceCounts)
       const finalResult = attendanceCounts.map((attn) => {
