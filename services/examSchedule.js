@@ -71,10 +71,11 @@ async function findExamByScheduleId(scheduleId) {
   return;
 }
 
-async function findExamByScheduleIdForReceipt(scheduleId) {
+async function findExamByScheduleIdForReceipt(scheduleId, studentId) {
   const examScheduleReceipt = await prisma.student_apply_course.findFirst({
     where: {
-      schedule_id: scheduleId
+      schedule_id: scheduleId,
+      student_id: studentId
     },
     orderBy: {
       created_at: 'desc' // or any other timestamp field
