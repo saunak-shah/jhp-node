@@ -349,6 +349,7 @@ async function getAllApplicationsByCourseIdToDownload(
       total_marks: application.exam_schedule.total_marks,
       passing_score: application.exam_schedule.passing_score,
       score: application.result[0]?.score,
+      gender: application.student.gender
     });
   }
 
