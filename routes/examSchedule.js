@@ -324,6 +324,7 @@ module.exports = function () {
       const { student, teacher } = req.body;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
+      console.log("student=========", student)
       // const courseId = 1;
       const organizationId = student
         ? student.organization_id
@@ -339,7 +340,8 @@ module.exports = function () {
         filterObj,
         sortOrder,
         !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
-        offset
+        offset,
+        student.student_id
       );
       if (courses) {
         res.status(200).json({

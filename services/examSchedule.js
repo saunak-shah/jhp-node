@@ -239,26 +239,38 @@ async function getAllExamScheduleForStudent(
   filterObj,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  studentId
 ) {
   const courses = await prisma.exam_schedule.findMany({
     where: {
       ...buildWhereClause(filterObj, searchKey),
       end_time: {
-        gte: new Date(), // This ensures CURRENT_DATE <= start_time
+        gte: new Date(), // upcoming or ongoing exams
       }, 
     },
-    select: examOutputData,
+    select: {
+      ...examOutputData,
+      student_apply_course: {
+        where: {
+          student_id: studentId, // fetch only if this student applied
+        },
+        select: {
+          schedule_id: true,
+          student_id: true,
+          course_id: true,
+          reg_id: true,
+        },
+      },
+    },
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
 
-  if (courses) {
-    return courses;
-  }
-  return;
+  return courses;
 }
+
 
 module.exports = {
   createExam,
