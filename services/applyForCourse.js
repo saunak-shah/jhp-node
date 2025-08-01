@@ -167,6 +167,14 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
         },
         {
           student: {
+            register_no: {
+              contains: searchKey,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          student: {
             address: {
               contains: searchKey,
               mode: "insensitive",
@@ -320,6 +328,7 @@ async function getAllApplicationsByCourseIdToDownload(
           phone_number: true,
           email: true,
           gender: true,
+          register_no: true,
         },
       },
       course: {
@@ -349,7 +358,8 @@ async function getAllApplicationsByCourseIdToDownload(
       total_marks: application.exam_schedule.total_marks,
       passing_score: application.exam_schedule.passing_score,
       score: application.result[0]?.score,
-      gender: application.student.gender
+      gender: application.student.gender,
+      register_no: application.student.register_no,
     });
   }
 
