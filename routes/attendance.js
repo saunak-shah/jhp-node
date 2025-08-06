@@ -346,6 +346,9 @@ module.exports = function () {
       cutoffAttendanceCount,
       attendanceStartDate,
       attendanceEndDate,
+      currentAttendanceCutoff,
+      gender,
+      teacherId
     } = req.query;
   
     try {
@@ -353,6 +356,17 @@ module.exports = function () {
       if(!cutoffAttendanceCount){
         cutoffAttendanceCount = 0;
       }
+
+      let query = ``
+      if(gender){
+        let genderQuery = (gender === "Male" ? "M" : "F")
+        query = ` AND gender = ${genderQuery}`
+      }
+
+      if(teacherId){
+        query = ` AND t.teacher_id = ${teacherId}`
+      }
+
       if(cutoffStartDate && cutoffEndDate && cutoffAttendanceCount){
         students = await prisma.$queryRawUnsafe(`
         SELECT 
@@ -365,7 +379,8 @@ module.exports = function () {
           (COUNT(*) - $3::int)::integer AS excess_attendance_count
         FROM attendance a
         LEFT JOIN student s ON s.student_id = a.student_id
-        WHERE a.date::date BETWEEN $1::date AND $2::date
+        INNER JOIN teacher t ON t.teacher_id = s.assigned_to
+        WHERE a.date::date BETWEEN $1::date AND $2::date ${query}
         GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to, s.register_no
         HAVING COUNT(*) >= $3::int
       `, cutoffStartDate, cutoffEndDate, cutoffAttendanceCount);
@@ -379,26 +394,35 @@ module.exports = function () {
       const studentIds = students.map((s) => s.student_id);
       const studentIdMap = new Map(students.map(s => [s.student_id, s]));
   
+      let cutOffQuery = ``
+      if(currentAttendanceCutoff){
+        cutOffQuery = ` HAVING COUNT(*) >= ${currentAttendanceCutoff}::int`
+      }
+
       const attendanceCounts = await prisma.$queryRawUnsafe(`
         SELECT 
           a.student_id,
           CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) AS full_name,
           s.register_no,
           s.gender,
+          CONCAT(t.teacher_first_name, ' ', t.teacher_last_name) AS teacher_name,
           COUNT(*)::integer AS attendance_count
         FROM attendance a
-        LEFT JOIN student s ON s.student_id = a.student_id
-        WHERE a.date::date BETWEEN $1::date AND $2::date
-        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.register_no, s.gender
+        INNER JOIN student s ON s.student_id = a.student_id
+        INNER JOIN teacher t ON t.teacher_id = s.assigned_to
+        WHERE a.date::date BETWEEN $1::date AND $2::date ${query}
+        GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.register_no, s.gender, t.teacher_first_name, t.teacher_last_name
+         ${cutOffQuery}
       `, attendanceStartDate, attendanceEndDate);
   
       console.log("attendanceCounts=========", attendanceCounts)
-      const finalResult = attendanceCounts.map((attn) => {
+      const finalResult = attendanceCounts.map((attn, index) => {
         const student = studentIdMap.get(attn.student_id);
         return {
-          // student_id: attn.student_id,
+          sr_no: index + 1,
           full_name: attn.full_name || '',
-          gender: attn.gender || '',
+          gender: (attn.gender === "M") ? "Male" : "Female" || '',
+          teacher_name: attn.teacher_name || '',
           register_no: attn.register_no || '',
           cutoff_attendance_count: student?.cutoff_attendance_count || 0,
           excess_attendance_count: student?.excess_attendance_count || 0,
