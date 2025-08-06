@@ -18,6 +18,8 @@ const appliedExamOutputData = {
       email: true,
       username: true,
       register_no: true,
+      gender: true,
+      created_at: true
     },
   },
   course: {

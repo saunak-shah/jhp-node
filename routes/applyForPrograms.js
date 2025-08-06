@@ -218,7 +218,9 @@ module.exports = function () {
         return;
       }
 
-      const registrationId = "JHP" + Date.now()
+      // const registrationId = "JHP" + Date.now()
+      const registrationId = uuidv4().replace(/-/g, '').slice(0, 10);
+
 
       const registration = await applyForProgram({
         student_id: studentId,

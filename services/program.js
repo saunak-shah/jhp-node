@@ -19,15 +19,19 @@ const programOutputData = {
 };
 
 async function createProgram(data) {
-  const program = await prisma.program.create({
-    data,
-    select: programOutputData,
-  });
-
-  if (program) {
-    return program;
+  try {
+    const program = await prisma.program.create({
+      data,
+      select: programOutputData,
+    });
+  
+    if (program) {
+      return program;
+    }
+    return;
+  } catch (error) {
+    console.log("pogram add error============", error)
   }
-  return;
 }
 
 async function findProgramByProgramId(programId) {
