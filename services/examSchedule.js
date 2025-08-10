@@ -28,6 +28,7 @@ const examOutputData = {
   passing_score: true,
   created_at: true,
   is_exam_active: true,
+  is_result_publish: true,
   course: {
     select: {
       course_id: true,
