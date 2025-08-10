@@ -284,6 +284,46 @@ module.exports = function () {
     }
   });
 
+  // Publish exam result
+  router.put("/exam/result/publish", userMiddleware, async (req, res) => {
+    const { admin, teacher, is_result_publish, schedule_id } = req.body;
+    if (!admin) {
+      res.status(403).json({
+        message: `You dont have access to add Exam. Please contact to admin.`,
+      });
+      return;
+    }
+    // Validate required fields
+    if (!teacher || !schedule_id || typeof is_result_publish !== "boolean") {
+      return res.status(422).json({
+        message: "Fill all the required fields and ensure is_result_publish is true/false.",
+      });
+    }
+
+    try {
+      // Update exam schedule publish status
+      const updatedCourse = await updateExamScheduled(
+        { schedule_id },
+        { is_result_publish }
+      );
+      if (!updatedCourse) {
+        res.status(500).json({
+          message: `Unable to update course.`,
+        });
+        return;
+      }
+
+      return res.status(200).json({
+        message: `Exam result ${is_result_publish ? "published" : "unpublished"} successfully.`,
+        data: updatedCourse,
+      });  
+    } catch (error) {
+      console.error("Error while publishing exam result:", error);
+      return res.status(500).json({
+        message: `Error while publishing exam result: ${error.message || error}`,
+      });  
+    }
+  });
 
   // only Admin
   // Delete exam

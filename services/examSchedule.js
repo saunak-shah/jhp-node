@@ -247,9 +247,9 @@ async function getAllExamScheduleForStudent(
   const courses = await prisma.exam_schedule.findMany({
     where: {
       ...buildWhereClause(filterObj, searchKey),
-      end_time: {
+      /* end_time: {
         gte: new Date(), // upcoming or ongoing exams
-      }, 
+      },  */
     },
     select: {
       ...examOutputData,
