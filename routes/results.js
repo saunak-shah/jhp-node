@@ -42,44 +42,36 @@ module.exports = function () {
     }
   });
 
-  // student exam result check
+  // POST: Check student exam result
   router.post("/student/exam/result", userMiddleware, async (req, res) => {
-    const { student } = req.body;
+    const { student, reg_id } = req.body;
     const studentId = student?.student_id;
     try {
-      // Extract necessary data from request body
-      const {
-        reg_id,
-      } = req.body;
-
-      if (
-        !student ||
-        !reg_id
-      ) {
+      if (!studentId || !reg_id) {
         res.status(422).json({
           message: `Fill all the fields`,
         });
         return;
       }
 
+      // Fetch result by registration ID
       const result = await findResultByRegistrationId(reg_id);
-
-      if(result && result.student_apply_course && result.student_apply_course.schedule_id){
-        // check in exam schedule table for result is publish or not
-        const examApplyData = result.student_apply_course;
-        const examSchedule = await findExamByScheduleId(examApplyData.schedule_id);
-        if(examSchedule && examSchedule.is_result_publish === false){
-          res.status(422).json({
-            message: `Exam result is not publish yet.`,
-          });
-          return;
-        }
-      }
       if(!result){
-        res.status(422).json({
-          message: `Invalid registration number..`,
-        });
-        return;
+        return res.status(422).json({ message: "Invalid registration number." });
+      }
+
+      // Check if logged-in student matches the student who applied
+      if (result.student_apply_course?.student_id !== parseInt(studentId)) {
+        return res.status(422).json({ message: "Invalid information provided." });
+      }
+
+      const scheduleId = result.student_apply_course?.schedule_id;
+      if(scheduleId){
+        // check in exam schedule table for result is publish or not
+        const examSchedule = await findExamByScheduleId(scheduleId);
+        if (examSchedule && examSchedule.is_result_publish === false) {
+          return res.status(422).json({ message: "Exam result is not published yet." });
+        }
       }
 
       // apply student and request student should same log
@@ -89,17 +81,7 @@ module.exports = function () {
         });
         return;
       }
-
-      if (!result) {
-        res.status(422).json({
-          message: `No Result found`,
-        });
-        return;
-      }
-      res.status(200).json({
-        message: `Result found`,
-        data: result,
-      });
+      res.status(200).json({ message: `Result found`, data: result});
     } catch (error) {
       res.status(500).json({
         message: `Error while creating course : ${error}`,
