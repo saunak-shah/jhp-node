@@ -11,7 +11,8 @@ const courseOutputData = {
   total_marks: true,
   passing_score: true,
   created_at: true,
-  is_exam_active: true
+  is_exam_active: true,
+  is_result_publish: true
 };
 
 const examOutputData = {
@@ -71,10 +72,11 @@ async function findExamByScheduleId(scheduleId) {
   return;
 }
 
-async function findExamByScheduleIdForReceipt(scheduleId) {
+async function findExamByScheduleIdForReceipt(scheduleId, studentId) {
   const examScheduleReceipt = await prisma.student_apply_course.findFirst({
     where: {
-      schedule_id: scheduleId
+      schedule_id: scheduleId,
+      student_id: studentId
     },
     orderBy: {
       created_at: 'desc' // or any other timestamp field
@@ -239,26 +241,38 @@ async function getAllExamScheduleForStudent(
   filterObj,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  studentId
 ) {
   const courses = await prisma.exam_schedule.findMany({
     where: {
       ...buildWhereClause(filterObj, searchKey),
       end_time: {
-        gte: new Date(), // This ensures CURRENT_DATE <= start_time
+        gte: new Date(), // upcoming or ongoing exams
       }, 
     },
-    select: examOutputData,
+    select: {
+      ...examOutputData,
+      student_apply_course: {
+        where: {
+          student_id: studentId, // fetch only if this student applied
+        },
+        select: {
+          schedule_id: true,
+          student_id: true,
+          course_id: true,
+          reg_id: true,
+        },
+      },
+    },
     orderBy: buildOrderClause(sortBy, sortOrder),
     take: parseInt(limit),
     skip: parseInt(offset),
   });
 
-  if (courses) {
-    return courses;
-  }
-  return;
+  return courses;
 }
+
 
 module.exports = {
   createExam,

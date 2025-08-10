@@ -27,15 +27,13 @@ module.exports = function () {
   router.get("/exam/receipt/:id", userMiddleware, async (req, res) => {
     const { student, teacher } = req.body;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-
+      
       const organizationId = student
         ? student.organization_id
         : teacher.organization_id;
 
     const examId = parseInt(req.params.id);
-
-    const examScheduleData = await findExamByScheduleIdForReceipt(examId);
-    
+    const examScheduleData = await findExamByScheduleIdForReceipt(examId, student.student_id);
     let examData = examScheduleData.exam_schedule;
     examData.start_time = moment(examData.start_time).tz("Asia/Kolkata").format("lll")
     examData.end_time = moment(examData.end_time).tz("Asia/Kolkata").format("lll")
@@ -324,6 +322,7 @@ module.exports = function () {
       const { student, teacher } = req.body;
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
+      console.log("student=========", student)
       // const courseId = 1;
       const organizationId = student
         ? student.organization_id
@@ -339,7 +338,8 @@ module.exports = function () {
         filterObj,
         sortOrder,
         !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
-        offset
+        offset,
+        student.student_id
       );
       if (courses) {
         res.status(200).json({

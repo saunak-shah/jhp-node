@@ -13,6 +13,9 @@ const {
   getAllResultsByCourseIdToDownload,
   findResultByRegistrationId,
 } = require("../services/result");
+const {
+  findExamByScheduleId,
+} = require("../services/examSchedule");
 const router = express.Router();
 
 // Export a function that accepts the database pool as a parameter
@@ -60,6 +63,18 @@ module.exports = function () {
       }
 
       const result = await findResultByRegistrationId(reg_id);
+
+      if(result && result.student_apply_course && result.student_apply_course.schedule_id){
+        // check in exam schedule table for result is publish or not
+        const examApplyData = result.student_apply_course;
+        const examSchedule = await findExamByScheduleId(examApplyData.schedule_id);
+        if(examSchedule && examSchedule.is_result_publish === false){
+          res.status(422).json({
+            message: `Exam result is not publish yet.`,
+          });
+          return;
+        }
+      }
       if(!result){
         res.status(422).json({
           message: `Invalid registration number..`,
