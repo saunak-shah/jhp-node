@@ -14,6 +14,7 @@ const resultOutputData = {
       student_id: true,
       course_id: true,
       reg_id: true,
+      schedule_id: true,
       course: {
         select: {
           course_name: true,

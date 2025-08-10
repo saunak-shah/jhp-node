@@ -11,7 +11,8 @@ const courseOutputData = {
   total_marks: true,
   passing_score: true,
   created_at: true,
-  is_exam_active: true
+  is_exam_active: true,
+  is_result_publish: true
 };
 
 const examOutputData = {

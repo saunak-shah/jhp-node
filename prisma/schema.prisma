@@ -263,6 +263,7 @@ model exam_schedule {
   is_exam_active             Boolean            @default(true)
   created_at                 DateTime           @default(now()) @map("created_at")
   updated_at                 DateTime           @default(now()) @map("updated_at")
+  is_result_publish          Boolean            @default(false)
 
   student_apply_course student_apply_course[]
 
