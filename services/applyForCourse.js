@@ -107,7 +107,7 @@ async function findAppliedCourseWithScheduleId(courseId, scheduleId, studentId) 
   });
 
   // findMany returns an array; return the first element or undefined
-  return applications[0];
+  return applications;
 }
 
 
