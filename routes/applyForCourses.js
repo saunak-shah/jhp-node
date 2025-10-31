@@ -13,8 +13,8 @@ const {
   getAllApplicationsByUserIdCount,
   getAllApplicationsByCourseIdCount,
   getAllApplicationsByCourseIdToDownload,
+  findAppliedCourseWithScheduleId
 } = require("../services/applyForCourse");
-const { findCourseByCourseId } = require("../services/course");
 const { findExamByScheduleId } = require("../services/examSchedule");
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
@@ -207,6 +207,38 @@ module.exports = function () {
           message: `Invalid data.`,
         });
         return;
+      }
+
+      ///////////////// Previous Exam Scenario check for same category //////////
+      // check if previously applied for same category exam
+      // Like for dhoran-1 could be taken multi time with name as
+      // Dhoran-1-June, Dhoran-1-Dec
+      // So user can not apply 2 times for Dhoran-1
+      const examCat = await findAppliedCourseWithScheduleId(
+        course_id, 
+        schedule_id, 
+        student.student_id
+      );
+      console.log("examCat===========", examCat);
+      // if examCat found means they have applied previously
+      // it can be pass, fail or not attempt.
+      // for that need to check result table
+      if(examCat){
+        // if user attempt exam and clear exam already
+        if (examCat.score !== undefined && examCat.course_passing_score !== undefined) {
+          if (examCat.score >= examCat.course_passing_score) {
+            return res.status(422).json({
+              message: `You have already passed this exam and cannot reapply.`,
+            });
+          }
+        }
+
+        // if user applied but exam not given.
+        if (examCat.course_passing_score == undefined) {
+          return res.status(422).json({
+            message: `You have applied previous exam but not given the exam. Kindly contact to admin.`,
+          });
+        }
       }
 
       // Get course schedule info

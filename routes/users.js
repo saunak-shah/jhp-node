@@ -126,6 +126,7 @@ module.exports = function () {
       );
 
       res.status(200).json({
+        message: `Fetched students.`,
         data: {
           users,
           offset,
