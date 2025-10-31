@@ -222,11 +222,13 @@ module.exports = function () {
       console.log("examCat===========", examCat);
       // if examCat found means they have applied previously
       // it can be pass, fail or not attempt.
-      // for that need to check result table
+      // for that need to check result 
       if(examCat){
         // if user attempt exam and clear exam already
-        if (examCat.score !== undefined && examCat.course_passing_score !== undefined) {
-          if (examCat.score >= examCat.course_passing_score) {
+        const prevscore = examCat[0]?.result[0]?.score;
+        const prevpassingScore = examCat[0]?.result[0]?.course_passing_score;
+        if (prevscore !== undefined && prevpassingScore !== undefined) {
+          if (prevscore >= prevpassingScore) {
             return res.status(422).json({
               message: `You have already passed this exam and cannot reapply.`,
             });
@@ -234,7 +236,7 @@ module.exports = function () {
         }
 
         // if user applied but exam not given.
-        if (examCat.course_passing_score == undefined) {
+        if (!examCat[0]?.result[0]) {
           return res.status(422).json({
             message: `You have applied previous exam but not given the exam. Kindly contact to admin.`,
           });

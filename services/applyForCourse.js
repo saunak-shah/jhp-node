@@ -93,23 +93,23 @@ async function findApplicationByApplicantId(studentApplyId) {
 }
 
 async function findAppliedCourseWithScheduleId(courseId, scheduleId, studentId) {
-  const application = await prisma.student_apply_course.findUnique({
+  const applications = await prisma.student_apply_course.findMany({
     where: {
       course_id: courseId,
+      student_id: studentId,
       schedule_id: { not: scheduleId },
-      student_id: studentId
     },
     orderBy: {
       student_apply_course_id: 'desc',
     },
+    take: 1, // only need the latest one
     select: appliedExamOutputData,
   });
 
-  if (application) {
-    return application;
-  }
-  return;
+  // findMany returns an array; return the first element or undefined
+  return applications[0];
 }
+
 
 function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
   let whereClause;
