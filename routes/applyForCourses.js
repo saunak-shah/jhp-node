@@ -223,14 +223,14 @@ module.exports = function () {
       // if examCat found means they have applied previously
       // it can be pass, fail or not attempt.
       // for that need to check result 
-      if(examCat){
+      if(examCat && examCat.length > 0){
         // if user attempt exam and clear exam already
         const prevscore = examCat[0]?.result[0]?.score;
         const prevpassingScore = examCat[0]?.result[0]?.course_passing_score;
         if (prevscore !== undefined && prevpassingScore !== undefined) {
           if (prevscore >= prevpassingScore) {
             return res.status(422).json({
-              message: `You have already passed this exam and cannot reapply.`,
+              message: `You have already passed same category exam and cannot reapply.`,
             });
           }
         }

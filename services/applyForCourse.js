@@ -19,7 +19,8 @@ const appliedExamOutputData = {
       username: true,
       register_no: true,
       gender: true,
-      created_at: true
+      created_at: true,
+      birth_date: true
     },
   },
   course: {

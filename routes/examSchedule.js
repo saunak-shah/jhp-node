@@ -372,11 +372,12 @@ module.exports = function () {
         organization_id: organizationId,
         is_exam_active: true
       }
+
       const courses = await getAllExamScheduleForStudent(
         searchKey,
         sortBy,
         filterObj,
-        sortOrder,
+        sortOrder = "desc",
         !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
         offset,
         student.student_id

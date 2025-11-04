@@ -240,7 +240,7 @@ async function getAllExamScheduleForStudent(
   searchKey,
   sortBy,
   filterObj,
-  sortOrder = "asc",
+  sortOrder = "desc",
   limit = 100,
   offset = 0,
   studentId
