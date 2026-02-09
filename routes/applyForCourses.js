@@ -224,6 +224,7 @@ module.exports = function () {
       // it can be pass, fail or not attempt.
       // for that need to check result 
       if(examCat && examCat.length > 0){
+        console.log("examCat found===========");
         // if user attempt exam and clear exam already
         const prevscore = examCat[0]?.result[0]?.score;
         const prevpassingScore = examCat[0]?.result[0]?.course_passing_score;
@@ -234,6 +235,7 @@ module.exports = function () {
             });
           }
         }
+        console.log("same categor exam already given===========");
 
         // if user applied but exam not given.
         if (!examCat[0]?.result[0]) {

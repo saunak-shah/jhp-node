@@ -360,7 +360,7 @@ module.exports = function () {
   router.get("/course/exam/schedule/", userMiddleware, async (req, res) => {
     try {
       const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder = "desc" } = req.query;
 
       console.log("student=========", student)
       // const courseId = 1;
@@ -377,8 +377,8 @@ module.exports = function () {
         searchKey,
         sortBy,
         filterObj,
-        sortOrder = "desc",
-        !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
+        sortOrder,
+        !limit || limit == "null" || limit == "undefined" ? courseCount : limit,
         offset,
         student.student_id
       );
