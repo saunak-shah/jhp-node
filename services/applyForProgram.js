@@ -14,6 +14,7 @@ const appliedProgramOutputData = {
       last_name: true,
       father_name: true,
       phone_number: true,
+      birth_date: true,
       address: true,
       email: true,
       username: true,
@@ -305,6 +306,7 @@ async function getAllApplicationsByProgramIdToDownload(
           first_name: true,
           last_name: true,
           phone_number: true,
+          birth_date: true,
           email: true,
           gender: true,
         },
@@ -332,6 +334,7 @@ async function getAllApplicationsByProgramIdToDownload(
         application.student.first_name + application.student.last_name,
       program: application.program.program_name,
       phone_number: application.student.phone_number,
+      birth_date: application.student.birth_date,
       email: application.student.email,
       gender: application.student.gender,
     });
