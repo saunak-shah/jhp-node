@@ -332,10 +332,9 @@ module.exports = function () {
               <pre>
 Hello ${student.first_name}
                 
-Thank you for registering with us. Below are your login details. Please keep them secure and do not share them with anyone.
+Thank you for registering with us. Your login username follows below. Please keep your login credentials secure.
 
 <b>Username:</b> ${student.username.toLowerCase()} 
-<b>Password:</b> ${password} 
                 
 You can log in using the below link: 
                 
@@ -772,24 +771,23 @@ You can log in using the below link:
   router.delete("/students/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      // const { student } = req.body;
-      // if (student && student.student_id == id) {
-
-      const deletedStudent = await deleteStudentData({
-        student_id: parseInt(id),
-      });
-
-      if (deletedStudent) {
-        res.status(200).json({
-          message: "Student deleted",
-          data: { student: deletedStudent },
+      const { admin, student } = req.body;
+      if (admin || (student && student.student_id == id)) {
+        const deletedStudent = await deleteStudentData({
+          student_id: parseInt(id),
         });
+
+        if (deletedStudent) {
+          res.status(200).json({
+            message: "Student deleted",
+            data: { student: deletedStudent },
+          });
+        } else {
+          res.status(500).json({ message: "Unable to delete student" });
+        }
       } else {
-        res.status(500).json({ message: "Unable to delete student" });
+        res.status(403).json({ message: "Unauthorized to delete student" });
       }
-      // } else {
-      //   res.status(204).json({ message: "Student not found" });
-      // }
     } catch (error) {
       console.error("Error while getting student with unique id:", error);
       res.status(500).send(`Internal Server Error: ${error}`);
@@ -801,9 +799,9 @@ You can log in using the below link:
     userMiddleware,
     async (req, res) => {
       const { admin, teacher } = req.body;
-      /* if (!admin) {
-        throw new Error("Only admin");
-      } */
+      if (!admin) {
+        return res.status(403).json({ message: "Only admin can view student assignments data" });
+      }
 
       const data = await findStudentsAssignedToTeacherData(
         teacher?.organization_id
@@ -828,9 +826,9 @@ You can log in using the below link:
 
   router.get("/students-age-group-data", userMiddleware, async (req, res) => {
     const { admin, teacher } = req.body;
-    /* if (!admin) {
-        throw new Error("Only admin");
-      } */
+    if (!admin) {
+        return res.status(403).json({ message: "Only admin can view age group data" });
+    }
 
     const data = await findStudentsByAgeGroup(teacher?.organization_id);
 
@@ -856,9 +854,9 @@ You can log in using the below link:
     userMiddleware,
     async (req, res) => {
       const { admin, teacher } = req.body;
-      /* if (!admin) {
-        throw new Error("Only admin");
-      } */
+      if (!admin) {
+        return res.status(403).json({ message: "Only admin can view gender group data" });
+      }
 
       const data = await findStudentsByGenderGroup(teacher?.organization_id);
 
@@ -880,9 +878,12 @@ You can log in using the below link:
     }
   );
 
-  // Forgot password
-  router.put("/students/approve", async (req, res) => {
-    const { id } = req.body;
+  // Approve student registration
+  router.put("/students/approve", userMiddleware, async (req, res) => {
+    const { id, admin } = req.body;
+    if (!admin) {
+        return res.status(403).json({ message: "Only admin can approve students" });
+    }
     try {
       
       const studentData = await findStudentById(

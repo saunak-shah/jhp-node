@@ -40,7 +40,7 @@ module.exports = function () {
         sortBy,
         organizationId,
         sortOrder,
-        !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
+        !limit || limit == "null" || limit == "undefined" ? courseCount : limit,
         offset
       );
       if (courses) {
@@ -98,12 +98,13 @@ module.exports = function () {
       if (
         !course ||
         course.registration_starting_date >
-          new Date(Date.now()).toISOString() ||
+        new Date(Date.now()).toISOString() ||
         course.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
         res.status(422).json({
           message: `Course registration cannot be done`,
         });
+        return;
       }
 
       const application = await createApplication({
@@ -189,7 +190,7 @@ module.exports = function () {
     }
   });
 
-  router.get("/generate-presigned-url", async (req, res) => {
+  router.get("/generate-presigned-url", userMiddleware, async (req, res) => {
     try {
       const { fileName, fileType } = req.query;
       console.log("filename", fileName)
@@ -202,7 +203,7 @@ module.exports = function () {
         Expires: 300, // 5 minutes
         ContentType: fileType,
       };
-  
+
       const uploadURL = await s3.getSignedUrlPromise("putObject", params);
       // console.log("connect============", uploadURL);
       const url = decodeURIComponent(uploadURL);

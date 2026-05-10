@@ -26,24 +26,24 @@ module.exports = function () {
   // student generate receipt
   router.get("/exam/receipt/:id", userMiddleware, async (req, res) => {
     const { student, teacher } = req.body;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-      
-      const organizationId = student
-        ? student.organization_id
-        : teacher.organization_id;
+    const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+
+    const organizationId = student
+      ? student.organization_id
+      : teacher.organization_id;
 
     const examId = parseInt(req.params.id);
     const examScheduleData = await findExamByScheduleIdForReceipt(examId, student.student_id);
     let examData = examScheduleData.exam_schedule;
     examData.start_time = moment(examData.start_time).tz("Asia/Kolkata").format("lll")
     examData.end_time = moment(examData.end_time).tz("Asia/Kolkata").format("lll")
-    
+
     const studentData = {
       reg_id: examScheduleData.reg_id,
       student: examScheduleData.student,
     };
 
-    let response = {...examData, ...studentData};
+    let response = { ...examData, ...studentData };
     const qrPayload = JSON.stringify(examData);
     const qrBuffer = qr.imageSync(qrPayload, { type: "png" });
     const qrBase64 = qrBuffer.toString("base64");
@@ -73,9 +73,9 @@ module.exports = function () {
     res.setHeader("Content-Disposition", "attachment; filename=exam_receipt.pdf");
     // res.send(pdfBuffer); // This should work correctly
 
-    res.end(pdfBuffer); 
+    res.end(pdfBuffer);
   });
-  
+
   // Get all exams od courses for admin
   router.get("/exam/schedule/:id", userMiddleware, async (req, res) => {
     try {
@@ -102,7 +102,7 @@ module.exports = function () {
         sortBy,
         filterObj,
         sortOrder,
-        !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
+        !limit || limit == "null" || limit == "undefined" ? courseCount : limit,
         offset
       );
       if (courses) {
@@ -151,15 +151,15 @@ module.exports = function () {
 
       if (
         !teacher ||
-        !schedule_id,
-        !course_id,
-        !registration_starting_date,
-        !registration_closing_date,
-        !location,
-        !start_time,
-        !end_time,
-        !total_marks,
-        !passing_score,
+        !schedule_id ||
+        !course_id ||
+        !registration_starting_date ||
+        !registration_closing_date ||
+        !location ||
+        !start_time ||
+        !end_time ||
+        !total_marks ||
+        !passing_score ||
         !exam_name
       ) {
         res.status(422).json({
@@ -170,8 +170,8 @@ module.exports = function () {
       // get date of country from timezone
       const mIST = moment.tz(req.body.registration_closing_date, "Asia/Kolkata");
       const regClosingDate = moment(mIST, "YYYY/MM/DD")
-      .endOf("day")
-      .format();
+        .endOf("day")
+        .format();
       console.log("regClosingDate", regClosingDate)
 
       const data = {
@@ -236,14 +236,14 @@ module.exports = function () {
       } = req.body;
       if (
         !teacher ||
-        !course_id,
-        !registration_starting_date,
-        !registration_closing_date,
-        !location,
-        !start_time,
-        !end_time,
-        !total_marks,
-        !passing_score,
+        !course_id ||
+        !registration_starting_date ||
+        !registration_closing_date ||
+        !location ||
+        !start_time ||
+        !end_time ||
+        !total_marks ||
+        !passing_score ||
         !exam_name
       ) {
         res.status(422).json({
@@ -316,12 +316,12 @@ module.exports = function () {
       return res.status(200).json({
         message: `Exam result ${is_result_publish ? "published" : "unpublished"} successfully.`,
         data: updatedCourse,
-      });  
+      });
     } catch (error) {
       console.error("Error while publishing exam result:", error);
       return res.status(500).json({
         message: `Error while publishing exam result: ${error.message || error}`,
-      });  
+      });
     }
   });
 
@@ -373,6 +373,7 @@ module.exports = function () {
         is_exam_active: true
       }
 
+      const courseCount = await getAllExamScheduleCount(filterObj, searchKey);
       const courses = await getAllExamScheduleForStudent(
         searchKey,
         sortBy,
@@ -385,7 +386,7 @@ module.exports = function () {
       if (courses) {
         res.status(200).json({
           message: `Fetched all courses`,
-          data: { courses, offset},
+          data: { courses, offset },
         });
       } else {
         res.status(422).json({
@@ -399,7 +400,7 @@ module.exports = function () {
     }
   });
 
-  
-  
+
+
   return router;
 };

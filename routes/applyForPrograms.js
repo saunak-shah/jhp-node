@@ -181,7 +181,7 @@ module.exports = function () {
         });
         return;
       }
-      if(teacher && !student_id) {
+      if (teacher && !student_id) {
         res.status(403).json({
           message: `Teacher registration requires student_id.`,
         });
@@ -201,12 +201,13 @@ module.exports = function () {
       if (
         !program ||
         program.registration_starting_date >
-          new Date(Date.now()).toISOString() ||
-          program.registration_closing_date < new Date(Date.now()).toISOString()
+        new Date(Date.now()).toISOString() ||
+        program.registration_closing_date < new Date(Date.now()).toISOString()
       ) {
         res.status(422).json({
           message: `Program registration cannot be done`,
         });
+        return;
       }
 
       const isRegistered = await getAllApplicationsByUserIdAndProgramId(

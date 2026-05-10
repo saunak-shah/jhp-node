@@ -136,8 +136,11 @@ module.exports = function () {
   });
 
   // Create teacher
-  router.post("/teachers/signup", async (req, res) => {
+  router.post("/teachers/signup", userMiddleware, async (req, res) => {
     try {
+      if (!req.body.admin) {
+        return res.status(403).json({ message: "Only admin can create teacher accounts." });
+      }
       // Extract necessary data from request body
       const {
         teacher_first_name,

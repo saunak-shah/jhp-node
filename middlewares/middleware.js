@@ -10,7 +10,7 @@ async function userMiddleware(req, res, next) {
     if (tokenData) {
       let student, teacher;
       try {
-        if(tokenData.username){
+        if (tokenData.username) {
           student = await findStudentByUsername(tokenData.username.toLowerCase());
           if (student && student.status === USER_STATUS.PENDING) {
             res.status(403).json({
@@ -26,12 +26,14 @@ async function userMiddleware(req, res, next) {
           return;
         } */
       } catch (e) {
-          res.status(500).json({ message: e });
-          return;
+        res.status(500).json({ message: e });
+        return;
       }
 
-      const isUserAdmin = await isAdmin(
-        student?.student_id || teacher?.teacher_id, student?.organization_id || teacher?.organization_id
+      const isUserAdmin = teacher ? await isAdmin(
+        teacher.teacher_id, teacher.organization_id
+      ) : await isAdmin(
+        student.student_id, student.organization_id
       );
       if (student || teacher) {
         req.body = {
@@ -47,9 +49,12 @@ async function userMiddleware(req, res, next) {
         return;
       }
     } else {
-      res.status(403).json({ message: `Invalid token` });
+      res.status(401).json({ message: `Invalid token` });
       return;
     }
+  } else {
+    res.status(401).json({ message: "No token provided" });
+    return;
   }
 }
 

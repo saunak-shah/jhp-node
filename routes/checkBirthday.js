@@ -6,19 +6,21 @@ const { sendEmail } = require("../helpers/sendEmail");
 const router = express.Router();
 
 module.exports = function () {
-    router.get("/send-birthday-email", async (req, res) => {
-        try {
-            const peopleWithBirthdays = await getPeopleWithTodayBirthdays();
-            console.log("peopleWithBirthdays===========", peopleWithBirthdays)
-            if (peopleWithBirthdays.length > 0) {
-                await Promise.all(
-                    peopleWithBirthdays.map(async (person) => {
-                        const to = person.email || person.teacher_email;
-                        console.log("whom to send mail===========", to)
-                        const subject = `Happy Birthday, ${person.first_name || person.teacher_first_name
-                            }!`;
+  router.get("/send-birthday-email", userMiddleware, async (req, res) => {
+    try {
+      const { admin } = req.body;
+      if (!admin) {
+        return res.status(403).json({ message: "Only admin can trigger birthday emails" });
+      }
+      const peopleWithBirthdays = await getPeopleWithTodayBirthdays();
+      if (peopleWithBirthdays.length > 0) {
+        await Promise.all(
+          peopleWithBirthdays.map(async (person) => {
+            const to = person.email || person.teacher_email;
+            const subject = `Happy Birthday, ${person.first_name || person.teacher_first_name
+              }!`;
 
-                        const html = `
+            const html = `
                             <!DOCTYPE html>
                             <html>
                             <head>
@@ -98,25 +100,25 @@ module.exports = function () {
                             </body>
                             </html>`;
 
-                        await sendEmail(to, subject, html);
-                    })
-                );
-            }
+            await sendEmail(to, subject, html);
+          })
+        );
+      }
 
-            res.status(200).json({
-                message:
-                    peopleWithBirthdays.length > 0
-                        ? `Birthday emails sent to ${peopleWithBirthdays.length} people`
-                        : "No birthdays today.",
-                data: peopleWithBirthdays,
-            });
-        } catch (error) {
-            console.error(error);
-            res
-                .status(500)
-                .json({ error: error?.message || "Internal Server Error" });
-        }
-    });
+      res.status(200).json({
+        message:
+          peopleWithBirthdays.length > 0
+            ? `Birthday emails sent to ${peopleWithBirthdays.length} people`
+            : "No birthdays today.",
+        data: peopleWithBirthdays,
+      });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ error: error?.message || "Internal Server Error" });
+    }
+  });
 
-    return router;
+  return router;
 };

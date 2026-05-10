@@ -105,7 +105,7 @@ model teacher {
   teacher_phone_number                    String
   teacher_email                           String
   teacher_address                         String
-  teacher_password                        String      @unique
+  teacher_password                        String
   teacher_birth_date                      DateTime
   teacher_gender                          gender
   teacher_username                        String      @unique

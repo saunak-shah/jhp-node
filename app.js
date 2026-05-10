@@ -5,8 +5,26 @@ const path = require("path");
 const helmet = require("helmet"); // ✅ Add helmet
 require("dotenv").config();
 var cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
+app.use(helmet());
+app.use(bodyParser.json());
+
+const corsOptions = {
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : "*",
+};
+app.use(cors(corsOptions));
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use("/api/students/login", limiter);
+app.use("/api/teachers/login", limiter);
+app.use("/api/students/forgot_password", limiter);
+app.use("/api/teachers/forgot_password", limiter);
 
 // ✅ Add Helmet for security headers including HSTS
 app.use(

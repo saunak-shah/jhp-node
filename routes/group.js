@@ -8,86 +8,86 @@ module.exports = function () {
   // group list
   router.get("/group", userMiddleware, async (req, res) => {
     try {
-        const { student, teacher } = req.body;
-        const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
-  
-        const organizationId = student
-          ? student.organization_id
-          : teacher.organization_id;
-        const groups = await getAllGroups(
-            searchKey,
-            sortBy,
-            organizationId,
-            sortOrder,
-            !limit || limit == "null" || limit == "undefined" ? courseCount: limit,
-            offset
-          );
-        const groupsCount = await getAllCoursesCount(organizationId, searchKey);
+      const { student, teacher } = req.body;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-        if (groups) {
-          res.status(200).json({
-            message: `Fetched all courses`,
-            data: { groups, offset, totalCount: groupsCount },
-          });
-        } else {
-          res.status(422).json({
-            message: `Unable to fetch courses`,
-          });
-        }
-      } catch (error) {
-        res.status(500).json({
-          message: `Internal Server Error while getting courses: ${error}`,
+      const organizationId = student
+        ? student.organization_id
+        : teacher.organization_id;
+      const groupsCount = await getAllCoursesCount(organizationId, searchKey);
+      const groups = await getAllGroups(
+        searchKey,
+        sortBy,
+        organizationId,
+        sortOrder,
+        !limit || limit == "null" || limit == "undefined" ? groupsCount : limit,
+        offset
+      );
+
+      if (groups) {
+        res.status(200).json({
+          message: `Fetched all courses`,
+          data: { groups, offset, totalCount: groupsCount },
+        });
+      } else {
+        res.status(422).json({
+          message: `Unable to fetch courses`,
         });
       }
+    } catch (error) {
+      res.status(500).json({
+        message: `Internal Server Error while getting courses: ${error}`,
+      });
+    }
   });
 
   // group add
   router.post("/group", userMiddleware, async (req, res) => {
-    const {group_name, teacher_assignee} = req.body;
+    const { group_name, teacher_assignee } = req.body;
 
     // validation
-    if(!group_name || (!teacher_assignee || (teacher_assignee && teacher_assignee.length <= 0))){
-        res.status(422).json({
-            message: `Fill all the fields`,
-          });
-        return;
+    if (!group_name || (!teacher_assignee || (teacher_assignee && teacher_assignee.length <= 0))) {
+      res.status(422).json({
+        message: `Fill all the fields`,
+      });
+      return;
     }
 
-    const groupData = await createGroup({group_name, teacher_ids: teacher_assignee});
+    const groupData = await createGroup({ group_name, teacher_ids: teacher_assignee });
     // update group_ id in respective teachers
     const group_id = groupData.group_id;
-    teacher_assignee.map(async (teacherId)=>{
-      const updatedTeacher = await updateTeacherData(
+    teacher_assignee.map(async (teacherId) => {
+      await updateTeacherData(
         { teacher_id: teacherId },
-        {group_ids: [group_id]}
+        { group_ids: [group_id] }
       );
     })
-    
+
 
     if (groupData) {
-        res.status(200).json({
-          message: `Group created successfully`,
-          data: groupData,
-        });
-        return;
-      } else {
-        res.status(500).json({
-          message: `Unable to create group`,
-        });
-      }
+      res.status(200).json({
+        message: `Group created successfully`,
+        data: groupData,
+      });
+      return;
+    } else {
+      res.status(500).json({
+        message: `Unable to create group`,
+      });
+    }
   });
 
   // Update Course
   router.post("/group/:id", userMiddleware, async (req, res) => {
     const groupId = parseInt(req.params.id);
-    const {group_name, teacher_assignee} = req.body;
+    const { group_name, teacher_assignee } = req.body;
 
     // validation
-    if(!group_name || (!teacher_assignee || (teacher_assignee && teacher_assignee.length <= 0))){
-        res.status(422).json({
-            message: `Fill all the fields`,
-          });
-        return;
+    if (!group_name || (!teacher_assignee || (teacher_assignee && teacher_assignee.length <= 0))) {
+      res.status(422).json({
+        message: `Fill all the fields`,
+      });
+      return;
     }
 
     const { admin, student } = req.body;
@@ -104,24 +104,22 @@ module.exports = function () {
       };
 
       const groupData = await findGroupById(groupId);
-      const teacherIds = groupData.teacher_ids;
-      const newTeacherIds = teacherData.group_ids;
 
       // check if any teacher removes, If remove then need to remove group id from that teacher
 
       // teacher data
       if (groupData) {
 
-        teacher_assignee.map(async (teacherId)=>{
+        teacher_assignee.map(async (teacherId) => {
           // teacher find and bind group_ids with new group
           const teacherData = await findTeacherById(teacherId);
-          
-          if(!teacherData.group_ids.includes(teacherId)){
+
+          if (!teacherData.group_ids.includes(teacherId)) {
             const groupIds = [...teacherData.group_ids, groupId]
 
-            const updatedTeacher = await updateTeacherData(
+            await updateTeacherData(
               { teacher_id: teacherId },
-              {group_ids: groupIds}
+              { group_ids: groupIds }
             );
           }
         })
