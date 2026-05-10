@@ -5,7 +5,6 @@ const path = require("path");
 const helmet = require("helmet"); // ✅ Add helmet
 require("dotenv").config();
 var cors = require("cors");
-const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
@@ -103,6 +102,9 @@ fs.readdirSync(routesPath).forEach((file) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+  });
+}
+module.exports = app;
