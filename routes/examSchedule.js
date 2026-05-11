@@ -25,55 +25,60 @@ module.exports = function () {
 
   // student generate receipt
   router.get("/exam/receipt/:id", userMiddleware, async (req, res) => {
-    const { student, teacher } = req.body;
-    const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+    try {
+      const { student, teacher } = req.body;
+      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
-    const organizationId = student
-      ? student.organization_id
-      : teacher.organization_id;
+      const organizationId = student
+        ? student.organization_id
+        : teacher.organization_id;
 
-    const examId = parseInt(req.params.id);
-    const examScheduleData = await findExamByScheduleIdForReceipt(examId, student.student_id);
-    let examData = examScheduleData.exam_schedule;
-    examData.start_time = moment(examData.start_time).tz("Asia/Kolkata").format("lll")
-    examData.end_time = moment(examData.end_time).tz("Asia/Kolkata").format("lll")
+      const examId = parseInt(req.params.id);
+      const examScheduleData = await findExamByScheduleIdForReceipt(examId, student.student_id);
+      let examData = examScheduleData.exam_schedule;
+      examData.start_time = moment(examData.start_time).tz("Asia/Kolkata").format("lll")
+      examData.end_time = moment(examData.end_time).tz("Asia/Kolkata").format("lll")
 
-    const studentData = {
-      reg_id: examScheduleData.reg_id,
-      student: examScheduleData.student,
-    };
+      const studentData = {
+        reg_id: examScheduleData.reg_id,
+        student: examScheduleData.student,
+      };
 
-    let response = { ...examData, ...studentData };
-    const qrPayload = JSON.stringify(examData);
-    const qrBuffer = qr.imageSync(qrPayload, { type: "png" });
-    const qrBase64 = qrBuffer.toString("base64");
+      let response = { ...examData, ...studentData };
+      const qrPayload = JSON.stringify(examData);
+      const qrBuffer = qr.imageSync(qrPayload, { type: "png" });
+      const qrBase64 = qrBuffer.toString("base64");
 
-    const html = await ejs.renderFile(
-      path.join(__dirname, "../templates/receipt.ejs"),
-      { ...response, qrCodeBase64: qrBase64 }
-    );
+      const html = await ejs.renderFile(
+        path.join(__dirname, "../templates/receipt.ejs"),
+        { ...response, qrCodeBase64: qrBase64 }
+      );
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-    });
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+      });
 
-    await browser.close();
+      await browser.close();
 
-    // 👉 Important: No other middleware should write to response after this
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=exam_receipt.pdf");
-    // res.send(pdfBuffer); // This should work correctly
+      // 👉 Important: No other middleware should write to response after this
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", "attachment; filename=exam_receipt.pdf");
+      // res.send(pdfBuffer); // This should work correctly
 
-    res.end(pdfBuffer);
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: `Internal Server Error: ${error}` });
+    }
   });
 
   // Get all exams od courses for admin

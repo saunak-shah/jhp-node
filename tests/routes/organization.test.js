@@ -13,6 +13,6 @@ describe('Organization Routes (/api/organization)', () => {
       prisma.organization.count.mockResolvedValue(1);
 
       const res = await request(app).get('/api/organization');
-    });
+  });
   });
 });

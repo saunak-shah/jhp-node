@@ -36,16 +36,17 @@ jest.mock('aws-sdk', () => {
 jest.mock('../middlewares/middleware', () => {
   return {
     userMiddleware: (req, res, next) => {
+      const adminValue = typeof req.body.admin === 'boolean' ? req.body.admin : true;
       req.body = {
         ...req.body,
-        admin: true,
-        teacher: { teacher_id: 1, organization_id: 1, master_role_id: 1 },
-        student: { student_id: 1, organization_id: 1 }
+        admin: adminValue,
+        teacher: req.body.teacher || { teacher_id: 1, organization_id: 1, master_role_id: 1 },
+        student: req.body.student || { student_id: 1, organization_id: 1 }
       };
       next();
     },
     adminMiddleware: (req, res, next) => {
-      req.body.admin = true;
+      req.body.admin = typeof req.body.admin === 'boolean' ? req.body.admin : true;
       next();
     }
   };

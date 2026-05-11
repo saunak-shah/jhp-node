@@ -9,7 +9,7 @@ const {
   getAllCoursesCount,
 } = require("../services/course");
 const { userMiddleware } = require("../middlewares/middleware");
-const { createApplication } = require("../services/applyForCourse");
+const { applyForCourse: createApplication } = require("../services/applyForCourse");
 const router = express.Router();
 
 const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');

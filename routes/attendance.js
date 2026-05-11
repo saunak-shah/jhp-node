@@ -47,6 +47,7 @@ module.exports = function () {
           res.status(403).json({
             message: `Only assigned teacher can fetch the attendance`,
           });
+          return;
         }
         const attendance = await getStudentAttendance(
           parseInt(student_id),

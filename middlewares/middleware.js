@@ -30,11 +30,7 @@ async function userMiddleware(req, res, next) {
         return;
       }
 
-      const isUserAdmin = teacher ? await isAdmin(
-        teacher.teacher_id, teacher.organization_id
-      ) : await isAdmin(
-        student.student_id, student.organization_id
-      );
+      const isUserAdmin = (student && await isAdmin(student?.student_id, student?.organization_id)) || (teacher && await isAdmin(teacher?.teacher_id, teacher?.organization_id))
       if (student || teacher) {
         req.body = {
           token: "",

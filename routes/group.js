@@ -53,26 +53,31 @@ module.exports = function () {
       return;
     }
 
-    const groupData = await createGroup({ group_name, teacher_ids: teacher_assignee });
-    // update group_ id in respective teachers
-    const group_id = groupData.group_id;
-    teacher_assignee.map(async (teacherId) => {
-      await updateTeacherData(
-        { teacher_id: teacherId },
-        { group_ids: [group_id] }
-      );
-    })
+    try {
+      const groupData = await createGroup({ group_name, teacher_ids: teacher_assignee });
+      // update group_ id in respective teachers
+      const group_id = groupData.group_id;
+      await Promise.all(teacher_assignee.map(async (teacherId) => {
+        await updateTeacherData(
+          { teacher_id: teacherId },
+          { group_ids: [group_id] }
+        );
+      }));
 
-
-    if (groupData) {
-      res.status(200).json({
-        message: `Group created successfully`,
-        data: groupData,
-      });
-      return;
-    } else {
+      if (groupData) {
+        res.status(200).json({
+          message: `Group created successfully`,
+          data: groupData,
+        });
+        return;
+      } else {
+        res.status(500).json({
+          message: `Unable to create group`,
+        });
+      }
+    } catch (error) {
       res.status(500).json({
-        message: `Unable to create group`,
+        message: `Internal Server Error: ${error}`,
       });
     }
   });
@@ -110,7 +115,7 @@ module.exports = function () {
       // teacher data
       if (groupData) {
 
-        teacher_assignee.map(async (teacherId) => {
+        await Promise.all(teacher_assignee.map(async (teacherId) => {
           // teacher find and bind group_ids with new group
           const teacherData = await findTeacherById(teacherId);
 
@@ -122,7 +127,7 @@ module.exports = function () {
               { group_ids: groupIds }
             );
           }
-        })
+        }));
 
         const updatedCourse = await updateGroup({ group_id: groupId }, data);
 
