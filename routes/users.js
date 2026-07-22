@@ -80,6 +80,8 @@ module.exports = function () {
         gender,
         fromDate,
         toDate,
+        birthDateFrom,
+        birthDateTo,
       } = req.query;
 
       const organization_id =
@@ -106,7 +108,9 @@ module.exports = function () {
         gender,
         fromDate,
         toDate,
-        status
+        status,
+        birthDateFrom,
+        birthDateTo
       );
 
       const users = await getAllStudents(
@@ -122,7 +126,9 @@ module.exports = function () {
         gender,
         fromDate,
         toDate,
-        status
+        status,
+        birthDateFrom,
+        birthDateTo
       );
 
       res.status(200).json({

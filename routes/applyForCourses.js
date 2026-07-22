@@ -136,16 +136,17 @@ module.exports = function () {
   router.get("/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
       const id = parseInt(parseInt(req.params.id));
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder, teacherId } = req.query;
 
-      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
+      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey, teacherId);
       const registrations = await getAllApplicationsByCourseId(
         searchKey,
         sortBy,
         id,
         sortOrder,
         limit,
-        offset
+        offset,
+        teacherId
       );
       if (registrations) {
         res.status(200).json({
@@ -168,16 +169,17 @@ module.exports = function () {
   router.get("/download/courses/registrations/:id", userMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
+      const { limit, offset, searchKey, sortBy, sortOrder, teacherId } = req.query;
 
-      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey);
+      const registrationCount = await getAllApplicationsByCourseIdCount(id, searchKey, teacherId);
       const registrations = await getAllApplicationsByCourseIdToDownload(
         searchKey,
         sortBy,
         id,
         sortOrder,
         limit,
-        offset
+        offset,
+        teacherId
       );
       if (registrations) {
         res.status(200).json({

@@ -20,7 +20,14 @@ const appliedExamOutputData = {
       register_no: true,
       gender: true,
       created_at: true,
-      birth_date: true
+      birth_date: true,
+      assigned_to: true,
+      teacher: {
+        select: {
+          teacher_first_name: true,
+          teacher_last_name: true,
+        },
+      },
     },
   },
   course: {
@@ -112,7 +119,7 @@ async function findAppliedCourseWithScheduleId(courseId, scheduleId, studentId) 
 }
 
 
-function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
+function buildWhereClause(searchKey, courseId = undefined, userId = undefined, teacherId = undefined) {
   let whereClause;
 
   if (courseId) {
@@ -207,6 +214,16 @@ function buildWhereClause(searchKey, courseId = undefined, userId = undefined) {
     };
   }
 
+  if (teacherId) {
+    whereClause = {
+      ...whereClause,
+      student: {
+        ...whereClause?.student,
+        assigned_to: parseInt(teacherId),
+      },
+    };
+  }
+
   return whereClause;
 }
 
@@ -292,12 +309,13 @@ async function getAllApplicationsByCourseId(
   examId,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  teacherId = undefined
 ) {
  try {
    const applications = await prisma.student_apply_course.findMany({
      
-     where: buildWhereClause(searchKey, examId, undefined),
+     where: buildWhereClause(searchKey, examId, undefined, teacherId),
      select: appliedExamOutputData,
      orderBy: buildOrderClause(sortBy, sortOrder),
      take: parseInt(limit),
@@ -319,10 +337,11 @@ async function getAllApplicationsByCourseIdToDownload(
   examId,
   sortOrder = "asc",
   limit = 100,
-  offset = 0
+  offset = 0,
+  teacherId = undefined
 ) {
   const applications = await prisma.student_apply_course.findMany({
-    where: buildWhereClause(searchKey, examId, undefined),
+    where: buildWhereClause(searchKey, examId, undefined, teacherId),
     select: {
       student_apply_course_id: true,
       reg_id: true,
@@ -351,6 +370,13 @@ async function getAllApplicationsByCourseIdToDownload(
           email: true,
           gender: true,
           register_no: true,
+          assigned_to: true,
+          teacher: {
+            select: {
+              teacher_first_name: true,
+              teacher_last_name: true,
+            },
+          },
         },
       },
       course: {
@@ -382,6 +408,9 @@ async function getAllApplicationsByCourseIdToDownload(
       score: application.result[0]?.score,
       gender: application.student.gender,
       register_no: application.student.register_no,
+      assigned_to: application.student.teacher
+        ? application.student.teacher.teacher_first_name + " " + application.student.teacher.teacher_last_name
+        : "No Assignee",
     });
   }
 
@@ -391,9 +420,9 @@ async function getAllApplicationsByCourseIdToDownload(
   return;
 }
 
-async function getAllApplicationsByCourseIdCount(examId, searchKey) {
+async function getAllApplicationsByCourseIdCount(examId, searchKey, teacherId) {
   const coursesCount = await prisma.student_apply_course.count({
-    where: buildWhereClause(searchKey, examId, undefined),
+    where: buildWhereClause(searchKey, examId, undefined, teacherId),
   });
 
   return coursesCount;
