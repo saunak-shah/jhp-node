@@ -316,54 +316,48 @@ async function getAttendanceCountByMonth(
 }
 
 async function getAttendanceCountByAnyMonth(
+  organization_id,
   formatDate,
-  teacher,
   searchKey,
   lowerDateLimit,
   upperDateLimit,
   teacherId,
   gender
 ) {
-  let dataByMonth;
   const params = [formatDate];
   const query = [
-    `SELECT 
-        s.gender as gender,
-        s.assigned_to as teacher_id,
-        CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name, ' ', s.gender) as full_name,
-        COUNT(*)::integer AS attendance_count
-      FROM
-        attendance as a
-      LEFT JOIN student s on s.student_id = a.student_id
-      WHERE 
-        `,
+    `SELECT COUNT(DISTINCT s.student_id)::integer as count
+      FROM student s
+      LEFT JOIN attendance a ON a.student_id = s.student_id
+        AND a.date >= $${params.length}::date
+        AND a.date <= `,
   ];
 
-  // if (lowerDateLimit) {
-    params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
-    query.push(` a.date >= $${params.length}::date`);
-  // }
+  params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
+  query.push(`$${params.length}::date`);
 
-  // if (upperDateLimit) {
-    params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
-    query.push(`AND a.date <= $${params.length}::date`);
-  // }
+  query.push(`WHERE s.organization_id = `);
+  params.push(organization_id);
+  query.push(`$${params.length}`);
+  query.push(`AND s.status = 2`);
 
-  if (teacher) {
-    if (teacher.master_role_id === 2) {
-      params.push(teacher.teacher_id);
-      query.push(`AND "teacher_id" = $${params.length}`);
-    }
-
-    if (teacher.master_role_id === 1 && teacherId) {
+  if (teacherId) {
+    if (Array.isArray(teacherId)) {
+      const startIdx = params.length;
+      teacherId.forEach((id) => params.push(id));
+      const placeholders = teacherId
+        .map((_, i) => `$${startIdx + i + 1}`)
+        .join(", ");
+      query.push(`AND s.assigned_to IN (${placeholders})`);
+    } else {
       params.push(teacherId);
-      query.push(`AND "teacher_id" = $${params.length}`);
+      query.push(`AND s.assigned_to = $${params.length}`);
     }
   }
 
   if (gender) {
     params.push(gender === "Male" ? "M" : "F");
-    query.push(`AND "gender"::text = $${params.length}`);
+    query.push(`AND s.gender::text = $${params.length}`);
   }
 
   if (searchKey) {
@@ -373,21 +367,17 @@ async function getAttendanceCountByAnyMonth(
     );
   }
 
-  query.push(
-    `GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to`
-  );
+  const result = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
-  dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
-
-  return dataByMonth.length;
+  return result[0]?.count || 0;
 }
 
 async function getAttendanceDataByAnyMonth(
+  organization_id,
   searchKey,
   sortBy,
   sortOrder,
   formatDate,
-  teacher,
   limit,
   offset,
   lowerDateLimit,
@@ -395,55 +385,47 @@ async function getAttendanceDataByAnyMonth(
   teacherId,
   gender
 ) {
-  let dataByMonth;
   const params = [formatDate];
 
   let query = [
     `
-      SELECT 
-        a.student_id,
+      SELECT
+        s.student_id,
         s.gender as gender,
         s.assigned_to as teacher_id,
         CONCAT(s.first_name, ' ', s.father_name, ' ', s.last_name) as full_name,
-        COUNT(*)::integer as attendance_count
-      FROM
-        attendance as a
-      LEFT JOIN student s on s.student_id = a.student_id
-      WHERE 
-        
-        `,
+        COUNT(a.attendance_id)::integer as attendance_count
+      FROM student s
+      LEFT JOIN attendance a ON a.student_id = s.student_id
+        AND a.date::date >= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date
+        AND a.date::date <= `,
   ];
-  // date_trunc('month', a.date) = date_trunc('month', $${params.length}::date)`,
 
-  // if (lowerDateLimit) {
-    params.push(moment(lowerDateLimit).format("YYYY-MM-DD"));
-    query.push(
-      ` a.date::date >= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`
-    );
-  // }
+  params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
+  query.push(`($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`);
 
-  // if (upperDateLimit) {
-    params.push(moment(upperDateLimit).format("YYYY-MM-DD"));
-    query.push(
-      `AND a.date::date <= ($${params.length}::timestamptz AT TIME ZONE 'UTC')::date`
-    );
-  // }
+  query.push(`WHERE s.organization_id = `);
+  params.push(organization_id);
+  query.push(`$${params.length}`);
+  query.push(`AND s.status = 2`);
 
-  if (teacher) {
-    if (teacher.master_role_id === 2) {
-      params.push(teacher.teacher_id);
-      query.push(`AND "teacher_id" = $${params.length}`);
-    }
-
-    if (teacher.master_role_id === 1 && teacherId) {
+  if (teacherId) {
+    if (Array.isArray(teacherId)) {
+      const startIdx = params.length;
+      teacherId.forEach((id) => params.push(id));
+      const placeholders = teacherId
+        .map((_, i) => `$${startIdx + i + 1}`)
+        .join(", ");
+      query.push(`AND s.assigned_to IN (${placeholders})`);
+    } else {
       params.push(teacherId);
-      query.push(`AND "teacher_id" = $${params.length}`);
+      query.push(`AND s.assigned_to = $${params.length}`);
     }
   }
 
   if (gender) {
     params.push(gender === "Male" ? "M" : "F");
-    query.push(`AND "gender"::text = $${params.length}`);
+    query.push(`AND s.gender::text = $${params.length}`);
   }
 
   if (searchKey) {
@@ -454,7 +436,7 @@ async function getAttendanceDataByAnyMonth(
   }
 
   query.push(
-    `GROUP BY a.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to`
+    `GROUP BY s.student_id, s.first_name, s.last_name, s.father_name, s.gender, s.assigned_to`
   );
 
   if (sortBy && sortOrder) {
@@ -465,8 +447,7 @@ async function getAttendanceDataByAnyMonth(
   params.push(Number(limit), Number(offset));
   query.push(`LIMIT $${params.length - 1} OFFSET $${params.length}`);
 
-  console.log("query=============", query)
-  dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
+  const dataByMonth = await prisma.$queryRawUnsafe(query.join(" "), ...params);
 
   return dataByMonth;
 }
