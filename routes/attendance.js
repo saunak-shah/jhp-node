@@ -272,17 +272,28 @@ module.exports = function () {
     } = req.query;
 
     teacherId = teacherId ? Number(teacherId) : null;
+
+    // Resolve group-based teacher IDs for teachers (same as GET /api/attendance/)
+    if (teacher && teacher.master_role_id === 2) {
+      if (teacher.group_ids && teacher.group_ids.length > 0) {
+        const group = await findGroupById(teacher.group_ids[0]);
+        teacherId = group.teacher_ids;
+      } else {
+        teacherId = teacher.teacher_id;
+      }
+    }
+
+    const organization_id = teacher?.organization_id;
+
     let formatDate = moment(req.query.lowerDateLimit).format("YYYY-MM-DD");
 
     lowerDateLimit = moment.utc(`${req.query.lowerDateLimit}`).toISOString();
     upperDateLimit = moment.utc(`${req.query.upperDateLimit}`).toISOString();
 
-    console.log("lowerDateLimit========", lowerDateLimit)
-    console.log("upperDateLimit========", upperDateLimit)
     try {
       const totalAttendanceCount = await getAttendanceCountByAnyMonth(
+        organization_id,
         formatDate,
-        teacher,
         searchKey,
         lowerDateLimit,
         upperDateLimit,
@@ -291,11 +302,11 @@ module.exports = function () {
       );
 
       const attendance = await getAttendanceDataByAnyMonth(
+        organization_id,
         searchKey,
         sortBy,
         sortOrder,
         formatDate,
-        teacher,
         limit,
         offset,
         lowerDateLimit,

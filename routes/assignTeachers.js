@@ -29,12 +29,12 @@ module.exports = function () {
         ? student?.organization_id
         : teacher?.organization_id;
 
-      const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate } = req.query;
+      const { searchKey, sortBy, sortOrder, limit, offset, gender, fromDate, toDate, birthDateFrom, birthDateTo } = req.query;
       
       const status = req.query?.status === "Pending" ? USER_STATUS.PENDING : USER_STATUS.APPROVE;
       console.log("status========", status)
       try {
-        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate, status);
+        const totalCount = await findStudentsAssignedToTeacherIdCount(organization_id, searchKey, teacher_id, gender, fromDate, toDate, status, birthDateFrom, birthDateTo);
         const students = await findStudentsAssignedToTeacherId(
           organization_id,
           searchKey,
@@ -44,7 +44,9 @@ module.exports = function () {
           limit,
           offset,
           gender, fromDate, toDate,
-          status
+          status,
+          birthDateFrom,
+          birthDateTo
         );
         if (!students) {
           res.status(422).json({

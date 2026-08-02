@@ -189,7 +189,9 @@ async function getTotalStudentsCount(
   gender,
   fromDate,
   toDate,
-  status
+  status,
+  birthDateFrom,
+  birthDateTo
 ) {
   const studentCount = await prisma.student.count({
     where: buildWhereClause(
@@ -199,7 +201,9 @@ async function getTotalStudentsCount(
       gender,
       fromDate,
       toDate,
-      status
+      status,
+      birthDateFrom,
+      birthDateTo
     ),
   });
 
@@ -217,7 +221,9 @@ async function getAllStudents(
   gender,
   fromDate,
   toDate,
-  status = USER_STATUS.APPROVE
+  status = USER_STATUS.APPROVE,
+  birthDateFrom,
+  birthDateTo
 ) {
   const student = await prisma.student.findMany({
     where: buildWhereClause(
@@ -227,7 +233,9 @@ async function getAllStudents(
       gender,
       fromDate,
       toDate,
-      status
+      status,
+      birthDateFrom,
+      birthDateTo
     ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
@@ -249,7 +257,9 @@ function buildWhereClause(
   gender,
   fromDate,
   toDate,
-  status
+  status,
+  birthDateFrom,
+  birthDateTo
 ) {
   let whereClause = {};
 
@@ -295,6 +305,24 @@ function buildWhereClause(
     }
     if (toDate) {
       whereClause.created_at.lte = new Date(toDate);
+    }
+  }
+
+  const parsedBirthDateFrom = birthDateFrom ? new Date(birthDateFrom) : null;
+  const parsedBirthDateTo = birthDateTo ? new Date(birthDateTo) : null;
+
+  const validFrom = parsedBirthDateFrom && !isNaN(parsedBirthDateFrom);
+  const validTo = parsedBirthDateTo && !isNaN(parsedBirthDateTo);
+
+  if (validFrom && validTo && parsedBirthDateFrom > parsedBirthDateTo) {
+    // Invalid range — skip filter
+  } else if (validFrom || validTo) {
+    whereClause.birth_date = {};
+    if (validFrom) {
+      whereClause.birth_date.gte = parsedBirthDateFrom;
+    }
+    if (validTo) {
+      whereClause.birth_date.lte = parsedBirthDateTo;
     }
   }
 
@@ -374,7 +402,9 @@ async function findStudentsAssignedToTeacherIdCount(
   gender,
   fromDate,
   toDate,
-  status = USER_STATUS.APPROVE
+  status = USER_STATUS.APPROVE,
+  birthDateFrom,
+  birthDateTo
 ) {
   const students = await prisma.student.count({
     where: buildWhereClause(
@@ -384,7 +414,9 @@ async function findStudentsAssignedToTeacherIdCount(
       gender,
       fromDate,
       toDate,
-      status
+      status,
+      birthDateFrom,
+      birthDateTo
     ),
   });
 
@@ -405,7 +437,9 @@ async function findStudentsAssignedToTeacherId(
   gender,
   fromDate,
   toDate,
-  status = USER_STATUS.APPROVE
+  status = USER_STATUS.APPROVE,
+  birthDateFrom,
+  birthDateTo
 ) {
   const students = await prisma.student.findMany({
     where: buildWhereClause(
@@ -415,7 +449,9 @@ async function findStudentsAssignedToTeacherId(
       gender,
       fromDate,
       toDate,
-      status
+      status,
+      birthDateFrom,
+      birthDateTo
     ),
     select: studentOutputData,
     orderBy: buildOrderClause(sortBy, sortOrder),
