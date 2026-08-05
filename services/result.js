@@ -265,81 +265,65 @@ function buildWhereClause(studentId, courseId, searchKey) {
       OR: [
         {
           student: {
-            select: {
-              first_name: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            first_name: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              last_name: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            last_name: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              father_name: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            father_name: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              phone_number: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            phone_number: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              email: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            email: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              register_no: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            register_no: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              username: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            username: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
         {
           student: {
-            select: {
-              address: {
-                contains: searchKey,
-                mode: "insensitive",
-              },
+            address: {
+              contains: searchKey,
+              mode: "insensitive",
             },
           },
         },
@@ -368,12 +352,10 @@ function buildOrderClause(sortBy, sortOrder) {
   return orderClause;
 }
 
-async function getAllResultsByCourseIdCount(courseId) {
+async function getAllResultsByCourseIdCount(courseId, searchKey) {
   const resultsCount = await prisma.result.count({
     where: {
-      student_apply_course: {
-        course_id: parseInt(courseId),
-      },
+      student_apply_course: buildWhereClause(undefined, courseId, searchKey),
     },
   });
 
