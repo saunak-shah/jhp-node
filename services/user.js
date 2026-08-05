@@ -157,19 +157,6 @@ async function updateStudentData(filter, data) {
   return;
 }
 
-async function updateStudentData(filter, data) {
-  const student = await prisma.student.update({
-    where: filter,
-    data,
-    select: studentOutputData,
-  });
-
-  if (student) {
-    return student;
-  }
-  return;
-}
-
 async function deleteStudentData(filter) {
   const student = await prisma.student.delete({
     where: filter,
