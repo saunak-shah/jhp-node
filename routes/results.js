@@ -118,7 +118,7 @@ module.exports = function () {
     const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
     try {
-      const resultCount = await getAllResultsByCourseIdCount(id);
+      const resultCount = await getAllResultsByCourseIdCount(id, searchKey);
       const result = await getAllResultsByCourseId(
         searchKey,
         sortBy,
@@ -159,7 +159,7 @@ module.exports = function () {
       const { limit, offset, searchKey, sortBy, sortOrder } = req.query;
 
       try {
-        const resultCount = await getAllResultsByCourseIdCount(id);
+        const resultCount = await getAllResultsByCourseIdCount(id, searchKey);
         const result = await getAllResultsByCourseIdToDownload(
           searchKey,
           sortBy,
