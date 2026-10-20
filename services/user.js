@@ -157,19 +157,6 @@ async function updateStudentData(filter, data) {
   return;
 }
 
-async function updateStudentData(filter, data) {
-  const student = await prisma.student.update({
-    where: filter,
-    data,
-    select: studentOutputData,
-  });
-
-  if (student) {
-    return student;
-  }
-  return;
-}
-
 async function deleteStudentData(filter) {
   const student = await prisma.student.delete({
     where: filter,
@@ -582,6 +569,31 @@ async function findStudentsByGenderGroup(organization_id) {
   return data;
 }
 
+async function getExamsByStudentId(student_id) {
+  const exams = await prisma.student_apply_course.findMany({
+    where: {
+      student_id: parseInt(student_id),
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+    select: {
+      schedule_id: true,
+      course: {
+        select: { course_name: true },
+      },
+      exam_schedule: {
+        select: { exam_name: true },
+      },
+    },
+  });
+
+  if (exams) {
+    return exams;
+  }
+  return;
+}
+
 module.exports = {
   findStudentByUsername,
   findStudentByUserInfo,
@@ -603,4 +615,5 @@ module.exports = {
   findStudentsAssignedToTeacherData,
   findStudentsByAgeGroup,
   findStudentsByGenderGroup,
+  getExamsByStudentId,
 };
