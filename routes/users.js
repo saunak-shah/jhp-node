@@ -19,6 +19,7 @@ const {
   findStudentsByGenderGroup,
   findStudentsByAgeGroup,
   findStudentByUserInfo,
+  getExamsByStudentId,
 } = require("../services/user");
 
 const { sendEmail } = require("../helpers/sendEmail");
@@ -178,6 +179,26 @@ module.exports = function () {
       }
     } catch (error) {
       console.error("Error while getting user with unique id:", error);
+      res.status(500).send(`Internal Server Error: ${error}`);
+    }
+  });
+
+  // Get exams registered by a student.
+  router.get("/students/:id/exams", userMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const studentId = parseInt(id);
+
+      if (isNaN(studentId)) {
+        res.status(422).json({ message: "Invalid student id", data: null });
+        return;
+      }
+
+      const exams = await getExamsByStudentId(studentId);
+
+      res.status(200).json({ message: "Fetched exams.", data: exams });
+    } catch (error) {
+      console.error("Error while getting student exams:", error);
       res.status(500).send(`Internal Server Error: ${error}`);
     }
   });
